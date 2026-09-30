@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const paths = {
+  chevron: 'm6 9 6 6 6-6',
   edit: 'm16 3 5 5M4 20l5-1L21 7a2 2 0 0 0-5-4L4 15v5Z',
   trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
   sound: 'M4 10v4m4-8v12m4-15v18m4-15v12m4-8v4',

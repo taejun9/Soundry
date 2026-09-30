@@ -5,13 +5,14 @@ import { StorageConfig } from './config/storage-config.js';
 import { DatabaseService } from './database/database.service.js';
 import { ProjectsController } from './projects/projects.controller.js';
 import { ProjectsService } from './projects/projects.service.js';
+import { ProvidersController } from './providers/providers.controller.js';
 
 @Module({})
 export class AppModule {
   static register(storage: StorageConfig): DynamicModule {
     return {
       module: AppModule,
-      controllers: [HealthController, ProjectsController],
+      controllers: [HealthController, ProjectsController, ProvidersController],
       providers: [{ provide: StorageConfig, useValue: storage }, DatabaseService, ProjectsService],
     };
   }

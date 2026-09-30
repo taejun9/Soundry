@@ -61,6 +61,15 @@ describe('local API boundary', () => {
     expect(result.headers['cache-control']).toBe('no-store');
   });
 
+  it('exposes provider capabilities without credentials or internal configuration', async () => {
+    const result = await callApi({ path: '/api/providers/current' });
+    expect(result.status).toBe(200);
+    const summary = JSON.parse(result.body);
+    expect(Object.keys(summary).sort()).toEqual(['capabilities', 'configured', 'generationEnabled', 'id', 'isMock', 'model', 'notice']);
+    expect(summary).toMatchObject({ id: 'mock', isMock: true, configured: true, generationEnabled: false });
+    expect(summary.capabilities).toEqual({ modes: ['instrumental'], settings: [], maxVariations: 4, seedSupported: false, canCancelRemote: false });
+  });
+
   it('rejects a non-allowlisted Host even with an approved forwarded Host', async () => {
     const result = await callApi({ headers: { host: 'attacker.example:3000', 'x-forwarded-host': 'localhost:3000' } });
     expect(result.status).toBe(403);

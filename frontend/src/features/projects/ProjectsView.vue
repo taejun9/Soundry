@@ -6,6 +6,7 @@ import StudioIcon from '../../components/StudioIcon.vue';
 import ProjectDialog from './ProjectDialog.vue';
 import { projectDate } from './dates';
 import { useProjects } from './useProjects';
+import { forgetProjectDraft } from '../generation/useComposer';
 
 const router = useRouter();
 const { projects, nextCursor, loading, loadingMore, error, refresh, loadMore } = useProjects();
@@ -27,6 +28,7 @@ async function saved(project: ProjectSummary) {
 }
 
 async function deleted(result: DeleteResult) {
+  if (dialog.value?.project) forgetProjectDraft(dialog.value.project.id);
   dialog.value = null;
   notice.value = result.cleanupPending
     ? '프로젝트는 삭제되었지만 일부 음원 파일 정리가 남아 있어요. 다음 서버 시작 때 다시 정리합니다.'

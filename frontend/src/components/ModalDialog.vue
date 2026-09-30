@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue';
 import StudioIcon from './StudioIcon.vue';
+import { restoreDialogFocus } from './dialog-focus';
 
-const props = defineProps<{ title: string; busy?: boolean }>();
+const props = defineProps<{ title: string; busy?: boolean; preferredReturnFocus?: () => HTMLElement | null }>();
 const emit = defineEmits<{ close: [] }>();
 const dialog = ref<HTMLDialogElement>();
 const titleId = useId();
@@ -38,10 +39,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   dialog.value?.close();
   document.body.style.overflow = previousOverflow;
-  void nextTick(() => {
-    if (returnFocus?.isConnected) returnFocus.focus();
-    else document.querySelector<HTMLElement>('#main-content')?.focus();
-  });
+  void restoreDialogFocus(returnFocus, props.preferredReturnFocus, () => document.querySelector<HTMLElement>('#main-content'));
 });
 </script>
 

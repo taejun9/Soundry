@@ -15,7 +15,7 @@ function responseError(payload: unknown, status: number): ApiError {
       if (status < 500 && 'message' in error && typeof error.message === 'string') message = error.message;
     }
   }
-  if (status === 404) message = '프로젝트가 없거나 이미 삭제되었어요.';
+  if (status === 404) message = '요청한 항목을 찾을 수 없어요.';
   if (status === 409) message = '진행 중인 음악 생성이 있어요. 작업을 취소하거나 완료된 뒤 삭제해 주세요.';
   return new ApiError(message, status, code);
 }

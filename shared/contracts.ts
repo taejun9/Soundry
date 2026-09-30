@@ -25,3 +25,37 @@ export interface DeleteResult {
   deleted: true;
   cleanupPending: boolean;
 }
+
+export type MusicMode = 'instrumental' | 'vocal';
+export type SettingKey = 'genre' | 'mood' | 'bpm' | 'durationSeconds' | 'seed';
+export interface GenerationSettings {
+  mode?: MusicMode;
+  genre?: string;
+  mood?: string;
+  bpm?: number;
+  durationSeconds?: number;
+  seed?: string;
+}
+export interface GenerationInput {
+  prompt: string;
+  settings: GenerationSettings;
+  variationCount: number;
+}
+export interface ProviderCapabilities {
+  modes: MusicMode[];
+  settings: SettingKey[];
+  maxVariations: number;
+  durationRangeSeconds?: { min: number; max: number };
+  bpmRange?: { min: number; max: number };
+  seedSupported: boolean;
+  canCancelRemote: boolean;
+}
+export interface ProviderSummary {
+  id: string;
+  model: string | null;
+  isMock: boolean;
+  configured: boolean;
+  generationEnabled: boolean;
+  capabilities: ProviderCapabilities;
+  notice: string;
+}
