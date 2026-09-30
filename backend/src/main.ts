@@ -28,8 +28,12 @@ bootstrap().catch((error: unknown) => {
     console.error('Soundry API: API_HOST=127.0.0.1, API_PORT=3000 설정만 지원합니다.');
   } else if (error instanceof Error && error.message === 'INVALID_UI_PORT') {
     console.error('Soundry API: UI_PORT는 1024–65535 사이의 정수이며 API_PORT(3000)와 달라야 합니다.');
+  } else if (error instanceof Error && ['UNSAFE_STORAGE_PATH', 'INVALID_DATA_DIRECTORY'].includes(error.message)) {
+    console.error('Soundry API: 저장 폴더의 링크와 파일 상태를 확인해 주세요. SOUNDRY_DATA_DIR는 실제 디렉터리를 가리켜야 합니다.');
+  } else if (error instanceof Error && error.message === 'UNSUPPORTED_DATABASE_SCHEMA') {
+    console.error('Soundry API: 현재 앱에서 열 수 없는 데이터베이스입니다. 기존 데이터를 보존하고 앱 버전을 확인해 주세요.');
   } else {
-    console.error('Soundry API를 시작하지 못했습니다. 설치와 로컬 포트 권한을 확인해 주세요.');
+    console.error('Soundry API를 시작하지 못했습니다. 설치, 저장 폴더 권한, 데이터베이스와 로컬 포트를 확인해 주세요.');
   }
   process.exitCode = 1;
 });

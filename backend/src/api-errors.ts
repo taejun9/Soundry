@@ -4,6 +4,13 @@ import type { ErrorRequestHandler, Response } from 'express';
 
 type SafeError = { code: string; message: string };
 
+// Only application-owned messages may cross the API boundary.
+export class AppError extends HttpException {
+  constructor(status: number, readonly publicCode: string, readonly publicMessage: string) {
+    super(publicMessage, status);
+  }
+}
+
 const errors: Record<number, SafeError> = {
   400: { code: 'INVALID_INPUT', message: '요청 내용을 확인해 주세요.' },
   403: { code: 'FORBIDDEN', message: '허용되지 않은 요청입니다.' },
@@ -32,6 +39,10 @@ export const jsonErrorHandler: ErrorRequestHandler = (error: unknown, _request, 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
+    if (exception instanceof AppError) {
+      host.switchToHttp().getResponse<Response>().status(exception.getStatus()).json({ error: { code: exception.publicCode, message: exception.publicMessage } });
+      return;
+    }
     const status = exception instanceof HttpException ? exception.getStatus() : 500;
     sendError(host.switchToHttp().getResponse<Response>(), status);
   }

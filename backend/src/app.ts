@@ -5,10 +5,12 @@ import express from 'express';
 import { ApiExceptionFilter, jsonErrorHandler } from './api-errors.js';
 import { AppModule } from './app.module.js';
 import { createLocalBoundary, readUiPort } from './config/local-boundary.js';
+import { StorageConfig } from './config/storage-config.js';
 
-export async function createApplication(uiPortSetting: string | undefined = process.env.UI_PORT): Promise<NestExpressApplication> {
-  const uiPort = readUiPort(uiPortSetting);
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+export async function createApplication(options: { uiPort?: string; dataDir?: string } = {}): Promise<NestExpressApplication> {
+  const uiPort = readUiPort(options.uiPort ?? process.env.UI_PORT);
+  const storage = new StorageConfig(options.dataDir);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(storage), {
     logger: false,
     bodyParser: false,
     abortOnError: false,

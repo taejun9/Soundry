@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { existsSync } from 'node:fs';
+import { mkdtemp, realpath, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
@@ -10,9 +13,11 @@ const launcher = fileURLToPath(new URL('./dev.mjs', import.meta.url));
 const envPath = fileURLToPath(new URL('../../.env', import.meta.url));
 if (existsSync(envPath)) process.loadEnvFile(envPath);
 const uiPort = Number(process.env.UI_PORT ?? '5173');
+const dataDir = await realpath(await mkdtemp(join(tmpdir(), 'soundry-smoke-')));
+const isolatedEnv = { ...process.env, SOUNDRY_DATA_DIR: dataDir, MUSIC_PROVIDER: 'mock' };
 const logs = [];
 let ready = false;
-const child = spawn(process.execPath, [launcher], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+const child = spawn(process.execPath, [launcher], { cwd: root, env: isolatedEnv, stdio: ['ignore', 'pipe', 'pipe'] });
 child.stdout.on('data', (chunk) => logs.push(chunk.toString()));
 child.stderr.on('data', (chunk) => logs.push(chunk.toString()));
 const finished = new Promise((resolve) => child.once('exit', (code) => resolve(code)));
@@ -42,7 +47,7 @@ try {
   const page = await fetch(`http://127.0.0.1:${uiPort}/`);
   assert.match(await page.text(), /Soundry/);
   ready = true;
-  const collision = spawn(process.execPath, [launcher], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+  const collision = spawn(process.execPath, [launcher], { cwd: root, env: isolatedEnv, stdio: ['ignore', 'pipe', 'pipe'] });
   let collisionError = '';
   collision.stderr.on('data', (chunk) => { collisionError += chunk.toString(); });
   const code = await new Promise((resolve) => collision.once('exit', resolve));
@@ -55,6 +60,7 @@ try {
 } finally {
   if (child.exitCode === null) child.kill('SIGINT');
   const code = await Promise.race([finished, delay(8000).then(() => 'timeout')]);
+  if (code !== 'timeout') await rm(dataDir, { recursive: true, force: true });
   if (ready) {
     assert.equal(code, 0, 'Ctrl-C가 두 프로세스를 정상 종료해야 합니다.');
     await canBind(3000);

@@ -186,3 +186,77 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
 }
+
+/* Project management */
+.nav-hint { display: block; font-size: 10px; color: #96a38e; font-weight: 400; margin-top: 3px; }
+.project-count { font-size: 11px; color: #9ba79f; font-weight: 400; margin-left: 9px; }
+.refresh-link { color: #aab4b9; background: transparent; font-size: 11px; gap: 7px; }
+.refresh-link:disabled { color: #737e83; }
+.text-link { background: transparent; }
+.project-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px; }
+.project-card { background: #191d1f; border: 1px solid #30393e; border-radius: 11px; overflow: hidden; min-width: 0; transition: border-color 150ms; }
+.project-card:hover { border-color: #627852; }
+.project-open { display: block; padding: 22px 22px 18px; }
+.project-open:focus-visible { outline-offset: -4px; border-radius: 10px; }
+.project-cover { width: 45px; height: 45px; display: grid; place-items: center; border: 1px solid #42503c; background: #2a3628; color: #bbd7a7; border-radius: 10px; margin-bottom: 21px; }
+.project-card h3 { font-size: 17px; font-weight: 620; line-height: 1.55; letter-spacing: -.3px; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: 53px; }
+.project-track-count { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #b8c1c7; margin: 10px 0 22px; }
+.project-track-count .studio-icon { width: 14px; height: 14px; }
+.project-dates { display: grid; gap: 5px; margin: 0; color: #949fa6; font-size: 10px; }
+.project-dates div { display: flex; justify-content: space-between; gap: 12px; }
+.project-dates dd { margin: 0; color: #b2bec5; }
+.project-actions { display: flex; align-items: center; border-top: 1px solid #30393e; padding: 3px 11px; }
+.project-actions button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 7px 11px; background: transparent; color: #b4c0c7; font-size: 11px; border-radius: 5px; }
+.project-actions button:hover { color: #f4f7f9; background: #2a3439; }
+.project-actions button .studio-icon { width: 14px; height: 14px; }
+.project-actions .delete-action { margin-left: auto; color: #c79c93; }
+.notice-banner, .error-banner { padding: 15px 18px; margin: 0 0 20px; border: 1px solid #415539; border-radius: 8px; background: #222d20; color: #c8e2b9; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.error-banner { background: #302424; color: #f0c3bc; border-color: #624340; }
+.error-banner .button { margin-top: 12px; }
+.load-more { display: flex; justify-content: center; margin-top: 25px; }
+.list-status { color: #a6b2b9; font-size: 11px; text-align: center; margin-top: 18px; }
+.loading-spinner { display: block; width: 25px; height: 25px; border: 2px solid #3c4a3a; border-top-color: #bedb9c; border-radius: 50%; margin-bottom: 8px; animation: studio-spin 900ms linear infinite; }
+@keyframes studio-spin { to { transform: rotate(360deg); } }
+.modal-dialog { position: fixed; inset: 0; margin: auto; width: min(470px, calc(100vw - 36px)); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 27px; color: #e9eff1; background: #1b2023; border: 1px solid #46535a; border-radius: 13px; box-shadow: 0 24px 70px #0008; }
+.modal-dialog::backdrop { background: #070b0ecc; }
+.modal-dialog:focus { outline: none; }
+.modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 17px; }
+.modal-heading h2 { font-size: 20px; font-weight: 650; letter-spacing: -.6px; }
+.modal-copy { color: #adb9c0; line-height: 1.85; font-size: 12px; }
+.modal-copy strong { color: #eff4f6; }
+.text-input { width: 100%; min-height: 47px; padding: 12px 14px; border: 1px solid #51616b; background: #11171a; color: #e8f0f4; border-radius: 7px; font-size: 14px; outline-offset: 3px; }
+.text-input::placeholder { color: #8e9da6; }
+.text-input[aria-invalid='true'] { border-color: #e9a095; }
+.input-caption { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; color: #a4b2ba; margin: 10px 0 0; }
+.field-error { color: #efb0a5; font-size: 11px; line-height: 1.7; margin-top: 7px; min-height: 19px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 23px; }
+.modal-actions .button { min-width: 78px; }
+.modal-dialog .error-banner { margin-top: 15px; margin-bottom: 0; }
+.button-danger { color: #2c1211; background: #edaca1; }
+.button-danger:hover:enabled { background: #f3c0b8; }
+.button-danger:disabled { background: #644a46; color: #d7b5ae; }
+.button-secondary:disabled { color: #7e8c95; }
+.delete-scope { border: 1px solid #564543; background: #282124; border-radius: 8px; padding: 14px 16px; margin-top: 17px; color: #d5b7b1; font-size: 12px; line-height: 1.85; }
+.delete-scope p + p { margin-top: 6px; }
+.break-name { overflow-wrap: anywhere; }
+.workspace-title { min-width: 0; flex: 1; }
+.workspace-title h1 { font-size: 29px; }
+.workspace-back { margin-bottom: 20px; color: #a8b7c0; }
+.workspace-back .studio-icon { transform: rotate(180deg); order: -1; }
+.workspace-select { min-height: 430px; }
+.workspace-select h1 { font-size: clamp(24px, 3vw, 30px); }
+.workspace-select .eyebrow { margin-top: 3px; }
+.inline-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.inline-actions .button { margin-top: 0; }
+@media (max-width: 760px) {
+  .project-grid { gap: 17px; }
+  .project-card h3 { min-height: auto; }
+  .project-open { padding: 23px; }
+  .project-dates { font-size: 11px; }
+  .modal-dialog { padding: 22px; }
+  .modal-heading h2 { font-size: 19px; }
+  .workspace-title { flex-basis: 100%; }
+  .workspace-title h1 { font-size: 26px; }
+  .workspace-select { padding-right: 15px; padding-left: 15px; }
+  .project-count { display: block; margin-left: 0; margin-top: 3px; }
+}

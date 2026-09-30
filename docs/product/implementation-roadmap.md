@@ -1,6 +1,6 @@
 # Phase별 구현 계획
 
-**현재 gate: 2026-09-30 전체 구현 승인, Phase 1 완료.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
+**현재 gate: 2026-09-30 전체 구현 승인, Phase 2 완료.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
 
 | Phase | 범위 | 사용자 확인 가능한 완료 기준 | 검증 |
 |---|---|---|---|
@@ -30,3 +30,7 @@ Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자
 ## 보고 및 완료 절차
 
 각 Phase에서 구현 기능, 주요 변경 파일, 실제 실행 방법, 테스트 결과, 문제, 다음 범위를 한국어로 보고한다. 테스트는 변경된 동작의 실패 경계를 검증하며 QA 이후 별도 리뷰를 한다. 계획 완료와 리뷰 mirror를 남긴 뒤 승인된 git lifecycle로 병합한다. 다음 phase의 범위 변경은 새로운 plan의 Decision Log에 남긴다.
+
+## 실행 기록 연결
+
+Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. 다음 앱 Phase 3 계획 번호는 plan-005로 예약한다.

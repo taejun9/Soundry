@@ -31,7 +31,7 @@ watch(() => route.fullPath, async () => {
         <p class="eyebrow nav-caption">YOUR STUDIO</p>
         <nav aria-label="스튜디오 메뉴">
           <RouterLink to="/" class="nav-item" exact-active-class="is-active"><StudioIcon name="grid" />프로젝트</RouterLink>
-          <RouterLink to="/workspace" class="nav-item" :class="{ 'is-active': route.path.startsWith('/projects/') }" active-class="is-active"><StudioIcon name="sliders" />작업 공간</RouterLink>
+          <RouterLink to="/workspace" class="nav-item" :class="{ 'is-active': route.path.startsWith('/projects/') }" active-class="is-active"><StudioIcon name="sliders" /><span>작업 공간<span class="nav-hint">프로젝트 선택</span></span></RouterLink>
           <RouterLink to="/library" class="nav-item" active-class="is-active"><StudioIcon name="heart" />보관함</RouterLink>
         </nav>
         <div class="sidebar-bottom">

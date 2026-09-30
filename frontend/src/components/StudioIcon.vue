@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const paths = {
+  edit: 'm16 3 5 5M4 20l5-1L21 7a2 2 0 0 0-5-4L4 15v5Z',
+  trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
   sound: 'M4 10v4m4-8v12m4-15v18m4-15v12m4-8v4',
   grid: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
   sliders: 'M4 4v6m0 4v6m8-16v10m0 4v2m8-16v2m0 4v10M1 10h6m2 8h6m2-12h6',

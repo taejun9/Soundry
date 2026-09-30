@@ -1,6 +1,6 @@
 # 품질 규칙
 
-Phase 1 앱 bootstrap을 구현하고 검증했다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책 테스트, production build, dev launcher smoke를 검증한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
+Phase 1 bootstrap과 Phase 2 프로젝트 저장을 구현하고 검증했다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책·SQLite/Project CRUD 테스트, production build, dev launcher smoke를 검증한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
 
 ## 계획과 작업 경계
 

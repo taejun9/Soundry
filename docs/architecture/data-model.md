@@ -1,6 +1,6 @@
 # SQLite 데이터 모델
 
-상태: 설계 계약. 실제 DB나 migration은 아직 생성하지 않았다. DB 접근은 backend 한 프로세스가 소유한다. SQLite foreign key는 연결마다 명시적으로 활성화한다. schema migration SQL을 버전 관리하며 사용자 DB를 reset하는 명령을 기본 실행에 넣지 않는다.
+상태: Phase 2에서 Drizzle schema와 `backend/migrations/0000_initial.sql`을 구현했다. 프로젝트 CRUD를 검증했으며 생성·트랙 업무 흐름은 후속 Phase다. DB 접근은 backend 한 프로세스가 소유한다. SQLite foreign key는 연결마다 명시적으로 활성화한다. schema migration SQL을 버전 관리하며 사용자 DB를 reset하는 명령을 기본 실행에 넣지 않는다.
 
 ## 테이블
 

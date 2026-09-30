@@ -1,3 +1,4 @@
+import { mkdtempSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
@@ -9,6 +10,12 @@ type HttpResult = { status: number; body: string; headers: Record<string, string
 let app: NestExpressApplication;
 let port: number;
 const uiOrigin = 'http://127.0.0.1:5173';
+const temporaryRoots: string[] = [];
+function testDataDir(): string {
+  const root = mkdtempSync('/private/tmp/soundry-boundary-');
+  temporaryRoots.push(root);
+  return root;
+}
 
 function callApi(options: { port?: number; path?: string; method?: string; headers?: Record<string, string>; body?: string } = {}): Promise<HttpResult> {
   return new Promise((resolve, reject) => {
@@ -35,12 +42,15 @@ function callApi(options: { port?: number; path?: string; method?: string; heade
 }
 
 beforeAll(async () => {
-  app = await createApplication('5173');
+  app = await createApplication({ uiPort: '5173', dataDir: testDataDir() });
   await app.listen(0, '127.0.0.1');
   port = ((app.getHttpServer() as Server).address() as AddressInfo).port;
 });
 
-afterAll(async () => { await app?.close(); });
+afterAll(async () => {
+  await app?.close();
+  for (const root of temporaryRoots) rmSync(root, { recursive: true, force: true });
+});
 
 describe('local API boundary', () => {
   it('returns only the public health contract', async () => {
@@ -74,7 +84,7 @@ describe('local API boundary', () => {
   });
 
   it('uses only the explicitly configured alternate UI port', async () => {
-    const alternateApp = await createApplication('5174');
+    const alternateApp = await createApplication({ uiPort: '5174', dataDir: testDataDir() });
     try {
       await alternateApp.listen(0, '127.0.0.1');
       const alternatePort = ((alternateApp.getHttpServer() as Server).address() as AddressInfo).port;
@@ -92,8 +102,8 @@ describe('local API boundary', () => {
   });
 
   it('rejects invalid UI configuration before creating a server', async () => {
-    await expect(createApplication('3000')).rejects.toThrow('INVALID_UI_PORT');
-    await expect(createApplication('5174/attacker')).rejects.toThrow('INVALID_UI_PORT');
+    await expect(createApplication({ uiPort: '3000', dataDir: testDataDir() })).rejects.toThrow('INVALID_UI_PORT');
+    await expect(createApplication({ uiPort: '5174/attacker', dataDir: testDataDir() })).rejects.toThrow('INVALID_UI_PORT');
   });
 
   it('answers approved preflight without enabling credentials or wildcard access', async () => {

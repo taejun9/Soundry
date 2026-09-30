@@ -7,3 +7,21 @@ export interface HealthResponse {
 export interface ApiErrorResponse {
   error: { code: string; message: string };
 }
+
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  trackCount: number;
+}
+
+export interface Page<T> {
+  items: T[];
+  nextCursor: string | null;
+}
+
+export interface DeleteResult {
+  deleted: true;
+  cleanupPending: boolean;
+}
