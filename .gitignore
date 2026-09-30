@@ -1,0 +1,23 @@
+# Dependencies/build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local configuration and generated audio/database
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+
+# Local tools
+.worktree/
+.DS_Store
+__pycache__/
+*.pyc
