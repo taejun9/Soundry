@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useId } from 'vue';
-import type { SettingKey } from '../../../../shared/contracts';
+import { computed, nextTick, onMounted, ref, useId, watch } from 'vue';
+import type { GenerationInput, SettingKey } from '../../../../shared/contracts';
 import StudioIcon from '../../components/StudioIcon.vue';
 import ModalDialog from '../../components/ModalDialog.vue';
 import { GENRE_PRESETS } from './genres';
@@ -9,7 +9,8 @@ import type { ComposerDraft } from './composer-input';
 import { useComposer } from './useComposer';
 import { useProvider } from './useProvider';
 
-const props = defineProps<{ projectId: string }>();
+const props = defineProps<{ projectId: string; submitting?: boolean; blocked?: boolean }>();
+const emit = defineEmits<{ submit: [input: GenerationInput]; availability: [available: boolean] }>();
 const id = useId();
 const promptField = ref<HTMLTextAreaElement>();
 const selectedPreset = ref('');
@@ -19,6 +20,14 @@ const replacementConfirmed = ref(false);
 const preferredPresetFocus = () => replacementConfirmed.value ? promptField.value ?? null : null;
 const { provider, loading, error, reload } = useProvider();
 const { draft, restored, capabilityNotice, touched, errors, touch, validate } = useComposer(props.projectId, provider);
+const available = computed(() => Boolean(provider.value?.configured && provider.value.generationEnabled));
+watch(available, value => emit('availability', value), { immediate: true });
+async function requestGeneration() {
+  if (!available.value || props.submitting || props.blocked) return;
+  const input = validate();
+  if (input) emit('submit', input);
+  else { await nextTick(); promptField.value?.focus(); }
+}
 const caps = computed(() => provider.value?.capabilities ?? null);
 const preset = computed(() => GENRE_PRESETS.find(item => item.id === selectedPreset.value));
 const variationLimit = computed(() => maxVariations(caps.value));
@@ -74,7 +83,7 @@ onMounted(() => { void reload(); });
     </div>
     <p v-if="capabilityNotice" class="notice-banner compact-notice" role="status">{{ capabilityNotice }}</p>
 
-    <form novalidate @submit.prevent="validate">
+    <form novalidate @submit.prevent="requestGeneration">
       <div class="preset-block">
         <label :for="`${id}-preset`" class="field-label">장르별 아이디어 <span class="optional-label">선택</span></label>
         <div class="preset-controls"><select :id="`${id}-preset`" v-model="selectedPreset" class="text-input"><option value="">장르 예문 살펴보기</option><option v-for="item in GENRE_PRESETS" :key="item.id" :value="item.id">{{ item.label }}</option></select><button class="button button-secondary" type="button" :disabled="!preset" @click="choosePreset">예문 넣기</button></div>
@@ -100,7 +109,7 @@ onMounted(() => { void reload(); });
           <div class="setting-field setting-wide"><label :for="`${id}-seed`" class="field-label">시드 <span class="optional-label">같은 설정으로 결과 비교</span></label><input :id="`${id}-seed`" v-model="draft.seed" class="text-input" maxlength="120" placeholder="자동" :disabled="!supported('seed')" :aria-describedby="`${id}-seed-help`" :aria-invalid="Boolean(visibleError('seed'))" @blur="touch('seed')" /><p :id="`${id}-seed-help`" class="field-help">{{ supportHelp('seed') }}</p><p v-if="visibleError('seed')" class="field-error" role="alert">{{ visibleError('seed') }}</p></div>
         </div>
       </details>
-      <div class="composer-submit"><button class="button button-primary full-width" type="button" disabled :aria-describedby="`${id}-availability`"><StudioIcon name="plus" />음악 생성 · 준비 중</button><p :id="`${id}-availability`" class="field-help">현재는 아이디어 작성과 설정을 할 수 있어요. 음악 생성 기능은 준비 중입니다.</p></div>
+      <div class="composer-submit"><button class="button button-primary full-width" type="submit" :disabled="!available || submitting || blocked" :aria-describedby="`${id}-availability`"><StudioIcon name="plus" />{{ submitting ? '작업 접수 중…' : provider?.isMock ? '8초 데모 생성' : '음악 생성' }}</button><p :id="`${id}-availability`" class="field-help">{{ blocked && !submitting ? '이전 요청의 접수 여부를 먼저 확인해 주세요.' : !available ? '공급자 연결과 생성 가능 여부를 확인해 주세요.' : provider?.isMock ? '고정된 8초 데모 음원을 저장합니다. 프롬프트에 맞춘 새 작곡은 하지 않습니다.' : '입력한 프롬프트와 설정을 연결한 음악 공급자에게 전송합니다.' }}</p></div>
     </form>
     <p class="draft-privacy"><StudioIcon name="lock" /><span>{{ restored ? '이 탭에서 작성하던 내용을 복원했어요. ' : '' }}작성 내용은 이 탭에서만 임시 보관되며, 새로고침하면 사라집니다.</span></p>
   </section>

@@ -66,7 +66,7 @@ describe('local API boundary', () => {
     expect(result.status).toBe(200);
     const summary = JSON.parse(result.body);
     expect(Object.keys(summary).sort()).toEqual(['capabilities', 'configured', 'generationEnabled', 'id', 'isMock', 'model', 'notice']);
-    expect(summary).toMatchObject({ id: 'mock', isMock: true, configured: true, generationEnabled: false });
+    expect(summary).toMatchObject({ id: 'mock', isMock: true, configured: true, generationEnabled: true });
     expect(summary.capabilities).toEqual({ modes: ['instrumental'], settings: [], maxVariations: 4, seedSupported: false, canCancelRemote: false });
   });
 

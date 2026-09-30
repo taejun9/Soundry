@@ -11,16 +11,16 @@ export function readMusicProvider(value: string | undefined): 'mock' {
 export class ProviderService {
   readonly current: MusicGenerationProvider;
 
-  constructor(name: string | undefined = process.env.MUSIC_PROVIDER) {
+  constructor(name: string | undefined = process.env.MUSIC_PROVIDER, override?: MusicGenerationProvider) {
     readMusicProvider(name);
-    this.current = new MockProvider();
+    this.current = override ?? new MockProvider();
   }
 
   summary(): ProviderSummary {
     return {
       id: this.current.id, model: MOCK_MODEL, isMock: true, configured: true,
-      generationEnabled: false, capabilities: this.current.capabilities,
-      notice: '고정된 짧은 데모 음원을 사용하는 Mock 모드입니다. 프롬프트가 음원을 바꾸지 않으며 외부로 전송되지 않습니다. 음악 생성 기능은 준비 중입니다.',
+      generationEnabled: true, capabilities: this.current.capabilities,
+      notice: '고정된 짧은 데모 음원을 사용하는 Mock 모드입니다. 프롬프트가 음원을 바꾸지 않으며 외부로 전송되지 않습니다.',
     };
   }
 }

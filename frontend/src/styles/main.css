@@ -333,3 +333,54 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .composer-panel textarea { min-height: 225px; }
   .input-counter { font-size: 9px; }
 }
+
+/* Persisted generation jobs */
+.job-workspace-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.generation-history { min-width: 0; }
+.history-status { color: #a8b8be; font-size: 11px; line-height: 1.8; margin-top: 10px; margin-bottom: 21px; }
+.generation-list, .result-tracks { list-style: none; padding: 0; margin: 0; }
+.generation-list { display: grid; gap: 19px; }
+.generation-card { min-width: 0; padding: 17px; border: 1px solid #3b484e; border-radius: 9px; background: #151c20; }
+.generation-heading { display: flex; align-items: center; justify-content: space-between; gap: 9px; flex-wrap: wrap; }
+.generation-heading time { font-size: 9px; color: #a5b5be; }
+.job-status { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; color: #c6d6db; }
+.job-status[data-status='completed'] { color: #bfdea3; }
+.job-status[data-status='failed'] { color: #efb3a9; }
+.job-status[data-status='cancelled'] { color: #a6b4bb; }
+.job-dot { width: 6px; height: 6px; border-radius: 50%; background: #c7d997; }
+.generation-source { margin: 10px 0 15px; font-size: 9px; color: #95a9b3; line-height: 1.8; overflow-wrap: anywhere; }
+.generation-prompt { border-top: 1px solid #313d43; border-bottom: 1px solid #313d43; padding: 10px 0; }
+.generation-prompt summary { display: flex; align-items: center; justify-content: space-between; cursor: pointer; list-style: none; font-size: 10px; color: #c1ced5; }
+.generation-prompt summary::-webkit-details-marker { display: none; }
+.generation-prompt summary .studio-icon { width: 14px; height: 14px; }
+.generation-prompt[open] summary .studio-icon { transform: rotate(180deg); }
+.generation-prompt p { font-size: 11px; line-height: 1.85; color: #c0cdd3; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 11px; }
+.generation-prompt .source-note { font-size: 10px; color: #9db1bb; }
+.requested-settings { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #344149; font-size: 10px; }
+.requested-settings div { display: flex; gap: 14px; margin-top: 5px; }
+.requested-settings dt { color: #97b0be; flex-shrink: 0; }
+.requested-settings dd { margin: 0; overflow-wrap: anywhere; }
+.mock-result-note, .job-hint { font-size: 10px; color: #b9c9ae; line-height: 1.8; margin-top: 13px; }
+.job-hint { color: #a1b3be; }
+.job-error { font-size: 11px; color: #f0bfb3; line-height: 1.8; margin-top: 13px; overflow-wrap: anywhere; }
+.generation-actions { display: flex; justify-content: flex-end; margin-top: 15px; }
+.generation-actions .button { font-size: 10px; padding: 8px 12px; min-height: 39px; }
+.result-tracks { display: grid; gap: 10px; margin-top: 14px; }
+.result-track { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border: 1px solid #37494c; background: #212e2e; border-radius: 7px; }
+.track-symbol { color: #b4d29b; display: grid; place-items: center; }
+.track-symbol .studio-icon { width: 18px; height: 18px; }
+.track-copy { min-width: 0; flex: 1; }
+.track-copy h3 { font-size: 12px; font-weight: 560; overflow-wrap: anywhere; line-height: 1.6; }
+.track-copy p { font-size: 9px; color: #aec0bf; line-height: 1.7; margin-top: 3px; }
+.playback-pending { font-size: 9px; color: #a6b4b6; border: 1px solid #506363; padding: 4px 6px; border-radius: 4px; margin-left: auto; }
+.history-footnote { color: #91a5af; font-size: 10px; line-height: 1.8; margin-top: 24px; }
+.history-error { font-size: 11px; }
+.history-error p + p { margin-top: 8px; }
+.uncertain-submission { border: 1px solid #756440; border-radius: 9px; background: #2c291c; color: #e1d2a6; padding: 20px; margin-bottom: 20px; }
+.uncertain-submission h2 { font-size: 16px; margin-bottom: 9px; }
+.uncertain-submission p { font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
+.uncertain-submission details { margin: 14px 0; }
+.uncertain-submission summary { font-size: 11px; cursor: pointer; }
+.uncertain-submission details p { margin-top: 8px; white-space: pre-wrap; }
+@media (max-width: 1100px) { .job-workspace-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .generation-history { padding: 20px 16px; } .generation-card { padding: 14px; } .playback-pending { flex-basis: auto; } }

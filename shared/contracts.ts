@@ -59,3 +59,51 @@ export interface ProviderSummary {
   capabilities: ProviderCapabilities;
   notice: string;
 }
+
+export type GenerationStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type GenerationStage = 'preparing' | 'generating' | 'saving';
+export interface CreateGenerationRequest extends GenerationInput {
+  requestKey: string;
+  sourceGenerationId?: string;
+}
+export interface TrackSummary {
+  id: string;
+  projectId: string;
+  generationId: string;
+  variationIndex: number;
+  title: string;
+  prompt: string;
+  audioUrl: string;
+  downloadUrl: string;
+  mimeType: string;
+  byteSize: number;
+  durationSeconds: number | null;
+  bpm: number | null;
+  genre: string | null;
+  mood: string | null;
+  seed: string | null;
+  provider: string;
+  model: string | null;
+  favorite: boolean;
+  createdAt: string;
+}
+export interface GenerationSummary {
+  id: string;
+  projectId: string;
+  prompt: string;
+  settings: GenerationSettings;
+  variationCount: number;
+  requestKey: string;
+  sourceGenerationId: string | null;
+  provider: string;
+  model: string | null;
+  status: GenerationStatus;
+  stage: GenerationStage | null;
+  progress: null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+  tracks: TrackSummary[];
+}

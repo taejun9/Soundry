@@ -39,7 +39,7 @@ describe('MockProvider real WAV contract', () => {
       for (const [index, track] of tracks.entries()) {
         const expected = manifest.files[index % 2]!;
         const bytes = await collect(track.audio);
-        expect(bytes).toEqual(readFileSync(join(fixtureRoot, expected.file)));
+        expect(bytes.equals(readFileSync(join(fixtureRoot, expected.file)))).toBe(true);
         expect(bytes.subarray(0, 4).toString()).toBe('RIFF');
         expect(bytes.subarray(8, 12).toString()).toBe('WAVE');
         expect(bytes.readUInt32LE(4) + 8).toBe(bytes.length);
@@ -61,7 +61,7 @@ describe('MockProvider real WAV contract', () => {
     const provider = new MockProvider({ delayMs: 0 });
     const a = await provider.generate({ ...input, prompt: '재즈', variationCount: 1 }, context());
     const b = await provider.generate({ ...input, prompt: '록', variationCount: 1 }, context());
-    expect(await collect(a[0]!.audio)).toEqual(await collect(b[0]!.audio));
+    expect((await collect(a[0]!.audio)).equals(await collect(b[0]!.audio))).toBe(true);
     expect(a[0]!.metadata).toEqual({ durationSeconds: 8 });
   });
 

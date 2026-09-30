@@ -81,6 +81,6 @@ Phase 8에서 fal.ai, local model 또는 다른 API 중 하나를 선택하고 e
 
 외부 provider이면 프롬프트와 선택 설정이 전송된다는 설명을 생성 UI에 표시한다. key는 backend `.env`에만 둔다. 참조 오디오 전송은 현재 범위에 없으므로 구현하지 않는다. 자동 재시도는 없고 사용자의 Retry는 새 작업/외부 비용을 발생시킬 수 있다.
 
-원격 URL은 adapter가 검증한 공급자 host/HTTPS에서만 가져온다. redirect 대상도 같은 정책으로 검사하고 내부 주소를 거부한다. 파일을 bounded streaming으로 받아 media signature·크기·포맷을 검증한다. 앱 전체 기본 파일 상한은 track당 100 MiB로 두되 모델 선정 시 예상 길이에 맞춰 명시적으로 재검토한다. 이를 통과한 결과를 StorageService에 전달하며 원격 URL을 영구 audioPath로 저장하지 않는다.
+원격 URL은 adapter가 검증한 공급자 host/HTTPS에서만 가져온다. redirect 대상도 같은 정책으로 검사하고 내부 주소를 거부한다. 파일을 bounded streaming으로 받아 media signature·크기·포맷을 검증한다. 현재 저장 구현은 선택된 공급자의 WAV(PCM 또는 IEEE-float32)를 검증한다. MP3 등 다른 출력이 필요하면 해당 공급자 계획에서 검증기를 먼저 확장한다. 앱 전체 기본 파일 상한은 track당 100 MiB로 두되 모델 선정 시 예상 길이에 맞춰 명시적으로 재검토한다. 이를 통과한 결과를 StorageService에 전달하며 원격 URL을 영구 audioPath로 저장하지 않는다.
 
 provider가 취소를 지원하지 않더라도 로컬 결과 수집을 중단하고 늦은 성공을 폐기한다. UI는 로컬 취소와 공급자 과금 중단을 같은 뜻으로 표시하지 않는다. 재시작 후 외부 job이 계속될 수 있으므로 자동 중복 요청은 하지 않는다.

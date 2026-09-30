@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { OnModuleDestroy } from '@nestjs/common';
+import type { OnApplicationShutdown } from '@nestjs/common';
 import BetterSqlite3 from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
@@ -10,7 +10,7 @@ import { REPOSITORY_ROOT, StorageConfig } from '../config/storage-config.js';
 import * as schema from './schema.js';
 
 @Injectable()
-export class DatabaseService implements OnModuleDestroy {
+export class DatabaseService implements OnApplicationShutdown {
   readonly client: BetterSqlite3.Database;
   readonly db: BetterSQLite3Database<typeof schema>;
 
@@ -18,6 +18,10 @@ export class DatabaseService implements OnModuleDestroy {
     storage.assertSafe();
     this.client = new BetterSqlite3(storage.databasePath);
     try {
+      this.client.pragma('busy_timeout = 1000');
+      // Acquire before schema reads, recovery, or file cleanup. Held until close.
+      this.client.pragma('locking_mode = EXCLUSIVE');
+      this.client.exec('BEGIN EXCLUSIVE; COMMIT;');
       this.client.pragma('foreign_keys = ON');
       this.client.pragma('busy_timeout = 5000');
       const version = this.client.pragma('user_version', { simple: true });
@@ -33,11 +37,13 @@ export class DatabaseService implements OnModuleDestroy {
       this.db.select().from(schema.projects).limit(1).all();
       this.db.select().from(schema.generations).limit(1).all();
       const references = this.db.select({ path: schema.tracks.audioPath }).from(schema.tracks).all();
-      if (storage.removeOrphanAudio(new Set(references.map((track) => track.path)))) {
+      const staleTempPending = storage.removeStaleTemp();
+      if (storage.removeOrphanAudio(new Set(references.map((track) => track.path))) || staleTempPending) {
         console.warn('Soundry: 일부 음원을 정리하지 못했습니다. 저장 폴더의 권한과 파일 상태를 확인해 주세요.');
       }
     } catch (error) {
       this.client.close();
+      if (error instanceof Error && 'code' in error && error.code === 'SQLITE_BUSY') throw new Error('DATA_DIRECTORY_IN_USE', { cause: error });
       throw error;
     }
   }
@@ -49,7 +55,7 @@ export class DatabaseService implements OnModuleDestroy {
     this.db.update(schema.projects).set({ updatedAt: next }).where(eq(schema.projects.id, id)).run();
   }
 
-  onModuleDestroy(): void {
+  onApplicationShutdown(): void {
     if (this.client.open) this.client.close();
   }
 }

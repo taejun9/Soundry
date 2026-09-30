@@ -1,6 +1,6 @@
 # Local REST API 설계
 
-base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`를 구현했다. 생성·트랙 endpoint는 후속 Phase의 계약이다.
+base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 조회/편집/재생/다운로드 endpoint는 후속 Phase의 계약이다.
 
 ## 공통 계약
 

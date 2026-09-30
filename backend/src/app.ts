@@ -7,12 +7,24 @@ import { AppModule } from './app.module.js';
 import { createLocalBoundary, readUiPort } from './config/local-boundary.js';
 import { StorageConfig } from './config/storage-config.js';
 import { ProviderService } from './providers/provider.service.js';
+import type { MusicGenerationProvider } from './providers/music-generation-provider.js';
+import type { BatchStorage } from './storage/storage.types.js';
 
-export async function createApplication(options: { uiPort?: string; dataDir?: string; musicProvider?: string } = {}): Promise<NestExpressApplication> {
+export interface ApplicationOptions {
+  uiPort?: string;
+  dataDir?: string;
+  musicProvider?: string;
+  /** In-process integration test dependencies, never environment or HTTP options. */
+  providerOverride?: MusicGenerationProvider;
+  storageOverride?: BatchStorage;
+  generationTimeoutMs?: number;
+}
+
+export async function createApplication(options: ApplicationOptions = {}): Promise<NestExpressApplication> {
   const uiPort = readUiPort(options.uiPort ?? process.env.UI_PORT);
-  const providers = new ProviderService(options.musicProvider ?? process.env.MUSIC_PROVIDER);
+  const providers = new ProviderService(options.musicProvider ?? process.env.MUSIC_PROVIDER, options.providerOverride);
   const storage = new StorageConfig(options.dataDir);
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(storage, providers), {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(storage, providers, options), {
     logger: false,
     bodyParser: false,
     abortOnError: false,

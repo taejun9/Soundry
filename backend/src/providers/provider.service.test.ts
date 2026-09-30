@@ -7,7 +7,7 @@ describe('selected provider configuration', () => {
     expect(readMusicProvider('mock')).toBe('mock');
     const providers = new ProviderService('mock');
     expect(providers.current.id).toBe('mock');
-    expect(providers.summary()).toMatchObject({ id: 'mock', model: 'demo-fixture', generationEnabled: false, isMock: true, configured: true });
+    expect(providers.summary()).toMatchObject({ id: 'mock', model: 'demo-fixture', generationEnabled: true, isMock: true, configured: true });
     expect(providers.summary().capabilities).toEqual(providers.current.capabilities);
   });
 

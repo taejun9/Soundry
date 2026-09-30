@@ -6,6 +6,7 @@ import StudioIcon from '../../components/StudioIcon.vue';
 import ProjectDialog from './ProjectDialog.vue';
 import { projectDate } from './dates';
 import { useProjects } from './useProjects';
+import { forgetGenerationRequest } from '../generation/useGenerations';
 import { forgetProjectDraft } from '../generation/useComposer';
 
 const router = useRouter();
@@ -28,7 +29,7 @@ async function saved(project: ProjectSummary) {
 }
 
 async function deleted(result: DeleteResult) {
-  if (dialog.value?.project) forgetProjectDraft(dialog.value.project.id);
+  if (dialog.value?.project) { forgetProjectDraft(dialog.value.project.id); forgetGenerationRequest(dialog.value.project.id); }
   dialog.value = null;
   notice.value = result.cleanupPending
     ? '프로젝트는 삭제되었지만 일부 음원 파일 정리가 남아 있어요. 다음 서버 시작 때 다시 정리합니다.'
@@ -57,7 +58,7 @@ onMounted(() => { void refresh(); });
     <div class="section-heading"><h2 id="projects-title">프로젝트 <span v-if="projects.length" class="project-count">{{ projects.length }}개{{ nextCursor ? ' 불러옴' : '' }}</span></h2><button type="button" class="text-link refresh-link" :disabled="loading || loadingMore" @click="refresh"><StudioIcon name="refresh" />새로고침</button></div>
     <div v-if="error" class="error-banner" role="alert"><p>{{ error }}</p><button type="button" class="button button-secondary" :disabled="loading || loadingMore" @click="nextCursor ? loadMore() : refresh()">다시 시도</button></div>
     <div v-if="loading && projects.length === 0" class="empty-state project-empty" role="status"><span class="loading-spinner" aria-hidden="true"></span><p>프로젝트를 불러오고 있어요.</p></div>
-    <div v-else-if="!error && projects.length === 0" class="empty-state project-empty"><span class="empty-icon"><StudioIcon name="folder" /></span><h3>첫 프로젝트를 시작해 보세요</h3><p>만들고 싶은 음악마다 프로젝트를 나눠 관리할 수 있어요.<br />프로젝트와 이름은 이 컴퓨터에 저장됩니다.</p><span class="availability-note">음악 생성 기능은 준비 중입니다.</span></div>
+    <div v-else-if="!error && projects.length === 0" class="empty-state project-empty"><span class="empty-icon"><StudioIcon name="folder" /></span><h3>첫 프로젝트를 시작해 보세요</h3><p>만들고 싶은 음악마다 프로젝트를 나눠 관리할 수 있어요.<br />프로젝트와 이름은 이 컴퓨터에 저장됩니다.</p><span class="availability-note">프로젝트에서 고정 데모 음원 생성을 체험할 수 있어요.</span></div>
     <ul v-if="projects.length" class="project-grid" aria-label="저장한 프로젝트">
       <li v-for="project in projects" :key="project.id" class="project-card">
         <RouterLink :to="`/projects/${project.id}`" class="project-open" :aria-label="`${project.name} 프로젝트 열기`"><span class="project-cover"><StudioIcon name="folder" /></span><h3 :title="project.name">{{ project.name }}</h3><span class="project-track-count"><StudioIcon name="note" />{{ project.trackCount }}곡</span><dl class="project-dates"><div><dt>최근 수정</dt><dd><time :datetime="project.updatedAt">{{ projectDate(project.updatedAt) }}</time></dd></div><div><dt>만든 날짜</dt><dd><time :datetime="project.createdAt">{{ projectDate(project.createdAt) }}</time></dd></div></dl></RouterLink>

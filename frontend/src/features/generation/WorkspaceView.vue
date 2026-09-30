@@ -6,7 +6,7 @@ import { getProject } from '../../api/projects';
 import { ApiError, errorMessage } from '../../api/client';
 import StudioIcon from '../../components/StudioIcon.vue';
 import { projectDate } from '../projects/dates';
-import GenerationComposer from './GenerationComposer.vue';
+import ProjectStudio from './ProjectStudio.vue';
 
 const route = useRoute();
 const projectId = computed(() => typeof route.params.id === 'string' ? route.params.id : '');
@@ -14,11 +14,15 @@ const project = ref<ProjectSummary | null>(null);
 const loading = ref(false);
 const error = ref('');
 const notFound = ref(false);
+const metadataError = ref('');
+let metadataController: AbortController | undefined;
 let controller: AbortController | undefined;
 let sequence = 0;
 
 async function loadProject() {
   controller?.abort();
+  metadataController?.abort();
+  metadataError.value = '';
   const request = ++sequence;
   project.value = null;
   error.value = '';
@@ -41,8 +45,22 @@ async function loadProject() {
   }
 }
 
+async function refreshMetadata() {
+  metadataController?.abort();
+  metadataController = new AbortController();
+  const current = metadataController;
+  const request = sequence;
+  const id = projectId.value;
+  try {
+    const result = await getProject(id, current.signal);
+    if (request === sequence && id === projectId.value) { project.value = result; metadataError.value = ''; }
+  } catch {
+    if (!current.signal.aborted && request === sequence) metadataError.value = '프로젝트 요약을 갱신하지 못했어요. 생성 이력에서 작업 결과를 확인할 수 있습니다.';
+  }
+}
+
 watch(projectId, () => { void loadProject(); }, { immediate: true });
-onBeforeUnmount(() => { sequence++; controller?.abort(); });
+onBeforeUnmount(() => { sequence++; controller?.abort(); metadataController?.abort(); });
 </script>
 
 <template>
@@ -52,9 +70,7 @@ onBeforeUnmount(() => { sequence++; controller?.abort(); });
   <template v-else-if="project">
     <RouterLink to="/" class="text-link workspace-back">모든 프로젝트<StudioIcon name="arrow" /></RouterLink>
     <section class="page-heading"><div class="workspace-title"><p class="eyebrow accent-text">CREATE YOUR NEXT SOUND</p><h1 class="break-name">{{ project.name }}</h1><p class="page-description">{{ project.trackCount }}곡 · 최근 수정 <time :datetime="project.updatedAt">{{ projectDate(project.updatedAt) }}</time></p></div><span class="outline-tag">이 컴퓨터에 저장됨</span></section>
-    <div class="workspace-grid">
-      <GenerationComposer :key="project.id" :project-id="project.id" />
-      <section class="panel workspace-results" aria-labelledby="results-title"><div class="section-heading"><h2 id="results-title">생성한 음악</h2><span class="muted-label">준비 중</span></div><div class="empty-state"><span class="empty-icon"><StudioIcon name="note" /></span><h3>새로운 사운드가 머무를 곳</h3><p>음악 생성 기능이 연결되면<br />이곳에서 결과를 듣고 비교할 수 있어요.</p></div><div class="writing-tips"><h3>아이디어가 막힌다면</h3><p><span>01</span>음악이 어울릴 장소나 시간을 떠올려 보세요.</p><p><span>02</span>주로 들렸으면 하는 악기를 두세 개 적어보세요.</p><p><span>03</span>시작과 끝의 감정 변화를 표현해 보세요.</p></div></section>
-    </div>
+    <p v-if="metadataError" class="error-banner" role="alert">{{ metadataError }}</p>
+    <ProjectStudio :key="project.id" :project-id="project.id" @project-changed="refreshMetadata" />
   </template>
 </template>

@@ -19,7 +19,7 @@ describe('project API client', () => {
   it('preserves cleanupPending and provides an actionable conflict error', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(Response.json({ deleted: true, cleanupPending: true }))
-      .mockResolvedValueOnce(Response.json({ error: { code: 'CONFLICT', message: 'conflict' } }, { status: 409 })));
+      .mockResolvedValueOnce(Response.json({ error: { code: 'PROJECT_BUSY', message: 'conflict' } }, { status: 409 })));
     await expect(deleteProject('project', signal())).resolves.toEqual({ deleted: true, cleanupPending: true });
     await expect(deleteProject('project', signal())).rejects.toMatchObject({ status: 409, message: expect.stringContaining('진행 중인 음악 생성') });
   });

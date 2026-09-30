@@ -1,4 +1,4 @@
-import { closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, unlinkSync } from 'node:fs';
+import { closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, realpathSync, rmdirSync, unlinkSync } from 'node:fs';
 import { dirname, isAbsolute, join, parse, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -78,6 +78,14 @@ export class StorageConfig {
     }
   }
 
+  /** Check only the owned temporary subtree so unrelated audio failures cannot block its cleanup. */
+  assertSafeTemp(): void {
+    for (const directory of [this.root, this.tempDirectory]) {
+      assertNoSymlinks(directory);
+      if (!lstatSync(directory).isDirectory()) throw new Error('UNSAFE_STORAGE_PATH');
+    }
+  }
+
   resolveAudioPath(relativePath: string): string {
     if (isAbsolute(relativePath) || !relativePath.startsWith('audio/') || !audioName.test(relativePath.slice(6))) {
       throw new Error('UNSAFE_AUDIO_PATH');
@@ -85,7 +93,7 @@ export class StorageConfig {
     this.assertSafe();
     const path = join(this.audioDirectory, relativePath.slice(6));
     const info = statIfPresent(path);
-    if (info && (!info.isFile() || info.isSymbolicLink())) throw new Error('UNSAFE_AUDIO_PATH');
+    if (info && (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1)) throw new Error('UNSAFE_AUDIO_PATH');
     return path;
   }
 
@@ -95,6 +103,29 @@ export class StorageConfig {
       if (statIfPresent(path)) unlinkSync(path);
       return true;
     } catch { return false; }
+  }
+
+  /** Called only after the database connection owns the data-root lock. */
+  removeStaleTemp(): boolean {
+    this.assertSafe();
+    let pending = false;
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    for (const entry of readdirSync(this.tempDirectory, { withFileTypes: true })) {
+      if (!uuid.test(entry.name)) { pending = true; continue; }
+      const directory = join(this.tempDirectory, entry.name);
+      if (!entry.isDirectory() || entry.isSymbolicLink()) { pending = true; continue; }
+      try {
+        for (const part of readdirSync(directory, { withFileTypes: true })) {
+          if (!part.name.endsWith('.part') || !uuid.test(part.name.slice(0, -5))) { pending = true; continue; }
+          const path = join(directory, part.name);
+          const info = lstatSync(path);
+          if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1) { pending = true; continue; }
+          unlinkSync(path);
+        }
+        rmdirSync(directory);
+      } catch { pending = true; }
+    }
+    return pending;
   }
 
   removeOrphanAudio(referencedPaths: ReadonlySet<string>): boolean {
