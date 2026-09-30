@@ -1,6 +1,6 @@
 # Soundry 초기 설계
 
-상태: **설계 제안, 사용자 승인 대기**. 이 문서는 구현 완료를 뜻하지 않는다. 아래 13개 결정은 첨부 기획 28항에 대응한다. 근거와 확인일은 [출처](../references/official-sources.md)에 있다.
+상태: **2026-09-30 사용자 전체 구현 승인, Phase 1 완료**. 이 문서는 구현 완료를 뜻하지 않는다. 아래 13개 결정은 첨부 기획 28항에 대응한다. 근거와 확인일은 [출처](../references/official-sources.md)에 있다.
 
 ## 1. 기술 스택
 
@@ -22,7 +22,7 @@ Prisma도 가능하지만 이번 설계는 로컬 SQLite 중심의 작은 schema
 
 ## 2. 디렉터리
 
-다음은 **목표 구조**다. 현재는 docs/harness만 존재한다.
+다음은 **목표 구조**다. 구현 진행 상태는 Phase별 계획과 README에서 확인한다.
 
 ```text
 Soundry/
@@ -148,6 +148,6 @@ Vue `ref/reactive/computed`와 composable + app-level provide/inject로 시작�
 
 ## 13. 구현 순서와 미확정 사항
 
-[Phase 1–10 계획](../product/implementation-roadmap.md)의 gate를 순서대로 통과한다. Phase 1 승인 전 실행 코드나 dependencies를 만들지 않는다.
+[Phase 1–10 계획](../product/implementation-roadmap.md)의 gate를 순서대로 통과한다. 2026-09-30 Phase 1–10 구현 승인을 기록했으며 각 Phase 완료 gate를 지킨다.
 
 남은 결정은 실제 AI provider/model, 모델별 duration·seed·vocal 지원, 출력 포맷·크기 제한·시간 제한·요금/라이선스다. 설계 승인은 이 사항의 자동 확정을 뜻하지 않는다. fal은 후보일 뿐이며 Phase 8에서 실제 endpoint 문서를 확인한다.

@@ -1,0 +1,30 @@
+{
+  "name": "soundry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24.12 <25", "npm": ">=11 <12" },
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "node harness/scripts/dev.mjs",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "vitest run",
+    "build": "npm run build --workspaces",
+    "qa:base": "python3 harness/scripts/verify_base.py",
+    "qa:smoke": "node harness/scripts/smoke.mjs",
+    "qa": "npm run lint && npm run typecheck && npm test && npm run build && npm run qa:base"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.0",
+    "eslint": "10.11.0",
+    "eslint-plugin-vue": "10.11.1",
+    "globals": "17.12.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.3",
+    "vue-eslint-parser": "10.4.1"
+  }
+}

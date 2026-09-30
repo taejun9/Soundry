@@ -1,6 +1,6 @@
 # Phase별 구현 계획
 
-**현재 gate: 초기 설계 승인 대기.** 아래 내용은 로드맵이며 구현 착수 승인이 아니다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 이번 설계는 plan-001-project-base이고 다음 번호는 plan-002다.
+**현재 gate: 2026-09-30 전체 구현 승인, Phase 1 완료.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
 
 | Phase | 범위 | 사용자 확인 가능한 완료 기준 | 검증 |
 |---|---|---|---|
@@ -19,13 +19,13 @@
 
 root package.json/workspaces와 package-lock.json, frontend/backend build 설정, shared JSON DTO 타입 경계, env 예제, UI shell, backend health, root dev script만 만든다. DB 실제 생성과 provider 구현은 다음 단계로 둔다.
 
-Node 24 LTS/npm 단일 도구로 설치한다. 두 dev process 종료·오류 전달은 작은 Node launcher로 구현 가능성을 먼저 확인하고 별도 orchestration framework는 도입하지 않는다. stdout에 비밀 env를 출력하지 않는다. root dev는 UI 5173 / API 3000 사용, port 점유 시 임의 LAN/다른 포트로 바꾸지 않고 설명한다.
+Node 24 LTS/npm 단일 도구로 설치한다. 두 dev process 종료·오류 전달은 작은 Node launcher로 구현 가능성을 먼저 확인하고 별도 orchestration framework는 도입하지 않는다. stdout에 비밀 env를 출력하지 않는다. root dev 기본은 UI 5173 / API 3000이다. port 점유 시 종료·안내하고 자동 fallback은 하지 않는다. `UI_PORT`로 UI 포트를 명시할 수 있으며 backend Origin도 그 값으로 제한한다.
 
 root에 실제로 동작하는 lint/typecheck/test/build/qa 명령을 구성하되 아직 테스트할 동작이 없는 경우 가짜 pass test를 만들지 않는다. 빈 smoke를 통과했다고 기능 완료를 주장하지 않는다.
 
 ## 실제 provider가 아직 없을 때
 
-Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자 승인된 범위 내에서 독립적인 Phase 9–10을 진행할 수 있으나 실제 AI 작곡 완료로 보고하지 않는다. 키를 묻기 전에 후보의 기능·포맷·비용·데이터 전송을 정리한다. 지금 키를 받거나 결제/원격 요청을 실행하지 않는다.
+Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자 승인된 범위 내에서 독립적인 Phase 9–10을 진행할 수 있으나 실제 AI 작곡 완료로 보고하지 않는다. 키를 묻기 전에 후보의 기능·포맷·비용·데이터 전송을 정리한다. 원격 요청은 사용자가 승인한 음원 제작 범위에서 공급자·비용·전송 경계를 확인한 뒤 실행한다. 키는 채팅에 요청하거나 출력하지 않고 backend 환경 설정으로만 받는다.
 
 ## 보고 및 완료 절차
 

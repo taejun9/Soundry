@@ -2,7 +2,7 @@
 
 ## 지금 상태
 
-base 스킬의 bundled scaffold를 사용한 뒤 Soundry 기획에 맞춰 구체화했다. 사용자 기획 28항의 설계 승인 gate가 현재 앱 구현을 제한한다. docs/harness 생성은 승인된 이번 작업이다.
+base 스킬의 bundled scaffold를 Soundry 기획에 맞춰 구체화했다. 2026-09-30 사용자가 전체 앱 구현·실제 화면 QA·UI/UX 개선·테스트 음원 제작을 승인했다. Phase 1 bootstrap을 완료했으며 Phase별 계획과 완료 gate를 유지한다.
 
 ## 시작
 
@@ -18,7 +18,7 @@ base 스킬의 bundled scaffold를 사용한 뒤 Soundry 기획에 맞춰 구체
 2. QA 완료 후 리뷰한다. 범위·데이터 경계·사용자 흐름·누락된 검증을 별도 판단한다.
 3. 계획을 `docs/exec_plans/completed/`로 이동하고 동일 basename의 리뷰를 `docs/reviews/`에 기록한다.
 4. 완료 기록까지 포함한 task commit을 만든다. main이 바뀌었다면 작업 branch에서 통합·검증한다.
-5. clean main에 병합하고 origin/main으로 push한다. 이번 $base 호출은 이 문서 작업의 lifecycle을 포함한다. 앱 기능 구현의 별도 승인 경계는 유지한다.
+5. clean main에 병합하고 origin/main으로 push한다. 2026-09-30 전체 구현 요청은 프로젝트 규칙의 이 lifecycle을 포함한다. force push나 사용자 변경 덮어쓰기는 하지 않는다.
 6. 완료 branch를 사용하는 worktree를 detach한 뒤 `git branch -d`로 병합된 branch만 지운다. `-D`는 쓰지 않는다.
 7. 더 이상 어떤 작업/process도 필요로 하지 않는 관리형 worktree는 앱 archive_worktree로 보관 정리한다. 단순히 PR이 merged됐다는 이유로 정리하지 않는다. 다음 작업이 곧 필요하면 재사용한다.
 8. blocker가 발생하면 그 단계를 우회하지 않고 정확히 보고한다. push 실패 시 강제 push나 branch 삭제를 하지 않는다.

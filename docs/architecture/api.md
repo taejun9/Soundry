@@ -1,6 +1,6 @@
 # Local REST API 설계
 
-base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. 아직 구현된 endpoint는 없다.
+base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. Phase 1에서 `/health`를 구현한다. 그 외 endpoint는 후속 Phase의 계약이다.
 
 ## 공통 계약
 
@@ -9,7 +9,7 @@ base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사
 - 목록: `{ items, nextCursor }`. 기본 limit 30, 최대 100. 일반 목록은 createdAt/id 내림차순 정렬과 같은 쌍의 cursor를 사용한다. project 목록은 updatedAt/id 내림차순 정렬과 같은 updatedAt/id cursor를 사용한다. 프로젝트 변경 후 목록을 새로 읽을 때는 기존 cursor를 버리고 첫 페이지부터 읽는다.
 - 입력 길이·enum·범위·필수 필드와 알 수 없는 필드를 검증한다. JSON body 기본 상한 64 KiB.
 - 400 입력 오류, 404 없음, 409 상태/동일 requestKey 입력 충돌, 429 queue full, 500 내부 오류.
-- localhost/127.0.0.1의 지정 포트만 Host allowlist에 두고 UI origin만 허용한다. mutation은 허용 Origin과 JSON/custom header를 검증해 다른 웹페이지의 단순 요청을 거부한다. wildcard CORS를 사용하지 않는다.
+- localhost/127.0.0.1의 지정 포트만 Host allowlist에 두고 UI origin만 허용한다. UI 포트는 기본 5173 또는 명시한 `UI_PORT` 하나다. mutation은 허용 Origin과 JSON/custom header를 검증해 다른 웹페이지의 단순 요청을 거부한다. wildcard CORS를 사용하지 않는다.
 - loopback listen을 강제하고 0.0.0.0으로 바꾸지 않는다. 계정·로그인·JWT는 만들지 않는다.
 
 ## Endpoint

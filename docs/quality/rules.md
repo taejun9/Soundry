@@ -1,6 +1,6 @@
 # 품질 규칙
 
-현재 저장소는 Soundry의 설계 및 agent 작업 기반 단계다. 앱 구현과 패키지 설치 전이며, 검증 대상은 문서 구조·계획·링크·저장 경계다. 실행되지 않는 앱 명령을 완료한 검증처럼 기록하지 않는다.
+Phase 1 앱 bootstrap을 구현하고 검증했다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책 테스트, production build, dev launcher smoke를 검증한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
 
 ## 계획과 작업 경계
 
@@ -26,7 +26,7 @@ git diff --check
 - 필수 디렉터리, 핵심 설계 문서, 작업 템플릿의 존재.
 - 루트 Markdown이 README와 AGENTS로 제한되는지, 계획 경로·파일명·활성/완료 중복과 완료 계획의 리뷰 기록.
 - docs 문서에 남은 미완성 표시와 Markdown 상대 링크의 파일 존재. 코드 펜스·인라인 코드, 외부 주소, 앵커, 템플릿용 경로는 링크 검사에서 제외한다. 외부 주소의 가용성과 문서 내부 앵커의 존재는 검사하지 않는다.
-- README의 npm 실행 안내가 실제 루트 package.json의 scripts에 정의되어 있는지. package.json이 없는 현재 상태는 정상이다. 예정 명령은 앱 구현 단계에 로드맵과 함께 구체화한다.
+- README의 npm 실행 안내가 실제 루트 package.json의 scripts에 정의되어 있는지. Phase 1부터 루트 package.json의 실행 명령과 대조한다. 예정 명령은 앱 구현 단계에 로드맵과 함께 구체화한다.
 - `git ls-files --cached --others --exclude-standard` 결과에 환경 비밀 파일, 개인 키, 로컬 DB, 음원 파일, `data/`, `uploads/`, `outputs/`, `backups/`, `.soundry/` 파일이 포함되는지. 이미 추적 중인 파일은 ignore 규칙만 추가해도 통과하지 않는다.
 
 환경 예시 파일은 `.env.example`, `.env.sample`, `.env.template`만 허용하며 실제 비밀 값을 넣지 않는다. 검사는 파일명과 경로를 확인하고 비밀 내용을 읽거나 출력하지 않는다. 내용 자체의 비밀 탐지를 보장하지 않으므로 리뷰에서 예시·로그·문서의 값도 확인한다. 별도로 승인된 음원 fixture가 필요해지면 출처·권한·용량과 허용 경로를 계획에 기록한 후 검사 규칙을 좁게 변경한다.
@@ -39,4 +39,4 @@ QA 결과와 리뷰 판단을 분리한다. 리뷰는 요청 범위 충족, 제�
 
 ## 앱 구현 단계의 추가 검증
 
-Phase 1 승인 후 실제 스택과 package scripts가 생길 때 lint, 타입 검사, 테스트, 빌드 명령을 이 문서와 README에 함께 추가한다. DB 무결성·마이그레이션, 생성 작업 상태 전이·취소·복구, provider 오류, loopback API와 파일 경로 경계, 음원 재생·내보내기 등 위험에 맞는 검증을 각 구현 계획에 배정한다. 존재하지 않는 명령을 현재 QA 통과 조건으로 삼지 않는다.
+Phase 1 명령은 `npm run qa`(lint/typecheck/test/build/base)와 `npm run qa:smoke`(개발 서버·proxy·포트 충돌·종료)다. smoke 전에 다른 Soundry dev 서버를 종료한다. DB 무결성·마이그레이션, 생성 작업 상태 전이·취소·복구, provider 오류, loopback API와 파일 경로 경계, 음원 재생·내보내기 등 위험에 맞는 검증을 각 구현 계획에 배정한다. 존재하지 않는 명령을 현재 QA 통과 조건으로 삼지 않는다.

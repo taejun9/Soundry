@@ -19,6 +19,6 @@
 ## 근거 공백과 재확인
 
 - 실제 AI provider/model은 미선정이다. fal.ai는 후보이며 현재 가격·출력·취소·라이선스·데이터 보관을 검증했다고 주장하지 않는다. Phase 8에서 해당 endpoint 공식 자료를 추가한다.
-- 정확한 dependency patch, native SQLite driver 설치, 브라우저별 오디오 codec 재생은 구현 시 검증한다.
+- Phase 1 npm registry의 stable patch/peerDependencies를 확인하고 package-lock.json에 고정했다. 최신 TypeScript 7 대신 lint 도구의 지원 범위인 5.9.3을 사용한다. native SQLite driver와 브라우저 오디오 codec은 후속 Phase에서 검증한다.
 - GrooveForge는 [별도 조사 기록](grooveforge.md)의 로컬 commit을 기준으로 한다.
 - 법률·음원 이용 권리·상업적 사용 가능성에 대한 결론은 이 문서에서 내리지 않는다.
