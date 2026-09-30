@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "file": "demo-01.wav",
+      "sha256": "ce16e61800a5fff21d710258abc3a68f026dc99ff4d794333f01e57e1e251717",
+      "frames": 352800,
+      "sampleRate": 44100,
+      "channels": 2,
+      "sampleWidthBytes": 2,
+      "durationSeconds": 8
+    },
+    {
+      "file": "demo-02.wav",
+      "sha256": "952c8ae96a5d0286f9f22f636c304e243f71e7702759665afbd0bf9749a7066c",
+      "frames": 352800,
+      "sampleRate": 44100,
+      "channels": 2,
+      "sampleWidthBytes": 2,
+      "durationSeconds": 8
+    }
+  ]
+}

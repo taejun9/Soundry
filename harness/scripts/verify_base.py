@@ -36,6 +36,9 @@ PRIVATE_SUFFIXES = {
     ".pfx", ".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aiff", ".aac",
 }
 PRIVATE_DIRS = {"data", "uploads", "outputs", "backups", ".soundry"}
+# Explicit plan-006 exception for original, reproducible workflow fixtures only.
+AUDIO_FIXTURES = {"backend/fixtures/audio/demo-01.wav", "backend/fixtures/audio/demo-02.wav"}
+AUDIO_FIXTURE_MAX_BYTES = 2 * 1024 * 1024
 
 
 def relative(path: Path) -> str:
@@ -152,6 +155,11 @@ def check_private_files(errors: list[str]) -> None:
         name = raw.decode("utf-8", errors="replace")
         path = Path(name)
         basename = path.name.lower()
+        if name in AUDIO_FIXTURES:
+            fixture = ROOT / path
+            if fixture.resolve() != fixture or not fixture.is_file() or not 44 < fixture.stat().st_size <= AUDIO_FIXTURE_MAX_BYTES:
+                errors.append(f"승인 fixture 파일/용량 경계 위반: {name}")
+            continue
         private_env = (basename == ".env" or basename.startswith(".env.")) and basename not in ENV_SAMPLES
         private_file = any(basename.endswith(suffix) for suffix in PRIVATE_SUFFIXES)
         private_dir = any(part.lower() in PRIVATE_DIRS for part in path.parts[:-1])

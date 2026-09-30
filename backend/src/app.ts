@@ -6,11 +6,13 @@ import { ApiExceptionFilter, jsonErrorHandler } from './api-errors.js';
 import { AppModule } from './app.module.js';
 import { createLocalBoundary, readUiPort } from './config/local-boundary.js';
 import { StorageConfig } from './config/storage-config.js';
+import { ProviderService } from './providers/provider.service.js';
 
-export async function createApplication(options: { uiPort?: string; dataDir?: string } = {}): Promise<NestExpressApplication> {
+export async function createApplication(options: { uiPort?: string; dataDir?: string; musicProvider?: string } = {}): Promise<NestExpressApplication> {
   const uiPort = readUiPort(options.uiPort ?? process.env.UI_PORT);
+  const providers = new ProviderService(options.musicProvider ?? process.env.MUSIC_PROVIDER);
   const storage = new StorageConfig(options.dataDir);
-  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(storage), {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule.register(storage, providers), {
     logger: false,
     bodyParser: false,
     abortOnError: false,

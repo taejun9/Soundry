@@ -29,7 +29,7 @@ git diff --check
 - README의 npm 실행 안내가 실제 루트 package.json의 scripts에 정의되어 있는지. Phase 1부터 루트 package.json의 실행 명령과 대조한다. 예정 명령은 앱 구현 단계에 로드맵과 함께 구체화한다.
 - `git ls-files --cached --others --exclude-standard` 결과에 환경 비밀 파일, 개인 키, 로컬 DB, 음원 파일, `data/`, `uploads/`, `outputs/`, `backups/`, `.soundry/` 파일이 포함되는지. 이미 추적 중인 파일은 ignore 규칙만 추가해도 통과하지 않는다.
 
-환경 예시 파일은 `.env.example`, `.env.sample`, `.env.template`만 허용하며 실제 비밀 값을 넣지 않는다. 검사는 파일명과 경로를 확인하고 비밀 내용을 읽거나 출력하지 않는다. 내용 자체의 비밀 탐지를 보장하지 않으므로 리뷰에서 예시·로그·문서의 값도 확인한다. 별도로 승인된 음원 fixture가 필요해지면 출처·권한·용량과 허용 경로를 계획에 기록한 후 검사 규칙을 좁게 변경한다.
+환경 예시 파일은 `.env.example`, `.env.sample`, `.env.template`만 허용하며 실제 비밀 값을 넣지 않는다. 검사는 파일명과 경로를 확인하고 비밀 내용을 읽거나 출력하지 않는다. 내용 자체의 비밀 탐지를 보장하지 않으므로 리뷰에서 예시·로그·문서의 값도 확인한다. plan-006에서 승인한 자체 제작 `backend/fixtures/audio/demo-01.wav`, `demo-02.wav` 두 파일만 예외다. 각 2 MiB 이하의 일반 파일이어야 하며 별도 `npm run qa:audio`가 manifest SHA256·PCM 포맷·길이·음량을 독립 검사한다. 그 외 음원·사용자 데이터는 계속 차단한다.
 
 ## 리뷰 기준
 

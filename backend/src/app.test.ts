@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
@@ -42,7 +42,7 @@ function callApi(options: { port?: number; path?: string; method?: string; heade
 }
 
 beforeAll(async () => {
-  app = await createApplication({ uiPort: '5173', dataDir: testDataDir() });
+  app = await createApplication({ musicProvider: 'mock', uiPort: '5173', dataDir: testDataDir() });
   await app.listen(0, '127.0.0.1');
   port = ((app.getHttpServer() as Server).address() as AddressInfo).port;
 });
@@ -93,7 +93,7 @@ describe('local API boundary', () => {
   });
 
   it('uses only the explicitly configured alternate UI port', async () => {
-    const alternateApp = await createApplication({ uiPort: '5174', dataDir: testDataDir() });
+    const alternateApp = await createApplication({ musicProvider: 'mock', uiPort: '5174', dataDir: testDataDir() });
     try {
       await alternateApp.listen(0, '127.0.0.1');
       const alternatePort = ((alternateApp.getHttpServer() as Server).address() as AddressInfo).port;
@@ -113,6 +113,12 @@ describe('local API boundary', () => {
   it('rejects invalid UI configuration before creating a server', async () => {
     await expect(createApplication({ uiPort: '3000', dataDir: testDataDir() })).rejects.toThrow('INVALID_UI_PORT');
     await expect(createApplication({ uiPort: '5174/attacker', dataDir: testDataDir() })).rejects.toThrow('INVALID_UI_PORT');
+  });
+
+  it('rejects invalid provider configuration before creating storage or a server', async () => {
+    const dataDir = `${testDataDir()}/not-created`;
+    await expect(createApplication({ musicProvider: 'unknown-private-value', dataDir })).rejects.toThrow(/^INVALID_MUSIC_PROVIDER$/);
+    expect(existsSync(dataDir)).toBe(false);
   });
 
   it('answers approved preflight without enabling credentials or wildcard access', async () => {

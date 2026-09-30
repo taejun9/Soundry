@@ -1,6 +1,6 @@
 # Phase별 구현 계획
 
-**현재 gate: 2026-09-30 전체 구현 승인, Phase 3 완료.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
+**현재 gate: 2026-09-30 전체 구현 승인, Phase 4 완료.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
 
 | Phase | 범위 | 사용자 확인 가능한 완료 기준 | 검증 |
 |---|---|---|---|
@@ -33,4 +33,4 @@ Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자
 
 ## 실행 기록 연결
 
-Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. Phase 3 작성 화면은 plan-005-workspace-form이다. 다음 앱 Phase 4 계획 번호는 plan-006으로 예약한다.
+Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. Phase 3 작성 화면은 plan-005-workspace-form이다. Phase 4 MockProvider는 plan-006-mock-provider이다. 다음 앱 Phase 5는 plan-007-job-flow로 진행한다.

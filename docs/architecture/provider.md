@@ -1,6 +1,6 @@
 # Music generation provider 계약
 
-아래 TypeScript는 설계 예시이며 실행 코드가 아니다. adapter는 backend 전용이고 UI에는 JSON capabilities와 DTO만 전달한다.
+Phase 4에서 backend 전용 provider 계약과 MockProvider를 구현했다. 실행 계약은 `backend/src/providers/music-generation-provider.ts`에 있으며, 아래 코드는 그 책임을 설명한다. UI에는 JSON capabilities와 DTO만 전달한다.
 
 ```ts
 type MusicMode = 'instrumental' | 'vocal';
@@ -67,7 +67,7 @@ Soundry는 job ID, project ID, 경로, filename, DB transaction을 소유한다.
 
 ## MockProvider
 
-- backend/fixtures/audio에 자체 제작 짧은 PCM WAV 2–4개와 제작 근거를 둔다. fixture는 작고 소스가 재현 가능해야 한다.
+- `backend/fixtures/audio`의 자체 제작 8초 stereo PCM16/44100Hz WAV 두 개를 사용한다. `generate.mjs`로 재현하고 manifest SHA256과 `npm run qa:audio`로 독립 검증한다. 사용자 요청 테스트곡이나 AI 생성 결과로 표시하지 않는다.
 - 요청마다 재생 가능한 실제 bytes를 반환한다. 빈 URL이나 가짜 성공만 반환하지 않는다.
 - UI에 `Mock / demo-fixture`를 표시한다. prompt가 곡을 바꿨다거나 실제 AI 결과라고 주장하지 않는다.
 - prompt-only 요청으로 기본 동작하며 mock가 반영할 수 없는 BPM/seed/vocal 등은 capabilities에서 비활성화한다.

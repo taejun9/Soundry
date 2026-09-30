@@ -1,21 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
-import type { ProviderCapabilities, ProviderSummary } from '../../../shared/contracts.js';
+import { Controller, Get, Inject } from '@nestjs/common';
+import type { ProviderSummary } from '../../../shared/contracts.js';
+import { ProviderService } from './provider.service.js';
 
-export function mockCapabilities(): ProviderCapabilities {
-  return {
-    modes: ['instrumental'], settings: [], maxVariations: 4,
-    seedSupported: false, canCancelRemote: false,
-  };
-}
+export { mockCapabilities } from './mock-provider.js';
 
 @Controller('providers')
 export class ProvidersController {
+  constructor(@Inject(ProviderService) private readonly providers: ProviderService) {}
+
   @Get('current')
   current(): ProviderSummary {
-    return {
-      id: 'mock', model: 'demo-fixture', isMock: true, configured: true,
-      generationEnabled: false, capabilities: mockCapabilities(),
-      notice: '데모 모드입니다. 음악 생성은 준비 중이며, 프롬프트는 외부로 전송되지 않습니다.',
-    };
+    return this.providers.summary();
   }
 }

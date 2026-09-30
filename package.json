@@ -13,7 +13,8 @@
     "build": "npm run build --workspaces",
     "qa:base": "python3 harness/scripts/verify_base.py",
     "qa:smoke": "node harness/scripts/smoke.mjs",
-    "qa": "npm run lint && npm run typecheck && npm test && npm run build && npm run qa:base"
+    "qa": "npm run lint && npm run typecheck && npm test && npm run build && npm run qa:base && npm run qa:audio",
+    "qa:audio": "node backend/fixtures/audio/generate.mjs --check && python3 harness/scripts/verify_audio_fixtures.py"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
