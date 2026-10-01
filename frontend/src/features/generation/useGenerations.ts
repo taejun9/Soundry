@@ -86,6 +86,7 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
       merge(page.items, !append && revision === observedRevision, observedTracks);
       nextCursor.value = page.nextCursor;
       syncError.value = ''; failures = 0; needsList = false;
+      return page.items;
     } catch (reason) {
       if (!disposed && request === listSequence && !current.signal.aborted) { syncFailed(reason); needsList = true; }
     } finally {

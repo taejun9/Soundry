@@ -33,4 +33,15 @@ describe('dialog focus after a confirmed edit', () => {
     await restoreDialogFocus(target('removed opener', visits, false), () => removedField, () => target('main', visits));
     expect(visits).toEqual(['opener', 'main']);
   });
+  it('returns a confirmed removal to the library heading when its opening card no longer exists', async () => {
+    const visits: string[] = [];
+    const opener = target('delete track button', visits);
+    const heading = target('favorite library heading', visits);
+    let deletionConfirmed = false;
+    const restoration = restoreDialogFocus(opener, () => deletionConfirmed ? heading : null, () => target('main', visits));
+    deletionConfirmed = true; opener.isConnected = false;
+    await restoration;
+    expect(visits).toEqual(['favorite library heading']);
+  });
+
 });

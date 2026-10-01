@@ -4,19 +4,21 @@ import type { DeleteResult, TrackSummary } from '../../../../shared/contracts';
 import ModalDialog from '../../components/ModalDialog.vue';
 import { useAudioPlayer } from '../../audio/context';
 import { useTrackDialog } from './useTrackDialog';
-const props = defineProps<{ mode: 'rename' | 'delete'; track: TrackSummary }>();
+const props = defineProps<{ mode: 'rename' | 'delete'; track: TrackSummary; afterDeleteFocus?: () => HTMLElement | null }>();
 const emit = defineEmits<{ close: []; saved: [track: TrackSummary]; deleted: [track: TrackSummary, result: DeleteResult] }>();
 const { detail, title, loading, busy, error, fieldError, load, save, remove } = useTrackDialog(props.track.id, props.track.projectId, useAudioPlayer());
+let deletionConfirmed = false;
+const preferredReturnFocus = () => deletionConfirmed ? props.afterDeleteFocus?.() ?? null : null;
 const id = useId(); const input = ref<HTMLInputElement>();
 async function submit() {
-  if (props.mode === 'delete') { const result = await remove(); if (result) emit('deleted', props.track, result); }
+  if (props.mode === 'delete') { const result = await remove(); if (result) { deletionConfirmed = true; emit('deleted', props.track, result); } }
   else { const result = await save(); if (result) emit('saved', result); else if (fieldError.value) { await nextTick(); input.value?.focus(); } }
 }
 watch(detail, async value => { if (value && props.mode === 'rename') { await nextTick(); input.value?.focus(); } });
 onMounted(() => { void load(); });
 </script>
 <template>
-  <ModalDialog :title="mode === 'rename' ? '음원 이름 변경' : '음원 삭제'" :busy="busy" @close="emit('close')">
+  <ModalDialog :title="mode === 'rename' ? '음원 이름 변경' : '음원 삭제'" :busy="busy" :preferred-return-focus="preferredReturnFocus" @close="emit('close')">
     <p v-if="loading" class="modal-copy" role="status">현재 음원 정보를 확인하고 있어요.</p>
     <div v-if="error" class="error-banner" role="alert"><p>{{ error }}</p><button v-if="!detail" type="button" class="button button-secondary" :disabled="loading" @click="load">다시 확인</button></div>
     <form novalidate @submit.prevent="submit">

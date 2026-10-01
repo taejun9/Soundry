@@ -1,6 +1,6 @@
 # SQLite 데이터 모델
 
-상태: Phase 2에서 Drizzle schema와 `backend/migrations/0000_initial.sql`을 구현했다. 프로젝트 CRUD와 Phase 5 생성 작업·원자적 트랙 저장·재시작 복구를 구현했다. 트랙 편집·즐겨찾기·재생은 후속 Phase다. DB 접근은 backend 한 프로세스가 소유한다. Phase 5부터 첫 DB 접근 전에 EXCLUSIVE 잠금을 획득해 두 번째 서버의 migration/recovery/파일 정리를 차단한다. 연결 종료는 worker 정리 이후에 수행한다. SQLite foreign key는 연결마다 명시적으로 활성화한다. schema migration SQL을 버전 관리하며 사용자 DB를 reset하는 명령을 기본 실행에 넣지 않는다.
+상태: Phase 2에서 Drizzle schema와 `backend/migrations/0000_initial.sql`을 구현했다. 프로젝트 CRUD와 Phase 5 생성 작업·원자적 트랙 저장·재시작 복구를 구현했다. 트랙 편집·삭제·즐겨찾기·재생과 전역 보관함 조회도 구현했다. DB 접근은 backend 한 프로세스가 소유한다. Phase 5부터 첫 DB 접근 전에 EXCLUSIVE 잠금을 획득해 두 번째 서버의 migration/recovery/파일 정리를 차단한다. 연결 종료는 worker 정리 이후에 수행한다. SQLite foreign key는 연결마다 명시적으로 활성화한다. schema migration SQL을 버전 관리하며 사용자 DB를 reset하는 명령을 기본 실행에 넣지 않는다.
 
 ## 테이블
 

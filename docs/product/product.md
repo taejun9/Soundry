@@ -21,7 +21,7 @@
 | History / Compare | generation별 묶음과 variation 목록 | 이전 결과 보존; 동시에 한 곡만 재생 |
 | Track | 재생·즐겨찾기·이름 변경·삭제·다운로드·재생성 | 원본 파일과 메타데이터 일관성 유지 |
 | Player | play/pause/seek/time/duration/volume | 화면을 옮겨도 단일 플레이어 유지 |
-| Library | 모든 프로젝트의 favorite | 제목·프로젝트·길이·BPM·장르·생성일 표시, 미상 값은 비워둠 |
+| Library | 모든 프로젝트의 favorite | 제목·프로젝트·길이·BPM·장르·생성일 표시, 미상 값은 미확인으로 표시 |
 | Prompt history | 최근 prompt, 복사·재사용·결과 이동 | Generation 기반 조회; 별도 중복 테이블 불필요 |
 | Export | 원본 오디오 다운로드 | 파일 확장자와 실제 포맷 일치; 이름 변경이 원본 경로를 바꾸지 않음 |
 

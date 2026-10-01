@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { GenerationSummary, TrackSummary } from '../../../../shared/contracts';
 import StudioIcon from '../../components/StudioIcon.vue';
+import FavoriteButton from '../tracks/FavoriteButton.vue';
 import { isPending } from './useGenerations';
 import { useAudioPlayer } from '../../audio/context';
 
@@ -9,9 +10,10 @@ const player = useAudioPlayer();
 defineProps<{
   jobs: GenerationSummary[]; loading: boolean; loadingMore: boolean; nextCursor: string | null;
   syncError: string; retrySeconds: number; pendingCount: number; retryDisabled: boolean;
+  favoritePending: Set<string>; favoriteErrors: Record<string, string>;
   cancelling: Set<string>; actionErrors: Record<string, string>;
 }>();
-const emit = defineEmits<{ refresh: []; more: []; cancel: [id: string]; retry: [job: GenerationSummary]; edit: [mode: 'rename' | 'delete', track: TrackSummary] }>();
+const emit = defineEmits<{ refresh: []; more: []; cancel: [id: string]; retry: [job: GenerationSummary]; edit: [mode: 'rename' | 'delete', track: TrackSummary]; favorite: [track: TrackSummary] }>();
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 function statusLabel(job: GenerationSummary) {
   if (job.status === 'processing') {
@@ -45,7 +47,7 @@ function settingValue(key: string, value: string | number | undefined) { return 
         <p v-else-if="job.status === 'cancelled'" class="job-hint">취소된 이력은 보존됩니다. 다시 시도하면 새 작업을 만듭니다.</p>
         <p v-if="job.status === 'completed' && job.provider === 'mock'" class="mock-result-note">고정된 8초 데모입니다. 프롬프트로 새로 작곡한 음악이 아닙니다.</p>
         <ul v-if="job.tracks.length" class="result-tracks">
-          <li v-for="track in job.tracks" :key="track.id" class="result-track" :class="{ 'is-current': player.state.track?.id === track.id }"><button type="button" class="track-play" :class="{ 'is-current': player.state.track?.id === track.id }" :aria-label="`${track.title} ${player.state.track?.id === track.id && (player.state.playing || player.state.loading) ? '일시 정지' : '재생'}`" :aria-pressed="player.state.track?.id === track.id && (player.state.playing || player.state.loading)" @click="player.toggle(track)"><StudioIcon :name="player.state.track?.id === track.id && (player.state.playing || player.state.loading) ? 'pause' : 'play'" /></button><div class="track-copy"><h3>{{ track.title }}</h3><p>{{ duration(track.durationSeconds) }} · {{ track.mimeType === 'audio/wav' ? 'WAV' : track.mimeType }} · {{ track.provider }}</p><p v-if="track.bpm !== null || track.genre"><span v-if="track.bpm !== null">{{ track.bpm }} BPM</span><span v-if="track.genre"> {{ track.genre }}</span></p></div><a class="track-download icon-button" :href="track.downloadUrl" download :aria-label="`${track.title} 원본 다운로드`" title="원본 다운로드"><StudioIcon name="download" /></a><div class="track-edit-actions"><button type="button" :aria-label="`${track.title} 이름 변경`" @click="emit('edit', 'rename', track)"><StudioIcon name="edit" />이름 변경</button><button type="button" :aria-label="`${track.title} 삭제`" @click="emit('edit', 'delete', track)"><StudioIcon name="trash" />삭제</button></div></li>
+          <li v-for="track in job.tracks" :key="track.id" class="result-track" :class="{ 'is-current': player.state.track?.id === track.id }"><button type="button" class="track-play" :class="{ 'is-current': player.state.track?.id === track.id }" :aria-label="`${track.title} ${player.state.track?.id === track.id && (player.state.playing || player.state.loading) ? '일시 정지' : '재생'}`" :aria-pressed="player.state.track?.id === track.id && (player.state.playing || player.state.loading)" @click="player.toggle(track)"><StudioIcon :name="player.state.track?.id === track.id && (player.state.playing || player.state.loading) ? 'pause' : 'play'" /></button><div class="track-copy"><h3>{{ track.title }}</h3><p>{{ duration(track.durationSeconds) }} · {{ track.mimeType === 'audio/wav' ? 'WAV' : track.mimeType }} · {{ track.provider }}</p><p v-if="track.bpm !== null || track.genre"><span v-if="track.bpm !== null">{{ track.bpm }} BPM</span><span v-if="track.genre"> {{ track.genre }}</span></p></div><a class="track-download icon-button" :href="track.downloadUrl" download :aria-label="`${track.title} 원본 다운로드`" title="원본 다운로드"><StudioIcon name="download" /></a><div class="track-edit-actions"><FavoriteButton :title="track.title" :favorite="track.favorite" :pending="favoritePending.has(track.id)" @toggle="emit('favorite', track)" /><button type="button" :disabled="favoritePending.has(track.id)" :aria-label="`${track.title} 이름 변경`" @click="emit('edit', 'rename', track)"><StudioIcon name="edit" />이름 변경</button><button type="button" :disabled="favoritePending.has(track.id)" :aria-label="`${track.title} 삭제`" @click="emit('edit', 'delete', track)"><StudioIcon name="trash" />삭제</button></div><p v-if="favoriteErrors[track.id]" class="job-error track-favorite-error" role="alert">{{ favoriteErrors[track.id] }}</p></li>
         </ul>
         <p v-if="job.status === 'completed' && !job.tracks.length" class="job-hint">이 작업의 음원은 모두 삭제되었습니다. 프롬프트와 생성 이력은 보관됩니다.</p>
         <div class="generation-actions"><button v-if="isPending(job)" type="button" class="button button-secondary" :disabled="cancelling.has(job.id)" @click="emit('cancel', job.id)">{{ cancelling.has(job.id) ? '취소 확인 중…' : '작업 취소' }}</button><button v-else type="button" class="button button-secondary" :disabled="retryDisabled" @click="emit('retry', job)"><StudioIcon name="refresh" />{{ job.status === 'completed' ? '입력 가져와 다시 만들기' : '입력 확인 후 재시도' }}</button></div>

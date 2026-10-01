@@ -1,6 +1,6 @@
 # Local REST API 설계
 
-base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 원본 재생/다운로드, 상세 조회·이름/즐겨찾기 수정·삭제와 프롬프트 이력을 구현했다. 전역 보관함 목록 endpoint는 Phase 9의 계약이다.
+base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 원본 재생/다운로드, 상세 조회·이름/즐겨찾기 수정·삭제와 프롬프트 이력을 구현했다. 전역 보관함 목록도 구현했다.
 
 ## 공통 계약
 
@@ -30,7 +30,7 @@ base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사
 | GET | /tracks/:id | Track detail + 원본 prompt/requested settings |
 | PATCH | /tracks/:id | `{ title?, favorite? }`만 허용 |
 | DELETE | /tracks/:id | `{ deleted: true, cleanupPending }`, generation 이력 보존 |
-| GET | /tracks | `favorite=true`, 선택 projectId, pagination; Library 데이터 |
+| GET | /tracks | 선택 favorite=true/false, projectId, pagination; TrackSummary + projectName |
 | GET / HEAD | /tracks/:id/audio | inline 원본 stream, Range 지원 |
 | GET / HEAD | /tracks/:id/download | attachment 원본 stream, 안전한 제목·확장자 |
 | GET | /projects/:id/prompts | 최근 Generation의 prompt/settings/id/trackCount; 재사용은 새 생성 요청 |
@@ -59,6 +59,12 @@ TrackDetail은 TrackSummary에 원본 `requestedSettings`와 `requestedVariation
 음원 삭제는 Track만 제거하고 Generation의 입력과 상태를 보존한다. DB commit 후 해당 UUID 음원 파일을 정리하며 실패 시 cleanupPending을 반환한다. 모든 음원을 삭제한 completed Generation도 정상 이력이다. 제목 변경은 원본 경로와 bytes를 변경하지 않는다.
 
 프롬프트 목록은 별도 저장본 없이 Generation에서 prompt/settings/variationCount/status/trackCount/createdAt/generationId를 조회한다. 완료·실패·취소와 결과 없는 이력도 포함하며 createdAt/id cursor를 사용한다. 작성칸 재사용은 원본을 수정하거나 자동 생성하지 않는다. 초안 덮어쓰기를 확인한 후 현재 공급자의 설정 범위로 가져오고, 사용자가 생성 버튼을 눌러야 새로운 requestKey/sourceGenerationId로 접수한다.
+
+## 보관함 목록
+
+GET /tracks는 favorite 생략 시 전체, true/false 지정 시 해당 상태를 필터링한다. projectId는 UUID 필터이며 올바른 형식의 없는 프로젝트는 200 빈 목록을 반환한다. 두 필터는 cursor/limit 전에 적용한다. cursor는 track.createdAt/id 기준이며 기준 음원이 삭제되어도 다음 페이지를 조회할 수 있다. 수정일이나 제목 변경으로 정렬하지 않는다.
+
+LibraryTrackSummary는 기존 공개 TrackSummary에 projectName만 추가한다. 요청한 BPM/seed 등을 실제 음원 metadata로 채우지 않는다. 알 수 없는/중복 query와 잘못된 cursor는 400이다. UI는 즐겨찾기만 표시하고 route 진입 또는 수동 새로고침 때 서버를 기준으로 읽는다.
 
 ## 재생/다운로드
 

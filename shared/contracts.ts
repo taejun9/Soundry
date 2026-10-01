@@ -125,3 +125,7 @@ export interface PromptSummary {
   trackCount: number;
   createdAt: string;
 }
+
+export interface LibraryTrackSummary extends TrackSummary {
+  projectName: string;
+}

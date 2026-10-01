@@ -1,6 +1,6 @@
 # 품질 규칙
 
-Phase 1 bootstrap과 Phase 2 프로젝트 저장을 구현하고 검증했다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책·SQLite/Project CRUD 테스트, production build, dev launcher smoke를 검증한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
+프로젝트·생성 이력·단일 플레이어·음원 관리와 보관함을 검증한다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책·DB/API와 frontend 상태 회귀, production build, dev launcher smoke 및 Mock WAV 재현성을 확인한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
 
 ## 계획과 작업 경계
 
@@ -39,4 +39,4 @@ QA 결과와 리뷰 판단을 분리한다. 리뷰는 요청 범위 충족, 제�
 
 ## 앱 구현 단계의 추가 검증
 
-Phase 1 명령은 `npm run qa`(lint/typecheck/test/build/base)와 `npm run qa:smoke`(개발 서버·proxy·포트 충돌·종료)다. smoke 전에 다른 Soundry dev 서버를 종료한다. DB 무결성·마이그레이션, 생성 작업 상태 전이·취소·복구, provider 오류, loopback API와 파일 경로 경계, 음원 재생·내보내기 등 위험에 맞는 검증을 각 구현 계획에 배정한다. 존재하지 않는 명령을 현재 QA 통과 조건으로 삼지 않는다.
+현재 명령은 `npm run qa`(lint/typecheck/test/build/base/audio)와 `npm run qa:smoke`(개발 서버·proxy·포트 충돌·종료)다. smoke 전에 다른 Soundry dev 서버를 종료한다. DB 무결성·마이그레이션, 생성 작업 상태 전이·취소·복구, provider 오류, loopback API와 파일 경로 경계, 음원 재생·내보내기 등 위험에 맞는 검증을 각 구현 계획에 배정한다. 존재하지 않는 명령을 현재 QA 통과 조건으로 삼지 않는다.

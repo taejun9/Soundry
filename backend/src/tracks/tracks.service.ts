@@ -1,12 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, lt, or } from 'drizzle-orm';
 import { closeSync, constants, createReadStream, fstatSync, lstatSync, openSync, readSync } from 'node:fs';
 import type { ReadStream } from 'node:fs';
 import { AppError } from '../api-errors.js';
 import { StorageConfig } from '../config/storage-config.js';
 import { DatabaseService } from '../database/database.service.js';
-import { generations, tracks } from '../database/schema.js';
-import type { DeleteResult, GenerationSettings, TrackDetail, UpdateTrackRequest } from '../../../shared/contracts.js';
+import { generations, projects, tracks } from '../database/schema.js';
+import type { DeleteResult, GenerationSettings, LibraryTrackSummary, Page, TrackDetail, UpdateTrackRequest } from '../../../shared/contracts.js';
+import { encodeTrackCursor } from './track-list.js';
+import type { TrackListQuery } from './track-list.js';
 import { trackId } from './track-input.js';
 import { trackSummary } from './track-summary.js';
 import { MAX_AUDIO_BYTES } from '../storage/storage.service.js';
@@ -33,6 +35,26 @@ export class TracksService {
       .innerJoin(generations, eq(tracks.generationId, generations.id)).where(eq(tracks.id, id)).get();
     if (!row) throw new AppError(404, 'NOT_FOUND', '음원을 찾을 수 없습니다.');
     return row;
+  }
+
+  list(query: TrackListQuery): Page<LibraryTrackSummary> {
+    const position = query.cursor
+      ? or(lt(tracks.createdAt, query.cursor.createdAt), and(eq(tracks.createdAt, query.cursor.createdAt), lt(tracks.id, query.cursor.id)))
+      : undefined;
+    const rows = this.database.db.select({ track: tracks, generation: generations, projectName: projects.name }).from(tracks)
+      .innerJoin(generations, eq(tracks.generationId, generations.id))
+      .innerJoin(projects, eq(generations.projectId, projects.id))
+      .where(and(
+        query.favorite === undefined ? undefined : eq(tracks.favorite, query.favorite),
+        query.projectId === undefined ? undefined : eq(generations.projectId, query.projectId),
+        position,
+      ))
+      .orderBy(desc(tracks.createdAt), desc(tracks.id)).limit(query.limit + 1).all();
+    const selected = rows.slice(0, query.limit);
+    return {
+      items: selected.map(({ track, generation, projectName }) => ({ ...trackSummary(track, generation), projectName })),
+      nextCursor: rows.length > query.limit ? encodeTrackCursor(selected[selected.length - 1]!.track) : null,
+    };
   }
 
   get(id: string): TrackDetail {

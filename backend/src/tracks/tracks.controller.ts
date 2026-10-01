@@ -1,14 +1,18 @@
-import { Body, Controller, Delete, Get, Head, Inject, Param, Patch, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Head, Inject, Param, Patch, Query, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { pipeline } from 'node:stream/promises';
 import { audioDisposition, parseAudioRange } from './audio-headers.js';
 import { TracksService } from './tracks.service.js';
-import type { DeleteResult, TrackDetail } from '../../../shared/contracts.js';
+import type { DeleteResult, LibraryTrackSummary, Page, TrackDetail } from '../../../shared/contracts.js';
+import { trackListQuery } from './track-list.js';
 import { trackId, validateTrackUpdate } from './track-input.js';
 
 @Controller('tracks')
 export class TracksController {
   constructor(@Inject(TracksService) private readonly tracks: TracksService) {}
+
+  @Get()
+  list(@Query() query: Record<string, unknown>): Page<LibraryTrackSummary> { return this.tracks.list(trackListQuery(query)); }
 
   @Get(':id')
   get(@Param('id') id: string): TrackDetail { return this.tracks.get(trackId(id)); }
