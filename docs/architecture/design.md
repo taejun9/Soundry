@@ -150,4 +150,4 @@ Vue `ref/reactive/computed`와 composable + app-level provide/inject로 시작�
 
 [Phase 1–10 계획](../product/implementation-roadmap.md)의 gate를 순서대로 통과한다. 2026-09-30 Phase 1–10 구현 승인을 기록했으며 각 Phase 완료 gate를 지킨다.
 
-남은 결정은 실제 AI provider/model, 모델별 duration·seed·vocal 지원, 출력 포맷·크기 제한·시간 제한·요금/라이선스다. 설계 승인은 이 사항의 자동 확정을 뜻하지 않는다. fal은 후보일 뿐이며 Phase 8에서 실제 endpoint 문서를 확인한다.
+별도 Phase 8 작업에서 Fal Stable Audio 3 Medium을 선정하고 공식 schema·가격·전송 정책에 맞춘 adapter를 구현했다. 키/잔액 준비 후 실제 생성 gate를 통과하기 전까지 main은 Mock workflow를 유지한다. 실제 생성 품질과 이용 권리는 자동 QA나 설계 승인으로 확정하지 않는다.

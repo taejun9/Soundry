@@ -1,6 +1,6 @@
 # Phase별 구현 계획
 
-**현재 gate: 2026-09-30 전체 구현 승인, Phase 1–7·9 검증, Phase 8 실제 생성 gate 대기.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
+**현재 gate: 2026-09-30 전체 구현 승인, Phase 1–7·9·10 Mock 흐름 검증, Phase 8 실제 생성 gate 대기.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
 
 | Phase | 범위 | 사용자 확인 가능한 완료 기준 | 검증 |
 |---|---|---|---|
@@ -33,4 +33,4 @@ Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자
 
 ## 실행 기록 연결
 
-Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. Phase 3 작성 화면은 plan-005-workspace-form이다. Phase 4 MockProvider는 plan-006-mock-provider이다. Phase 5 생성 흐름은 plan-007-job-flow이다. Phase 6 플레이어는 plan-008-player이다. Phase 7은 plan-009-history-tracks다. Phase 8은 별도 plan-010-real-provider에서 구현·자동 검증했으며 실제 생성 검증은 키/잔액 준비 후 수행한다. Phase 9 보관함은 plan-011-library-favorites다.
+Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. Phase 3 작성 화면은 plan-005-workspace-form이다. Phase 4 MockProvider는 plan-006-mock-provider이다. Phase 5 생성 흐름은 plan-007-job-flow이다. Phase 6 플레이어는 plan-008-player이다. Phase 7은 plan-009-history-tracks다. Phase 8은 별도 plan-010-real-provider에서 구현·자동 검증했으며 실제 생성 검증은 키/잔액 준비 후 수행한다. Phase 9 보관함은 plan-011-library-favorites다. Phase 10 최종 검증과 사용 준비는 plan-012-release-polish이며 Mock 흐름 범위에서 완료했다. 실제 생성과 20곡은 별도 active 계획에 남아 있다.

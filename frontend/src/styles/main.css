@@ -118,7 +118,7 @@ h1 { font-size: clamp(27px, 2.5vw, 34px); line-height: 1.35; font-weight: 720; l
 .field-label { display: block; color: #ced6da; font-weight: 550; font-size: 12px; margin: 26px 0 10px; }
 textarea { width: 100%; border: 1px solid #363e42; color: #edf1f3; border-radius: 8px; background: #111516; resize: vertical; padding: 14px; font-size: 13px; line-height: 1.8; }
 textarea::placeholder { color: #919ea6; opacity: 1; }
-.field-help { margin: 10px 0 23px; font-size: 11px; color: #9da8ae; line-height: 1.8; }
+.field-help { margin: 10px 0 23px; font-size: 11px; color: #9da8ae; line-height: 1.8; overflow-wrap: anywhere; }
 .full-width { width: 100%; }
 .workspace-results { display: flex; flex-direction: column; }
 .workspace-results .empty-state { flex: 1; padding-right: 0; padding-left: 0; }
@@ -371,7 +371,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .track-symbol .studio-icon { width: 18px; height: 18px; }
 .track-copy { min-width: 0; flex: 1; }
 .track-copy h3 { font-size: 12px; font-weight: 560; overflow-wrap: anywhere; line-height: 1.6; }
-.track-copy p { font-size: 9px; color: #aec0bf; line-height: 1.7; margin-top: 3px; }
+.track-copy p { font-size: 9px; color: #aec0bf; line-height: 1.7; margin-top: 3px; overflow-wrap: anywhere; }
 .playback-pending { font-size: 9px; color: #a6b4b6; border: 1px solid #506363; padding: 4px 6px; border-radius: 4px; margin-left: auto; }
 .history-footnote { color: #91a5af; font-size: 10px; line-height: 1.8; margin-top: 24px; }
 .history-error { font-size: 11px; }
@@ -404,6 +404,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .player-track-copy { min-width: 0; }
 .player-track-copy p { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .player-track-copy > span { display: block; font-size: 9px; margin-top: 4px; color: #aec3b4; }
+.player-track-copy > .player-provider { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .player-track-copy > .player-status { color: #c3dba9; font-size: 9px; }
 .player-transport { grid-area: transport; display: flex; align-items: center; gap: 15px; min-width: 0; }
 .player-toggle { display: grid; place-items: center; width: 43px; height: 43px; flex-shrink: 0; border-radius: 50%; background: #c5ed9e; color: #233419; }
@@ -430,8 +431,6 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .player-grid { grid-template-columns: minmax(0, 1fr) 80px; grid-template-areas: 'track actions' 'transport transport' 'volume volume'; gap: 10px 14px; }
   .player-art { width: 39px; height: 39px; }
   .player-transport { gap: 13px; }
-  .player-track-copy > .player-status { display: inline; margin-left: 8px; }
-  .player-track-copy > span { display: inline; }
   .player-track-copy p { margin-bottom: 4px; }
   .player-volume { width: 155px; }
   .player-error { font-size: 10px; }
