@@ -1,0 +1,606 @@
+{
+  "provider": "cli",
+  "model": "codex-composer-local-synth-v1",
+  "createdDate": "2026-10-01",
+  "tracks": [
+    {
+      "number": 1,
+      "slug": "hip-hop",
+      "genre": "Hip-hop",
+      "title": "Raincheck Avenue",
+      "concept": "비 갠 골목",
+      "description": "빗물이 반사하는 골목을 느긋하게 걷는 장면.",
+      "bpmRequested": 88,
+      "tags": [
+        "Hip-hop",
+        "jazz-hop",
+        "rainy-night",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100101,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Jazzy boom-bap hip-hop at 88 BPM. Warm acoustic piano chords, a small repeating piano motif with melodic variations, rounded electric bass, shuffled dry kick and snare, understated brushed cymbals. A reflective walk down a rain-washed alley after midnight. Begin with a short piano invitation, settle into a loose swinging pocket, introduce a conversational muted trumpet phrase, pull back to bass and drums midway, then return to the piano theme with a graceful resolved outro. Warm studio sound, clear drums and natural dynamics. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Hip-hop",
+          "mood": "비 갠 골목",
+          "durationSeconds": 150,
+          "seed": "2026100101",
+          "bpm": 88
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 2,
+      "slug": "trap",
+      "genre": "Trap",
+      "title": "Chrome Skyline",
+      "concept": "밤의 고층도로",
+      "description": "유리 빌딩 사이 고가도로를 달리는 차가운 긴장감.",
+      "bpmRequested": 142,
+      "tags": [
+        "Trap",
+        "808",
+        "night-drive",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100102,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Modern trap instrumental at 142 BPM with a half-time feel. Deep controlled 808 glides, crisp snare, intricate but restrained hi-hat rolls, icy metallic plucks and a spacious minor-key synth melody. The atmosphere is chrome towers passing on a night drive. Short atmospheric introduction, a confident main drop, a contrasting airy melodic passage, a bass-focused breakdown and a final developed drop. Finish with a deliberate short melodic outro rather than an abrupt stop. Wide synths and a centered punchy low end. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Trap",
+          "mood": "밤의 고층도로",
+          "durationSeconds": 150,
+          "seed": "2026100102",
+          "bpm": 142
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 3,
+      "slug": "rnb-soul",
+      "genre": "R&B / Soul",
+      "title": "Velvet Balcony",
+      "concept": "늦은 밤 발코니",
+      "description": "도시의 불빛을 바라보는 조용하고 따뜻한 시간.",
+      "bpmRequested": 76,
+      "tags": [
+        "R&B",
+        "neo-soul",
+        "late-night",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100103,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Instrumental contemporary R&B and neo-soul at 76 BPM. Velvety Rhodes chords with rich sevenths and ninths, warm melodic electric bass, intimate rimshot drums, delicate clean guitar fills. A peaceful late-night balcony above the city. Introduce a memorable keyboard theme, develop it over a lazy pocket, create an intimate drums-out bridge, then bring back a slightly richer harmony and finish with a soft resolved cadence. Spacious polished production, expressive playing, no vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "R&B / Soul",
+          "mood": "늦은 밤 발코니",
+          "durationSeconds": 150,
+          "seed": "2026100103",
+          "bpm": 76
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 4,
+      "slug": "pop",
+      "genre": "Pop",
+      "title": "Weekend Postcard",
+      "concept": "바다 여행 출발",
+      "description": "여름 주말 아침, 창문을 열고 바다로 떠나는 기분.",
+      "bpmRequested": 112,
+      "tags": [
+        "Pop",
+        "sunny",
+        "road-trip",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100104,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Bright instrumental pop at 112 BPM. Crisp strummed electric and acoustic guitars, a catchy original synth lead hook, buoyant bass and clean energetic drums. A sunny weekend road trip toward the sea. Use a concise intro, a clear verse-like motif, a lifted chorus melody, a breezy lighter bridge and a bigger final chorus followed by a satisfying short ending. Warm optimistic chords, playful rhythmic details and an open stereo mix. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Pop",
+          "mood": "바다 여행 출발",
+          "durationSeconds": 150,
+          "seed": "2026100104",
+          "bpm": 112
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 5,
+      "slug": "rock",
+      "genre": "Rock",
+      "title": "Last Train Sparks",
+      "concept": "막차를 향한 질주",
+      "description": "막차를 놓치지 않으려 달리는 순간의 열기.",
+      "bpmRequested": 128,
+      "tags": [
+        "Rock",
+        "indie-rock",
+        "energetic",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100105,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Driving indie rock instrumental at 128 BPM. Live acoustic drums with human fills, crunchy rhythm guitars, an original memorable lead guitar riff and a sturdy electric bass. Urgent but hopeful, like running through the station to catch the last train. Start with the guitar riff, build a full-band main section, move into a spacious clean-guitar bridge, then a vivid guitar solo and a final full-band refrain. End with a tight band cadence. Natural room tone, clear instrument separation. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Rock",
+          "mood": "막차를 향한 질주",
+          "durationSeconds": 150,
+          "seed": "2026100105",
+          "bpm": 128
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 6,
+      "slug": "funk",
+      "genre": "Funk",
+      "title": "Orange Roller",
+      "concept": "롤러스케이트장",
+      "description": "주황빛 조명 아래 서로 호흡을 주고받는 댄스 그루브.",
+      "bpmRequested": 106,
+      "tags": [
+        "Funk",
+        "groove",
+        "roller-skate",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100106,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Live-band funk instrumental at 106 BPM. A syncopated slap and fingerstyle bass line, dry drums with snare ghost notes, clipped wah guitar chords, short clavinet responses and bright brass accents. Warm orange lights in a vintage roller rink. Start in the pocket, trade short guitar and brass hooks, open into a bass feature, create an eight-bar drum-and-bass breakdown and reunite the full band for a joyful ending. Tight ensemble feel, warm analog studio character. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Funk",
+          "mood": "롤러스케이트장",
+          "durationSeconds": 150,
+          "seed": "2026100106",
+          "bpm": 106
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 7,
+      "slug": "jazz",
+      "genre": "Jazz",
+      "title": "Blue Hour Table",
+      "concept": "문 닫기 전 재즈바",
+      "description": "마지막 손님이 머무는 작은 테이블의 파란 여운.",
+      "bpmRequested": 92,
+      "tags": [
+        "Jazz",
+        "piano-trio",
+        "blue-hour",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100107,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Intimate small-combo jazz instrumental at 92 BPM. Acoustic piano, upright bass, lightly swinging brushed drums and a mellow tenor saxophone. The blue hour at a nearly empty jazz bar. State an original lyrical saxophone theme, hand a short improvisation to the piano, let the upright bass answer, return to the melody and close with a gentle ensemble cadence. Natural acoustic sound, subtle room reverb, expressive dynamics, no crowd or speech. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Jazz",
+          "mood": "문 닫기 전 재즈바",
+          "durationSeconds": 150,
+          "seed": "2026100107",
+          "bpm": 92
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 8,
+      "slug": "house",
+      "genre": "House",
+      "title": "Rooftop First Light",
+      "concept": "옥상에서 맞는 일출",
+      "description": "긴 밤이 끝나고 첫 햇빛이 들어오는 순간.",
+      "bpmRequested": 124,
+      "tags": [
+        "House",
+        "piano-house",
+        "sunrise",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100108,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Uplifting piano house instrumental at 124 BPM. Firm four-on-the-floor kick, warm rolling bass, open hi-hats, euphoric original piano chords and a spacious analog synth countermelody. The first sunlight reaching a city rooftop after a long night. Build from a stripped percussion intro into a melodic groove, create a warm suspended breakdown, return to a fuller joyful drop, then gradually resolve with the piano and bass. Clean club production without harshness, no vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "House",
+          "mood": "옥상에서 맞는 일출",
+          "durationSeconds": 150,
+          "seed": "2026100108",
+          "bpm": 124
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 9,
+      "slug": "techno",
+      "genre": "Techno",
+      "title": "Concrete Pulse",
+      "concept": "지하 공간의 맥박",
+      "description": "콘크리트 벽 사이에서 반복과 변화가 교차하는 장면.",
+      "bpmRequested": 132,
+      "tags": [
+        "Techno",
+        "modular",
+        "underground",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100109,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Focused hypnotic techno instrumental at 132 BPM. A tight deep kick, restrained sub bass, evolving modular synthesizer pulses, metallic percussion and small syncopated analog accents. Concrete underground spaces and a steady mechanical pulse. Develop a repeating original motif through gradual timbral changes, thin the arrangement for a tense middle section, reintroduce the full rhythmic engine and taper into a deliberate percussive ending. Controlled low end, detailed transients, no vocals or crowd sounds. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Techno",
+          "mood": "지하 공간의 맥박",
+          "durationSeconds": 150,
+          "seed": "2026100109",
+          "bpm": 132
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 10,
+      "slug": "drum-and-bass",
+      "genre": "Drum & Bass",
+      "title": "Night Bus Aurora",
+      "concept": "야간버스 창밖의 빛",
+      "description": "빠르게 스치는 불빛 위로 느린 감정이 흐르는 풍경.",
+      "bpmRequested": 172,
+      "tags": [
+        "Drum & Bass",
+        "liquid-dnb",
+        "night-bus",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100110,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Liquid drum and bass instrumental at 172 BPM. Crisp intricate breakbeat drums, deep smooth sub bass, floating atmospheric pads, an original wistful piano motif and shimmering synth responses. Neon reflections passing outside a late-night bus. Begin with the piano atmosphere, move into a fluid rolling rhythm, open into a spacious central breakdown, then bring back a richer melodic breakbeat section and a peaceful melodic outro. Airy but punchy, no vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Drum & Bass",
+          "mood": "야간버스 창밖의 빛",
+          "durationSeconds": 150,
+          "seed": "2026100110",
+          "bpm": 172
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 11,
+      "slug": "ambient",
+      "genre": "Ambient",
+      "title": "Tide Memory",
+      "concept": "조수와 기억",
+      "description": "물이 밀려오고 빠지듯 느리게 모습을 바꾸는 기억.",
+      "bpmRequested": null,
+      "tags": [
+        "Ambient",
+        "atmospheric",
+        "reflective",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100111,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Ambient instrumental composition with free flowing slow time. Soft evolving analog drones, sparse felt-piano notes, bowed glass-like tones and a warm low harmonic bed. A memory changing with the tide. Begin with one clear delicate motif, slowly broaden the harmonic color, introduce a distant answering piano register, build one restrained emotional crest and dissolve into a calm resolved ending. Detailed spacious stereo sound, gentle dynamics, no percussion, speech, singing or field-recording noise. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Ambient",
+          "mood": "조수와 기억",
+          "durationSeconds": 150,
+          "seed": "2026100111"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 12,
+      "slug": "cinematic",
+      "genre": "Cinematic",
+      "title": "Beyond the Ridge",
+      "concept": "능선 너머의 발견",
+      "description": "길고 조용한 등반 끝에 새로운 풍경을 마주하는 순간.",
+      "bpmRequested": 84,
+      "tags": [
+        "Cinematic",
+        "orchestral",
+        "discovery",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100112,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Cinematic orchestral instrumental at 84 BPM. Lyrical strings, warm French horns, delicate piano and restrained cinematic percussion. A quiet climb ending in the discovery of a vast landscape beyond a mountain ridge. Begin with an intimate original piano motif, add patient string movement, build into a broad hopeful horn theme, retreat briefly to solo piano and conclude with an expansive ensemble resolution and a natural reverb tail. Dynamic acoustic orchestration, clear mix, no choir or vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Cinematic",
+          "mood": "능선 너머의 발견",
+          "durationSeconds": 150,
+          "seed": "2026100112",
+          "bpm": 84
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 13,
+      "slug": "acoustic-folk",
+      "genre": "Acoustic / Folk",
+      "title": "Window Garden",
+      "concept": "아침 창가의 정원",
+      "description": "햇빛이 잎사귀를 비추는 작은 집의 평온함.",
+      "bpmRequested": 96,
+      "tags": [
+        "Acoustic",
+        "Folk",
+        "morning",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100113,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Warm acoustic folk instrumental at 96 BPM. Fingerpicked steel-string guitar carrying an original gentle melody, light shaker, upright bass and a lyrical cello answering phrase. Morning sunlight in a small window garden. Start with solo guitar, add an intimate rhythmic ensemble, let the cello carry a contrasting middle melody, return to the guitar theme with delicate ornamentation and finish on a natural ringing chord. Close natural recording, relaxed human timing, no vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Acoustic / Folk",
+          "mood": "아침 창가의 정원",
+          "durationSeconds": 150,
+          "seed": "2026100113",
+          "bpm": 96
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 14,
+      "slug": "classical",
+      "genre": "Classical",
+      "title": "Paper Constellations",
+      "concept": "종이별을 잇는 밤",
+      "description": "책상 위 작은 종이별이 하나의 하늘이 되는 이야기.",
+      "bpmRequested": 72,
+      "tags": [
+        "Classical",
+        "chamber",
+        "piano",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100114,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Original contemporary chamber classical instrumental at 72 BPM, piano and string quartet. A delicate piano theme is passed between violin, viola and cello, with tender counterpoint and transparent voicing. Imagining paper stars becoming a constellation at a desk at night. Clear opening theme, a more flowing developmental section, a quiet suspended transition, a warm return to the theme and a complete expressive final cadence. Natural acoustic hall ambience and dynamic nuance, no percussion or vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Classical",
+          "mood": "종이별을 잇는 밤",
+          "durationSeconds": 150,
+          "seed": "2026100114",
+          "bpm": 72
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 15,
+      "slug": "latin",
+      "genre": "Latin",
+      "title": "Mercado Sunset",
+      "concept": "저녁 시장",
+      "description": "장을 마친 사람들이 골목에 남기는 활기와 온기.",
+      "bpmRequested": 100,
+      "tags": [
+        "Latin",
+        "latin-jazz",
+        "sunset",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100115,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Latin instrumental at 100 BPM with a relaxed syncopated Afro-Cuban groove. Nylon-string guitar plays an original melodic hook over congas, bongos, shaker, warm bass and light piano montuno figures. Sunset over a lively neighborhood market. A brief guitar intro, an interlocking rhythmic main section, playful piano and guitar exchanges, a percussion break and a warm full-ensemble return with a clear ending. Organic acoustic percussion, bright but comfortable sound, no voices or crowd. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Latin",
+          "mood": "저녁 시장",
+          "durationSeconds": 150,
+          "seed": "2026100115",
+          "bpm": 100
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 16,
+      "slug": "reggae-dub",
+      "genre": "Reggae / Dub",
+      "title": "Saltwater Echo",
+      "concept": "해안의 산책",
+      "description": "바닷바람에 맞춰 천천히 걷는 여유로운 오후.",
+      "bpmRequested": 74,
+      "tags": [
+        "Reggae",
+        "Dub",
+        "coastal",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100116,
+      "referenceDirection": null,
+      "input": {
+        "prompt": "Instrumental roots reggae and dub at 74 BPM. Deep melodic bass, relaxed one-drop drums, offbeat clean guitar chops, gentle organ bubbles and occasional tape-delay horn accents. A slow afternoon walk beside the sea. State an original tuneful organ motif, settle into a warm pocket, create a spacious dub breakdown with rhythmic echoes, then bring the band and melody back and close with a gentle resolved bass phrase. Rounded vintage studio tone, no vocals or field noise. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Reggae / Dub",
+          "mood": "해안의 산책",
+          "durationSeconds": 150,
+          "seed": "2026100116",
+          "bpm": 74
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 17,
+      "slug": "reference-groove-1",
+      "genre": "Trap / R&B",
+      "title": "Midnight Switch",
+      "concept": "자정의 분위기 전환",
+      "description": "단단한 리듬과 몽환적인 색채가 교차하는 밤.",
+      "bpmRequested": 140,
+      "tags": [
+        "Trap",
+        "R&B",
+        "midnight",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100117,
+      "referenceDirection": "그루비룸 참고 방향",
+      "input": {
+        "prompt": "Contemporary Korean urban trap and R&B instrumental at 140 BPM in a half-time pocket. Deep polished 808 glides, highly detailed tight hi-hat syncopations, a dreamy mallet-like synth pluck motif, rich electric-piano chords and short rhythmic silences. A midnight city mood turning from cool restraint into confidence. An original restrained melodic intro leads to a bass-heavy hook, a spacious contrasting bridge, a developed second hook and a neat harmonic outro. Precise bouncy drums, lush but uncluttered layers, no vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Trap / R&B",
+          "mood": "자정의 분위기 전환",
+          "durationSeconds": 150,
+          "seed": "2026100117",
+          "bpm": 140
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 18,
+      "slug": "reference-groove-2",
+      "genre": "Hip-hop / R&B",
+      "title": "Glass Lobby",
+      "concept": "유리 로비의 잔향",
+      "description": "넓은 공간 안에서 리듬의 빈칸이 만들어 내는 세련된 움직임.",
+      "bpmRequested": 100,
+      "tags": [
+        "Hip-hop",
+        "R&B",
+        "bounce",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100118,
+      "referenceDirection": "그루비룸 참고 방향",
+      "input": {
+        "prompt": "Sleek bouncy hip-hop and R&B instrumental at 100 BPM. Percussive electric-piano chords, a nimble rounded bass line, syncopated kick and rimshot patterns, chopped original synth phrases and crisp tiny drum fills. Spacious glass architecture with warm reflections. Build around a memorable original keyboard hook, leave deliberate drum gaps, introduce a silky contrasting synth lead, use a short bass-and-percussion bridge and return with a richer final hook. Wide airy production and tight centered drums, no vocals. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Hip-hop / R&B",
+          "mood": "유리 로비의 잔향",
+          "durationSeconds": 150,
+          "seed": "2026100118",
+          "bpm": 100
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 19,
+      "slug": "reference-experimental-1",
+      "genre": "Experimental Hip-hop",
+      "title": "Broken Neon Diary",
+      "concept": "깨진 네온의 일기",
+      "description": "질서와 불안이 엇갈리는 늦은 밤의 단편.",
+      "bpmRequested": 82,
+      "tags": [
+        "Experimental Hip-hop",
+        "alternative",
+        "neon",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100119,
+      "referenceDirection": "천재노창 참고 방향",
+      "input": {
+        "prompt": "Experimental alternative hip-hop instrumental at 82 BPM. Rough textured but unclipped drums, an uneasy detuned piano motif, a thick asymmetric bass phrase and sparse strange synthetic accents. Fragments of a private diary reflected in broken neon. Establish an original crooked groove, interrupt it with a brief bare-piano passage, switch to a more urgent double-time percussion texture while the pulse remains coherent, then return to the initial motif transformed and end deliberately. Dramatic contrasts, tactile sound design, musical focus, no speech or singing. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Experimental Hip-hop",
+          "mood": "깨진 네온의 일기",
+          "durationSeconds": 150,
+          "seed": "2026100119",
+          "bpm": 82
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 20,
+      "slug": "reference-experimental-2",
+      "genre": "Psychedelic Electronic Hip-hop",
+      "title": "Paper Moon Static",
+      "concept": "종이달과 정전기",
+      "description": "가볍고 기묘한 장면이 후반부에 크게 펼쳐지는 꿈.",
+      "bpmRequested": 118,
+      "tags": [
+        "Experimental",
+        "Psychedelic",
+        "Electronic Hip-hop",
+        "instrumental"
+      ],
+      "durationRequested": 150,
+      "seed": 2026100120,
+      "referenceDirection": "천재노창 참고 방향",
+      "input": {
+        "prompt": "Psychedelic electronic hip-hop instrumental at 118 BPM. A bent resonant synth bass, quirky offbeat drums, a fragile original bell melody, reversing synth textures and sudden changes from dry intimacy to wide space. A paper moon hanging in a strange dream. Begin with a minimal fragile motif, build a surprising but coherent groove, dissolve into a floating harmonic bridge, then unfold a dramatic fuller second half and conclude with the bell melody alone. Detailed evolving timbres with controlled peaks, no voices or recognizable samples. Full instrumental composition lasting two minutes and thirty seconds, with an intentional musical ending.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "Psychedelic Electronic Hip-hop",
+          "mood": "종이달과 정전기",
+          "durationSeconds": 150,
+          "seed": "2026100120",
+          "bpm": 118
+        },
+        "variationCount": 1
+      }
+    }
+  ]
+}
