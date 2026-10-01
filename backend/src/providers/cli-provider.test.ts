@@ -60,6 +60,22 @@ describe('CLI composition provider', () => {
     for (const call of fake.compose.mock.calls) expect(fromPrompt(call[0]).prompt).toBe(musicInput.prompt);
     const a = tracks[0]!.audio[Symbol.asyncIterator](); expect(Buffer.from((await a.next()).value as Uint8Array).subarray(0, 4).toString()).toBe('RIFF'); await a.return?.();
   });
+  it('supplies the app-calculated bar count and finite synthesis limits beside each explicit-BPM request', async () => {
+    const fake = runner();
+    // This test inspects the outbound instruction contract before rejecting the synthetic response.
+    fake.compose.mockResolvedValue({});
+    for (const [bpm, durationSeconds, expectedBars] of [[112, 150, 70], [113, 150, 71], [88, 150, 55]]) {
+      await expect(new CliProvider(fake).generate({ ...musicInput, settings: { ...musicInput.settings, bpm, durationSeconds }, variationCount: 1 }, { signal: new AbortController().signal, onStage() {} })).rejects.toMatchObject({ code: 'CLI_INVALID_OUTPUT' });
+      const prompt = fake.compose.mock.calls.at(-1)![0];
+      const line = prompt.split('\n').find((line) => line.startsWith('{"computedConstraints":'))!;
+      expect(JSON.parse(line)).toEqual({ computedConstraints: {
+        durationSeconds, beatsPerBar: 4, requiredTotalBars: expectedBars,
+        minExpandedNotes: 48, maxExpandedNotes: 16_000, maxSimultaneousVoices: 48, maxVoiceSecondsIncludingRelease: 6_000,
+      } });
+      expect(fromPrompt(prompt).settings.bpm).toBe(bpm);
+    }
+    expect(fake.compose).toHaveBeenCalledTimes(3);
+  });
   it('validates requested ranges, seed length and parser-incompatible control characters before CLI calls', async () => {
     const fake = runner(); const provider = new CliProvider(fake);
     for (const settings of [{ durationSeconds: 89 }, { durationSeconds: 181 }, { bpm: 39 }, { bpm: 221 }, { seed: 'x'.repeat(65) }, { seed: 'a\nb' }, { genre: 'a\tb' }, { mood: 'a\u007fb' }, { mode: 'vocal' }]) {
@@ -96,6 +112,10 @@ describe('CLI composition provider', () => {
     const fake = runner();
     await new CliProvider(fake).generate({ prompt: '새로운 곡', settings: {}, variationCount: 1 }, { signal: new AbortController().signal, onStage() {} });
     expect(fromPrompt(fake.compose.mock.calls[0]![0]).settings.durationSeconds).toBe(150);
+    const line = fake.compose.mock.calls[0]![0].split('\n').find((line) => line.startsWith('{"computedConstraints":'))!;
+    const constraints = (JSON.parse(line) as { computedConstraints: Record<string, unknown> }).computedConstraints;
+    expect(constraints.durationSeconds).toBe(150);
+    expect(constraints).not.toHaveProperty('requiredTotalBars');
   });
 });
 

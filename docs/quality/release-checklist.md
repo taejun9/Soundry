@@ -65,3 +65,7 @@ git diff --check
 ```
 
 자동 API 검증은 임시 데이터 root와 자체 fixture를 사용한다. 실제 사용자 DB·키·음원이나 원격 결과 URL을 Git·리뷰 예시에 넣지 않는다. 브라우저에서 만든 QA 음원도 자체 Mock 검증 데이터와 요청한 테스트곡을 구분한다. 저장 폴더 백업은 Soundry 서버를 종료하고 전체 폴더를 복사하는 [README 절차](../../README.md)를 따른다.
+
+## 끝마디 실사용 보완
+
+[plan-014 리뷰](../reviews/plan-014-score-endings.md):마지막반복의부분마디를정확한요청길이로마감하도록수정했다. 기존실패악보의parse/150초렌더와새실제CLI팝곡의앱저장·다운로드PASS. 현재전체41files/443tests및lint/type/build/base/audioPASS,독립리뷰추가P1/P2없음. 앞선433개는plan013완료시점기록이다.

@@ -4,13 +4,14 @@ import { describe, expect, it } from 'vitest';
 import type { GenerationInput } from '../../../../shared/contracts.js';
 import { COMPOSITION_SCHEMA, CompositionError, parseComposition, renderComposition } from './index.js';
 import type { Composition } from './index.js';
+import { expandComposition } from './schema.js';
 import type { Instrument, Note, Part } from './schema.js';
 
 const input: GenerationInput = { prompt: '따뜻한 재즈 신스 연주곡 테스트', settings: { durationSeconds: 90 }, variationCount: 1 };
 function note(beat: number, pitch: number, duration = 0.375, velocity = 0.7): Note { return { beat, pitch, duration, velocity }; }
 /** Authored score used only for DSP tests; provider has no automatic fallback composition. */
-function composition(duration = 90): Composition {
-  const total = Math.ceil(duration / 2), lengths = [4, 12, 12, 8, total - 36];
+function composition(duration = 90, bpm = 120): Composition {
+  const total = Math.ceil(duration * bpm / 240), lengths = [4, 12, 12, 8, total - 36];
   let startBar = 0;
   const sections: Composition['sections'] = ['intro', 'verse', 'chorus', 'bridge', 'outro'].map((name, index) => {
     const section = { name: name as Composition['sections'][number]['name'], startBar, bars: lengths[index]! };
@@ -26,7 +27,7 @@ function composition(duration = 90): Composition {
     if (index === 1 || index === 2) parts.push({ ...common, instrument: 'drums', patternId: 'kit', gain: 0.7, pan: 0 });
   }
   return {
-    version: 1, bpm: 120, genre: 'Jazz', mood: '따뜻한', seed: 'composition-signal-test',
+    version: 1, bpm, genre: 'Jazz', mood: '따뜻한', seed: 'composition-signal-test',
     patterns: [
       { id: 'chords', bars: 1, notes: [0, 1, 2, 3].flatMap((beat) => [60, 64, 67].map((pitch) => note(beat, pitch, 0.8, 0.55))) },
       { id: 'bass', bars: 1, notes: [36, 43, 40, 47].map((pitch, beat) => note(beat, pitch, 0.85, 0.85)) },
@@ -35,6 +36,15 @@ function composition(duration = 90): Composition {
       { id: 'kit', bars: 1, notes: [note(0, 36), note(1, 38), note(2, 36), note(3, 38), ...Array.from({ length: 8 }, (_, index) => note(index / 2, 42, 0.0625, index % 2 ? 0.25 : 0.4))] },
     ], parts, sections,
   };
+}
+/** Synthetic ending case only: no production/user score is copied into this fixture. */
+function partialEnding(duration = 150): Composition {
+  const score = composition(duration, 112);
+  score.patterns.push({ id: 'ending_figure', bars: 4, notes: [60, 64, 67, 72].map((pitch, index) => note(index * 4, pitch, 1)) });
+  for (const instrument of ['guitar', 'pad'] as const) {
+    score.parts.push({ instrument, patternId: 'ending_figure', startBar: 68, repeats: 1, transpose: 0, gain: 0.25, pan: instrument === 'guitar' ? -0.3 : 0.3 });
+  }
+  return score;
 }
 function copy(): Composition { return structuredClone(composition()); }
 async function collect(score: Composition, duration = 90): Promise<Buffer> {
@@ -126,6 +136,27 @@ describe('bounded composition score', () => {
       expect(() => parseComposition(score, { ...input, settings: { ...input.settings, ...settings } })).toThrow(CompositionError);
     }
   });
+  it.each([[68, 1], [64, 2], [66, 1]])('accepts the final partial pattern at bar %i with %i repetitions', (startBar, repeats) => {
+    const score = partialEnding();
+    for (const part of score.parts.filter((part) => part.patternId === 'ending_figure')) { part.startBar = startBar; part.repeats = repeats; }
+    expect(parseComposition(score, { ...input, settings: { bpm: 112, durationSeconds: 150 } })).toEqual(score);
+    expect(score.sections.reduce((sum, section) => sum + section.bars, 0)).toBe(70);
+  });
+  it.each([[68, 2], [66, 2], [70, 1], [68, 64]])('rejects a wholly out-of-range repetition at bar %i with count %i', (startBar, repeats) => {
+    const score = partialEnding();
+    Object.assign(score.parts.at(-1)!, { startBar, repeats });
+    expect(() => parseComposition(score, { ...input, settings: { bpm: 112, durationSeconds: 150 } })).toThrow(CompositionError);
+  });
+  it('clips overhanging notes and releases, including a partial final bar', () => {
+    for (const duration of [149, 150]) {
+      const score = parseComposition(partialEnding(duration), { ...input, settings: { bpm: 112, durationSeconds: duration } });
+      const events = expandComposition(score, duration);
+      expect(events.every((event) => event.start < duration && event.start + event.length <= duration + 1e-9)).toBe(true);
+      const endings = events.filter((event) => event.instrument === 'guitar' || event.instrument === 'pad');
+      expect(endings).toHaveLength(4);
+      expect(endings.map((event) => event.pitch)).toEqual([60, 60, 64, 64]);
+    }
+  });
   it('uses 150 seconds by default and accepts a full 180 second arrangement', () => {
     expect(parseComposition(composition(150), { ...input, settings: {} }).sections.at(-1)?.startBar).toBe(36);
     expect(parseComposition(composition(180), { ...input, settings: { durationSeconds: 180 } }).sections.at(-1)?.bars).toBe(54);
@@ -133,6 +164,22 @@ describe('bounded composition score', () => {
 });
 
 describe('local musical WAV renderer', () => {
+  it('renders an overhanging four-bar ending as exactly 150 seconds with its existing fade', async () => {
+    const bytes = await collect(partialEnding(), 150);
+    expect(bytes.length).toBe(26_460_044);
+    expect(bytes.readUInt32LE(40) / bytes.readUInt32LE(28)).toBe(150);
+    expect(bytes.readUInt16LE(20)).toBe(1);
+    expect(bytes.readUInt16LE(22)).toBe(2);
+    expect(bytes.readUInt32LE(24)).toBe(44_100);
+    expect(bytes.readUInt16LE(34)).toBe(16);
+    const stats = signalStats(bytes);
+    expect(stats.peak).toBeLessThan(0.901);
+    expect(stats.clipped).toBe(0);
+    expect(stats.blockRms[148]).toBeGreaterThan(stats.blockRms[149]!);
+    expect(stats.blockRms[149]).toBeGreaterThan(0.001);
+    expect(Math.abs(bytes.readInt16LE(bytes.length - 4))).toBeLessThanOrEqual(1);
+    expect(Math.abs(bytes.readInt16LE(bytes.length - 2))).toBeLessThanOrEqual(1);
+  }, 30_000);
   it('renders a complete 150s stereo PCM16 WAV with clean levels, dynamics, and audible sections', async () => {
     const bytes = await collect(composition(150), 150);
     expect(bytes.length).toBe(44 + 150 * 44_100 * 4);
