@@ -18,7 +18,14 @@
 
 ## 근거 공백과 재확인
 
-- 실제 AI provider/model은 미선정이다. fal.ai는 후보이며 현재 가격·출력·취소·라이선스·데이터 보관을 검증했다고 주장하지 않는다. Phase 8에서 해당 endpoint 공식 자료를 추가한다.
+- 실제 생성은 설치된 Codex CLI의 ChatGPT 로그인으로 JSON 악보를 받고 로컬에서 WAV를 합성한다. 아래 CLI 공식 자료와 실제 검증을 근거로 사용하며, 과거 유료 음악 API 후보는 현재 실행 경로에서 제외한다.
 - Phase 1 npm registry의 stable patch/peerDependencies를 확인하고 package-lock.json에 고정했다. 최신 TypeScript 7 대신 lint 도구의 지원 범위인 5.9.3을 사용한다. native SQLite driver와 브라우저 오디오 codec은 후속 Phase에서 검증한다.
 - GrooveForge는 [별도 조사 기록](grooveforge.md)의 로컬 commit을 기준으로 한다.
 - 법률·음원 이용 권리·상업적 사용 가능성에 대한 결론은 이 문서에서 내리지 않는다.
+
+## CLI 작곡 전환 근거 — 2026-10-01
+
+- [Codex 비대화형 실행](https://learn.chatgpt.com/docs/non-interactive-mode): stdin 입력, JSON Schema 출력, 마지막 응답 파일, 기존 CLI 인증 재사용. 설치된 0.136.0의 실제 help 및 JSON 연결 probe로 사용 옵션을 확인했다.
+- [Codex 인증](https://learn.chatgpt.com/docs/auth): ChatGPT 로그인과 API 키 과금 방식 구분. Soundry는 기존 ChatGPT 로그인만 사용하고 유료 API 키 방식은 허용하지 않는다.
+- JSON 악보를 자체 renderer로 합성하는 방식과 악기/시간/연산량 제한은 Soundry의 설계 결정이다. Codex가 WAV를 직접 반환하는 기능이라고 주장하지 않는다.
+- 이전 Fal 후보 조사와 잔액/키 조건은 사용자 요청으로 폐기했다. 현재 구현 근거는 plan-013이며 기존 역사 기록은 당시 상태를 설명한다.

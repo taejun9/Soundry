@@ -17,6 +17,8 @@ export function generationId(value: string): string {
   return uuid(value, '생성 ID');
 }
 
+export const storedInputCapabilities: ProviderCapabilities = { modes: ['instrumental', 'vocal'], settings: ['genre', 'mood', 'bpm', 'durationSeconds', 'seed'], maxVariations: 4, seedSupported: true, canCancelRemote: false };
+
 export function validateCreateGeneration(value: unknown, capabilities: ProviderCapabilities): CreateGenerationRequest {
   if (!object(value) || Object.keys(value).some((key) => !requestFields.has(key))) invalid('지원하지 않는 생성 요청입니다.');
   const requestKey = uuid(value.requestKey, '요청 키');

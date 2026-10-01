@@ -25,7 +25,7 @@
 | Prompt history | 최근 prompt, 복사·재사용·결과 이동 | Generation 기반 조회; 별도 중복 테이블 불필요 |
 | Export | 원본 오디오 다운로드 | 파일 확장자와 실제 포맷 일치; 이름 변경이 원본 경로를 바꾸지 않음 |
 
-Mock만 있는 단계는 workflow MVP다. 실제 AI 작곡 완료라고 부르려면 Phase 8에서 실제 provider로 end-to-end 생성 검증을 통과해야 한다. 키나 모델 선택이 없으면 이 부분을 미완료로 명시한다.
+Mock만 있는 단계는 workflow MVP다. 실제 AI 작곡 완료라고 부르려면 Phase 8에서 실제 provider로 end-to-end 생성 검증을 통과해야 한다. 현재 선택한 CLI의 로그인·작곡·로컬 WAV 생성이 확인되지 않으면 이 부분을 미완료로 명시한다.
 
 ## 화면과 상태
 

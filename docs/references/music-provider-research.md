@@ -1,29 +1,15 @@
 # 실제 생성 공급자와 테스트 음원 조사
 
-조사: 2026-09-30, 기록: 2026-10-01. Fal MCP의 모델 추천·스키마·가격 읽기 전용 조회는 인증된 연결에서 성공했다. 잔액, 실제 생성, 청취 품질은 아직 검증하지 않았다. 연결된 MCP 인증과 Soundry backend의 API 키는 별개이며 현재 실행 환경에는 FAL_KEY가 설정되지 않았다.
+현재 결정: 2026-10-01 사용자가 유료 음악 API를 제외하고 AI CLI 호출을 요청했다. Codex CLI의 기존 ChatGPT 로그인으로 JSON 악보를 작성하고, Soundry 자체 renderer가 로컬에서 WAV를 합성한다. Fal은 현재 구현·제작 경로에서 사용하지 않는다.
 
-## 후속 Phase 8 후보
+## 실행과 데이터 경계
 
-`fal-ai/stable-audio-3/medium/text-to-audio`를 instrumental 첫 후보로 선택한다. live schema는 duration 1–380초, WAV/FLAC, seed를 지원한다. BPM/genre/mood는 프롬프트 지시로만 전달하며 실제 측정 metadata로 복사하지 않는다. vocal capability는 첫 adapter에서 지원하지 않는다.
+설치된 Codex CLI 0.136.0의 ChatGPT 로그인 상태와 실제 제한 JSON 응답을 확인했다. shell 없는 subprocess, 빈 작업폴더, read-only sandbox, 개인 config 및 외부 tool 비활성화, stdin·output-schema를 사용한다. 실제 요청에서 tool item 없이 agent_message 하나와 정상 JSON을 받았다. 이는 연결 검증이며 완성 음악 검증과는 구분한다.
 
-- [공식 endpoint](https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio)
-- [공식 schema](https://fal.ai/models/fal-ai/stable-audio-3/medium/text-to-audio/api)
-- [Stable Audio 3 공식 발표](https://stability.ai/news-updates/meet-stable-audio-3-the-model-family-built-for-artistic-experimentation-with-open-weight-models)
+- [공식 비대화형 실행](https://learn.chatgpt.com/docs/non-interactive-mode)
+- [공식 인증 방식](https://learn.chatgpt.com/docs/auth)
 
-조회 가격은 $0.0376/audio이며 20곡 1회씩의 추정값은 $0.752다. 실제 실행 직전 가격·스키마와 성공 결과를 확인한다. 품질을 듣기 전 가장 우수한 모델이라고 단정하지 않는다. 대안 조회 결과: MiniMax Music 3 $0.002/초(duration 상한, 조기 종료 가능), ElevenLabs Music v2.5 $0.60/분(분 단위 올림), ACE-Step $0.0002/초.
-
-권장 입력은 prompt, duration=150, output_format=wav, seed, num_inference_steps=8, enable_prompt_expansion=false, enable_safety_checker=true, sync_mode=false다. endpoint schema를 실제 구현 때 다시 읽는다.
-
-## 전송·저장 경계
-
-prompt/settings만 전송하며 사용자 참조 음원을 업로드하지 않는다. MCP 생성은 submit_job→check_job→get_job_result로 같은 request ID를 추적한다. `store_payload:false`, `expiration_seconds:86400`을 사용한다. backend는 `FAL_KEY`를 비밀 환경 변수로 받으며 frontend/URL/로그에 노출하지 않는다.
-
-- [Fal 보관 설정](https://fal.ai/docs/documentation/model-apis/media-expiration): JSON IO 보관과 media 보관은 별개, backend `X-Fal-Store-IO: 0` 사용.
-- [Fal CDN](https://fal.ai/docs/documentation/model-apis/fal-cdn): 공식 예시 fal.media, v3.fal.media, v3b.fal.media. HTTPS/host/IP/redirect 검사와 bounded streaming 필요.
-- [Queue](https://fal.ai/docs/documentation/model-apis/inference/queue): 실행 중 취소와 과금 중단은 보장하지 않는다. 앱 자동 재요청 금지.
-- [Fal 약관](https://fal.ai/legal/terms-of-service): 결과 독창성·비침해 보증으로 표현하지 않는다.
-
-WAV 응답의 MIME이 application/octet-stream일 수 있어 실제 RIFF/WAVE bytes로 검사한다. 원격 URL을 DB의 원본 경로로 저장하지 않는다.
+추가 음악 API 비용·키·자동충전은 없다. 기존 계정 사용 한도와 텍스트 전송 정책은 적용된다. 로컬 합성은 악보의 화성·멜로디·드럼·섹션을 자체 악기로 연주하며 연주곡만 지원한다. 고정 Mock 데모와 CLI가 작곡한 결과는 명확히 구분한다.
 
 ## 테스트 제작 제안
 
@@ -61,3 +47,5 @@ WAV 응답의 MIME이 application/octet-stream일 수 있어 실제 RIFF/WAVE by
 [SoundCloud 업로드 요구](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)는 무손실 stereo WAV/FLAC, 최소 16bit/44.1kHz, headroom을 권장한다. 실제 오디오 길이 90–180초, 디코딩, 클리핑·긴 무음·종료를 검사한다. MP3를 변환해 원래부터 무손실이었다고 표시하지 않는다.
 
 이번 요청은 일반 업로드용 파일 준비다. SoundCloud for Artists 수익화·외부 유통 승인을 보장하지 않는다. [AI distribution 제한](https://help.soundcloud.com/hc/en-us/articles/48881707977627-Distribution-Rejections-How-to-Resolve-Them), [AI partners](https://help.soundcloud.com/hc/en-us/articles/22353035482523-DAW-AI-Integrations).
+
+현재 로컬 합성기는 고정 BPM과 자체 악기 음색을 사용한다. 콘셉트의 808 글라이드·와우 기타·자유 템포 같은 표현은 작곡 방향이며 해당 오디오 효과나 템포 자동화를 구현했다고 주장하지 않는다.

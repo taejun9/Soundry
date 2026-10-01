@@ -4,7 +4,7 @@
 
 Soundry는 한 사용자의 loopback 웹앱이다. DB·음원·생성 이력은 설정한 로컬 data root에 저장한다. 로그인, 원격 hosting/storage, telemetry, analytics를 추가하지 않는다. local-first는 실제 AI 모델이 반드시 로컬에서 추론한다는 뜻이 아니다.
 
-MockProvider에는 외부 호출이 없다. 실제 원격 공급자를 선택한 경우에만 backend에서 prompt/settings를 전송하고 UI에 전송 대상을 표시한다. 라이선스·보관 정책·요금은 해당 공급자 공식 문서를 Phase 8에서 확인한다. 지금은 특정 보관 기간이나 상업 사용 가능성을 주장하지 않는다.
+기본 CLI 공급자는 사용자가 생성 버튼을 눌렀을 때 음악 prompt/settings를 설치된 Codex CLI에 전달한다. CLI는 기존 ChatGPT 로그인으로 AI 작곡 요청을 전송하며 계정 정책과 한도가 적용된다. Soundry는 인증 파일을 읽거나 복사하지 않고 API키 환경변수를 child에 전달하지 않는다. 오디오 합성과 저장은 로컬이며 유료 음악 API fallback은 없다. MockProvider는 외부 호출이 없다. 보관 기간이나 상업 사용 가능성을 임의로 보장하지 않는다.
 
 ## 키와 기록
 

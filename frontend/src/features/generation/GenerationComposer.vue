@@ -4,7 +4,8 @@ import type { GenerationInput, SettingKey } from '../../../../shared/contracts';
 import StudioIcon from '../../components/StudioIcon.vue';
 import ModalDialog from '../../components/ModalDialog.vue';
 import { GENRE_PRESETS } from './genres';
-import { maxVariations, supportsSetting } from './composer-input';
+import { providerName as displayProviderName } from './provider-display';
+import { maxVariations, seedCharacterLimit, supportsSetting } from './composer-input';
 import type { ComposerDraft, ReusableGeneration } from './composer-input';
 import { useComposer } from './useComposer';
 import { useProvider } from './useProvider';
@@ -27,12 +28,24 @@ async function requestGeneration() {
   if (!available.value || props.submitting || props.blocked) return;
   const input = validate();
   if (input) emit('submit', input, sourceGenerationId.value ?? undefined);
-  else { await nextTick(); promptField.value?.focus(); }
+  else {
+    await nextTick();
+    const field = Object.keys(errors.value)[0] ?? 'prompt';
+    const suffix = field === 'durationSeconds' ? 'duration' : field === 'variationCount' ? 'variations' : field;
+    const firstInvalid = document.getElementById(`${id}-${suffix}`);
+    if (firstInvalid instanceof HTMLElement) {
+      const advanced = firstInvalid.closest('details');
+      if (advanced instanceof HTMLDetailsElement) advanced.open = true;
+      firstInvalid.focus();
+    } else promptField.value?.focus();
+  }
 }
 const caps = computed(() => provider.value?.capabilities ?? null);
 const preset = computed(() => GENRE_PRESETS.find(item => item.id === selectedPreset.value));
 const variationLimit = computed(() => maxVariations(caps.value));
-const providerName = computed(() => provider.value?.isMock ? 'Mock' : provider.value?.id ?? '공급자');
+const providerName = computed(() => provider.value?.isMock ? 'Mock' : provider.value ? displayProviderName(provider.value.id) : '공급자');
+const isCli = computed(() => provider.value?.id === 'cli' && !provider.value.isMock);
+const seedLimit = computed(() => seedCharacterLimit(provider.value?.id));
 const modeHelp = computed(() => {
   if (!caps.value) return '공급자 정보를 확인한 뒤 선택할 수 있어요.';
   if (caps.value.modes.length === 1) return caps.value.modes[0] === 'instrumental' ? '현재 공급자는 연주곡만 지원합니다.' : '현재 공급자는 보컬 음악만 지원합니다.';
@@ -42,6 +55,8 @@ function supported(key: SettingKey) { return supportsSetting(caps.value, key); }
 function supportHelp(key: SettingKey) {
   if (!provider.value) return '공급자 정보를 확인한 뒤 선택할 수 있어요.';
   if (!supported(key)) return `현재 ${providerName.value}에서는 이 설정을 지원하지 않아요.`;
+  if (isCli.value && key === 'seed') return '선택 사항 · 64자 이내. 같은 악보의 로컬 합성에 사용할 값이며, AI 작곡 결과가 같아지는 것을 보장하지 않습니다.';
+  if (isCli.value && key === 'durationSeconds') return '90–180초 · 비워 두면 150초(2분 30초)로 만듭니다.';
   const range = key === 'bpm' ? caps.value?.bpmRange : key === 'durationSeconds' ? caps.value?.durationRangeSeconds : undefined;
   return range ? `선택 범위 ${range.min}–${range.max}${key === 'durationSeconds' ? '초' : ' BPM'}. 비워 두면 자동으로 결정합니다.` : '선택 사항 · 비워 두면 자동으로 결정합니다.';
 }
@@ -115,20 +130,20 @@ onMounted(() => { void reload(); });
       <p v-if="presetNotice" class="preset-notice" role="status">{{ presetNotice }}</p>
       <p v-if="sourceGenerationId" class="source-note composer-source">이전 작업에서 가져온 입력입니다. 생성하면 새 작업으로 저장되고 원본은 유지됩니다.</p>
 
-      <div class="variation-row"><div><label :for="`${id}-variations`" class="field-label">한 번에 만들 곡 수</label><p :id="`${id}-variations-help`" class="field-help">{{ provider ? `현재 공급자는 최대 ${variationLimit}곡을 지원해요.` : '공급자 정보를 확인하고 있어요.' }}</p></div><select :id="`${id}-variations`" v-model.number="draft.variationCount" class="text-input variation-select" :disabled="!provider" :aria-describedby="`${id}-variations-help`" @blur="touch('variationCount')"><option v-for="count in 4" :key="count" :value="count" :disabled="count > variationLimit">{{ count }}곡</option></select></div>
+      <div class="variation-row"><div><label :for="`${id}-variations`" class="field-label">한 번에 만들 곡 수</label><p :id="`${id}-variations-help`" class="field-help">{{ provider ? `현재 공급자는 최대 ${variationLimit}곡을 지원해요.` : '공급자 정보를 확인하고 있어요.' }}</p></div><select :id="`${id}-variations`" v-model.number="draft.variationCount" class="text-input variation-select" :disabled="!provider" :aria-invalid="Boolean(visibleError('variationCount'))" :aria-describedby="`${id}-variations-help`" @blur="touch('variationCount')"><option v-for="count in 4" :key="count" :value="count" :disabled="count > variationLimit">{{ count }}곡</option></select></div>
       <p v-if="visibleError('variationCount')" class="field-error" role="alert">{{ visibleError('variationCount') }}</p>
 
       <details class="advanced-settings"><summary><span><StudioIcon name="sliders" />세부 설정<span class="optional-label">선택</span></span><StudioIcon name="chevron" /></summary><p class="advanced-intro">프롬프트만으로 시작해도 괜찮아요. 지원하지 않는 설정은 선택할 수 없습니다.</p>
         <div class="settings-grid">
-          <div class="setting-field setting-wide"><label :for="`${id}-mode`" class="field-label">음악 유형</label><select :id="`${id}-mode`" v-model="draft.mode" class="text-input" :disabled="!provider" :aria-describedby="`${id}-mode-help`" @blur="touch('mode')"><option value="">공급자 기본값</option><option value="instrumental" :disabled="!caps?.modes.includes('instrumental')">연주곡 · 보컬 없음</option><option value="vocal" :disabled="!caps?.modes.includes('vocal')">보컬 포함</option></select><p :id="`${id}-mode-help`" class="field-help">{{ modeHelp }}</p><p v-if="visibleError('mode')" class="field-error" role="alert">{{ visibleError('mode') }}</p></div>
+          <div class="setting-field setting-wide"><label :for="`${id}-mode`" class="field-label">음악 유형</label><select :id="`${id}-mode`" v-model="draft.mode" class="text-input" :disabled="!provider" :aria-invalid="Boolean(visibleError('mode'))" :aria-describedby="`${id}-mode-help`" @blur="touch('mode')"><option value="">공급자 기본값</option><option value="instrumental" :disabled="!caps?.modes.includes('instrumental')">연주곡 · 보컬 없음</option><option value="vocal" :disabled="!caps?.modes.includes('vocal')">보컬 포함</option></select><p :id="`${id}-mode-help`" class="field-help">{{ modeHelp }}</p><p v-if="visibleError('mode')" class="field-error" role="alert">{{ visibleError('mode') }}</p></div>
           <div class="setting-field"><label :for="`${id}-genre`" class="field-label">장르</label><input :id="`${id}-genre`" v-model="draft.genre" class="text-input" :list="`${id}-genres`" maxlength="80" placeholder="자동" :disabled="!supported('genre')" :aria-describedby="`${id}-genre-help`" :aria-invalid="Boolean(visibleError('genre'))" @blur="touch('genre')" /><datalist :id="`${id}-genres`"><option v-for="item in GENRE_PRESETS" :key="item.id" :value="item.label" /></datalist><p :id="`${id}-genre-help`" class="field-help">{{ supportHelp('genre') }}</p><p v-if="visibleError('genre')" class="field-error" role="alert">{{ visibleError('genre') }}</p></div>
           <div class="setting-field"><label :for="`${id}-mood`" class="field-label">분위기</label><input :id="`${id}-mood`" v-model="draft.mood" class="text-input" maxlength="80" placeholder="예: 차분하고 몽환적인" :disabled="!supported('mood')" :aria-describedby="`${id}-mood-help`" :aria-invalid="Boolean(visibleError('mood'))" @blur="touch('mood')" /><p :id="`${id}-mood-help`" class="field-help">{{ supportHelp('mood') }}</p><p v-if="visibleError('mood')" class="field-error" role="alert">{{ visibleError('mood') }}</p></div>
           <div class="setting-field"><label :for="`${id}-bpm`" class="field-label">빠르기 · BPM</label><input :id="`${id}-bpm`" :value="draft.bpm" type="number" inputmode="decimal" step="any" :min="caps?.bpmRange?.min ?? 0.001" :max="caps?.bpmRange?.max" class="text-input" placeholder="자동" :disabled="!supported('bpm')" :aria-describedby="`${id}-bpm-help`" :aria-invalid="Boolean(visibleError('bpm'))" @input="setNumber('bpm', $event)" @blur="touch('bpm')" /><p :id="`${id}-bpm-help`" class="field-help">{{ supportHelp('bpm') }}</p><p v-if="visibleError('bpm')" class="field-error" role="alert">{{ visibleError('bpm') }}</p></div>
           <div class="setting-field"><label :for="`${id}-duration`" class="field-label">길이 · 초</label><input :id="`${id}-duration`" :value="draft.durationSeconds" type="number" inputmode="decimal" step="any" :min="caps?.durationRangeSeconds?.min ?? 0.001" :max="caps?.durationRangeSeconds?.max" class="text-input" placeholder="자동" :disabled="!supported('durationSeconds')" :aria-describedby="`${id}-duration-help`" :aria-invalid="Boolean(visibleError('durationSeconds'))" @input="setNumber('durationSeconds', $event)" @blur="touch('durationSeconds')" /><p :id="`${id}-duration-help`" class="field-help">{{ supportHelp('durationSeconds') }}</p><p v-if="visibleError('durationSeconds')" class="field-error" role="alert">{{ visibleError('durationSeconds') }}</p></div>
-          <div class="setting-field setting-wide"><label :for="`${id}-seed`" class="field-label">시드 <span class="optional-label">같은 설정으로 결과 비교</span></label><input :id="`${id}-seed`" v-model="draft.seed" class="text-input" maxlength="120" placeholder="자동" :disabled="!supported('seed')" :aria-describedby="`${id}-seed-help`" :aria-invalid="Boolean(visibleError('seed'))" @blur="touch('seed')" /><p :id="`${id}-seed-help`" class="field-help">{{ supportHelp('seed') }}</p><p v-if="visibleError('seed')" class="field-error" role="alert">{{ visibleError('seed') }}</p></div>
+          <div class="setting-field setting-wide"><label :for="`${id}-seed`" class="field-label">시드 <span class="optional-label">{{ isCli ? '로컬 합성 값 · 선택' : '같은 설정으로 결과 비교' }}</span></label><input :id="`${id}-seed`" v-model="draft.seed" class="text-input" :maxlength="seedLimit" placeholder="자동" :disabled="!supported('seed')" :aria-describedby="`${id}-seed-help`" :aria-invalid="Boolean(visibleError('seed'))" @blur="touch('seed')" /><p :id="`${id}-seed-help`" class="field-help">{{ supportHelp('seed') }}</p><p v-if="visibleError('seed')" class="field-error" role="alert">{{ visibleError('seed') }}</p></div>
         </div>
       </details>
-      <div class="composer-submit"><button class="button button-primary full-width" type="submit" :disabled="!available || submitting || blocked" :aria-describedby="`${id}-availability`"><StudioIcon name="plus" />{{ submitting ? '작업 접수 중…' : provider?.isMock ? '8초 데모 생성' : '음악 생성' }}</button><p :id="`${id}-availability`" class="field-help">{{ blocked && !submitting ? '이전 요청의 접수 여부를 먼저 확인해 주세요.' : !available ? '공급자 연결과 생성 가능 여부를 확인해 주세요.' : provider?.isMock ? '고정된 8초 데모 음원을 저장합니다. 프롬프트에 맞춘 새 작곡은 하지 않습니다.' : '입력한 프롬프트와 설정을 연결한 음악 공급자에게 전송합니다.' }}</p></div>
+      <div class="composer-submit"><button class="button button-primary full-width" type="submit" :disabled="!available || submitting || blocked" :aria-describedby="`${id}-availability`"><StudioIcon name="plus" />{{ submitting ? '작업 접수 중…' : provider?.isMock ? '8초 데모 생성' : isCli ? 'AI 작곡 시작' : '음악 생성' }}</button><p :id="`${id}-availability`" class="field-help">{{ blocked && !submitting ? '이전 요청의 접수 여부를 먼저 확인해 주세요.' : !available ? '공급자 연결과 생성 가능 여부를 확인해 주세요.' : provider?.isMock ? '고정된 8초 데모 음원을 저장합니다. 프롬프트에 맞춘 새 작곡은 하지 않습니다.' : isCli ? 'Codex 로그인 계정으로 프롬프트와 설정 텍스트를 전송합니다. WAV는 로컬에서 합성하며 계정 사용 한도가 적용됩니다.' : '입력한 프롬프트와 설정을 연결한 음악 공급자에게 전송합니다.' }}</p></div>
     </form>
     <p class="draft-privacy"><StudioIcon name="lock" /><span>{{ restored ? '이 탭에서 작성하던 내용을 복원했어요. ' : '' }}작성 내용은 이 탭에서만 임시 보관되며, 새로고침하면 사라집니다.</span></p>
   </section>

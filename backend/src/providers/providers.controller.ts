@@ -9,7 +9,8 @@ export class ProvidersController {
   constructor(@Inject(ProviderService) private readonly providers: ProviderService) {}
 
   @Get('current')
-  current(): ProviderSummary {
+  async current(): Promise<ProviderSummary> {
+    await this.providers.refreshConfiguration();
     return this.providers.summary();
   }
 }

@@ -1,6 +1,6 @@
 # Phase별 구현 계획
 
-**현재 gate: 2026-09-30 전체 구현 승인, Phase 1–7·9·10 Mock 흐름 검증, Phase 8 실제 생성 gate 대기.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
+**현재 gate: 2026-09-30 전체 구현 승인, Phase 1–7·9·10 Mock 흐름 검증, Phase 8 CLI 작곡·로컬 WAV E2E 검증 완료.** 사용자 요청은 실제 화면 QA·UI/UX 개선 및 90–180초 테스트 음원 제작까지 포함한다. 실제 Phase마다 `docs/exec_plans/active/plan-NNN-<task>.md`를 만든다. 초기 설계는 plan-001-project-base, bootstrap은 plan-002다.
 
 | Phase | 범위 | 사용자 확인 가능한 완료 기준 | 검증 |
 |---|---|---|---|
@@ -11,7 +11,7 @@
 | 5 Job flow | persisted state + FIFO, polling, cancellation/retry, 저장 | 202 즉시 접수, 기존 UI 사용 가능, 새로고침·실패 설명 | idempotency, queue cap, restart, timeout, cancel race, 디스크/부분 batch 실패 |
 | 6 Player | singleton audio, seek/volume, streaming Range | track 전환 시 동시에 한 곡, route 이동 재생 유지 | play promise race, pause/ended/error, Range/HEAD, 실제 browser 청취 |
 | 7 History / Compare | generation 그룹, 재사용/재생성, track rename/delete | 과거 이력 보존, 여러 결과를 빠르게 전환·비교 | FK/파일 정합성, 두 generation 회귀, prompt 재사용 |
-| 8 Real provider | 하나의 실제 공급자, backend key, local 수집 | 실제 생성 결과를 로컬 저장·재생하고 전송 경계를 표시 | 공식 schema/기능/비용 확인, 키 누출 검사, timeout/취소, 한 번의 실제 생성 |
+| 8 CLI composition | 기존 CLI 로그인, JSON 악보, 로컬 WAV 합성 | 실제 생성 결과를 로컬 저장·재생하고 전송 경계를 표시 | 공식 schema/기능/비용 확인, 키 누출 검사, timeout/취소, 한 번의 실제 생성 |
 | 9 Library / Favorites | favorite persistence와 전역 목록 | project에 걸친 즐겨찾기 조회, 미상 metadata 표시 | 저장/조회/삭제 연동, 페이지 이동 |
 | 10 Export / Polish / QA | 원본 다운로드, 오류/접근성/반응형 개선, README | 실행부터 생성·비교·재시작·다운로드까지 한 흐름 | byte/포맷 일치, clean install, Chrome/Safari smoke, 전체 QA 후 리뷰 |
 
@@ -23,9 +23,9 @@ Node 24 LTS/npm 단일 도구로 설치한다. 두 dev process 종료·오류 �
 
 root에 실제로 동작하는 lint/typecheck/test/build/qa 명령을 구성하되 아직 테스트할 동작이 없는 경우 가짜 pass test를 만들지 않는다. 빈 smoke를 통과했다고 기능 완료를 주장하지 않는다.
 
-## 실제 provider가 아직 없을 때
+## CLI 생성 정책
 
-Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자 승인된 범위 내에서 독립적인 Phase 9–10을 진행할 수 있으나 실제 AI 작곡 완료로 보고하지 않는다. 키를 묻기 전에 후보의 기능·포맷·비용·데이터 전송을 정리한다. 원격 요청은 사용자가 승인한 음원 제작 범위에서 공급자·비용·전송 경계를 확인한 뒤 실행한다. 키는 채팅에 요청하거나 출력하지 않고 backend 환경 설정으로만 받는다.
+Phase 8은 Codex CLI 작곡과 로컬 WAV 합성으로 구현한다. 음악 입력 텍스트는 기존 ChatGPT 로그인 계정으로 전송하며 계정 한도가 적용된다. 앱에는 API 키를 받지 않고 유료 음악 API fallback을 두지 않는다. 실제 요청곡 생성·저장·화면 재생·원본 다운로드를 확인한 뒤 완료로 기록한다.
 
 ## 보고 및 완료 절차
 
@@ -33,4 +33,8 @@ Phase 8은 명시적으로 보류하고 Mock workflow를 유지한다. 사용자
 
 ## 실행 기록 연결
 
-Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. Phase 3 작성 화면은 plan-005-workspace-form이다. Phase 4 MockProvider는 plan-006-mock-provider이다. Phase 5 생성 흐름은 plan-007-job-flow이다. Phase 6 플레이어는 plan-008-player이다. Phase 7은 plan-009-history-tracks다. Phase 8은 별도 plan-010-real-provider에서 구현·자동 검증했으며 실제 생성 검증은 키/잔액 준비 후 수행한다. Phase 9 보관함은 plan-011-library-favorites다. Phase 10 최종 검증과 사용 준비는 plan-012-release-polish이며 Mock 흐름 범위에서 완료했다. 실제 생성과 20곡은 별도 active 계획에 남아 있다.
+Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-projects-storage다. 사용자 요청의 별도 테스트 음원 제작은 독립 worktree의 plan-004-test-music에서 병행한다. Phase 3 작성 화면은 plan-005-workspace-form이다. Phase 4 MockProvider는 plan-006-mock-provider이다. Phase 5 생성 흐름은 plan-007-job-flow이다. Phase 6 플레이어는 plan-008-player이다. Phase 7은 plan-009-history-tracks다. Phase 8의 과거 plan-010 유료 provider 변경은 main에 병합하지 않고 보존했으며, 사용자 요청에 따라 plan-013 CLI 방식으로 대체한다. Phase 9 보관함은 plan-011-library-favorites다. Phase 10 최종 검증과 사용 준비는 plan-012-release-polish이며 Mock 흐름 범위에서 완료했다. 20곡 전체 제작은 별도 active 계획에 남아 있다.
+
+2026-10-01 사용자 요청으로 유료 Fal 방식을 제외했다. plan-013-cli-generation은 설치된 Codex CLI의 기존 ChatGPT 로그인으로 작곡하고 로컬에서 WAV를 렌더링한다. 이전 Fal key/잔액은 더 이상 진행 조건이 아니다. 실제 곡 생성·화면 QA를 새로운 완료 근거로 사용하며, 20곡의 원래 길이와 콘셉트 요구를 유지한다.
+
+plan-013은 실제150초 CLI 곡 생성·로컬저장·IAB재생/탐색/일시정지·원본SHA/Range검사를 완료했다. 자동433 tests 및 adapter/renderer 독립리뷰PASS. 20곡 전체 제작과 Downloads 전달은 plan004의 별도 완료 조건이다.

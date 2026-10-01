@@ -150,4 +150,4 @@ Vue `ref/reactive/computed`와 composable + app-level provide/inject로 시작�
 
 [Phase 1–10 계획](../product/implementation-roadmap.md)의 gate를 순서대로 통과한다. 2026-09-30 Phase 1–10 구현 승인을 기록했으며 각 Phase 완료 gate를 지킨다.
 
-별도 Phase 8 작업에서 Fal Stable Audio 3 Medium을 선정하고 공식 schema·가격·전송 정책에 맞춘 adapter를 구현했다. 키/잔액 준비 후 실제 생성 gate를 통과하기 전까지 main은 Mock workflow를 유지한다. 실제 생성 품질과 이용 권리는 자동 QA나 설계 승인으로 확정하지 않는다.
+2026-10-01 사용자가 유료 공급자를 제외하고 CLI 호출로 변경했다. 이전 Fal 구현은 미병합 상태로 보존하고 plan-013에서 Codex CLI의 JSON 악보 작곡과 자체 로컬 WAV 렌더링을 연결한다. 기존 로그인만 사용하며 유료 API fallback은 없다. 실제 생성·재생·다운로드 gate를 직접 검증한다.

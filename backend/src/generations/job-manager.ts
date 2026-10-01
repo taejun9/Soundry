@@ -4,6 +4,8 @@ import { and, eq, inArray } from 'drizzle-orm';
 import type { GenerationInput, GenerationStage } from '../../../shared/contracts.js';
 import { DatabaseService } from '../database/database.service.js';
 import { generations, tracks } from '../database/schema.js';
+import { ProviderError } from '../providers/provider-error.js';
+import { CLI_GENERATION_TIMEOUT_MS } from '../providers/cli-provider.js';
 import { ProviderService } from '../providers/provider.service.js';
 import type { ProviderTrack } from '../providers/music-generation-provider.js';
 import { StorageService } from '../storage/storage.service.js';
@@ -78,7 +80,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     @Inject(StorageService) private readonly storage: BatchStorage,
     @Inject(GENERATION_RUNTIME) private readonly runtime: GenerationRuntime,
   ) {
-    if (!Number.isFinite(runtime.timeoutMs) || runtime.timeoutMs < 1 || runtime.timeoutMs > DEFAULT_GENERATION_TIMEOUT_MS) throw new Error('INVALID_GENERATION_TIMEOUT');
+    if (!Number.isFinite(runtime.timeoutMs) || runtime.timeoutMs < 1 || runtime.timeoutMs > CLI_GENERATION_TIMEOUT_MS) throw new Error('INVALID_GENERATION_TIMEOUT');
   }
 
   get accepting(): boolean { return !this.closing; }
@@ -186,6 +188,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       if (active.reason === 'shutdown') this.fail(id, 'SERVER_RESTARTED', restartMessage);
       else if (active.reason === 'timeout') this.fail(id, 'GENERATION_TIMEOUT', '생성 시간이 초과되었습니다. 입력을 확인한 뒤 다시 생성해 주세요.');
+      else if (active.reason !== 'cancelled' && error instanceof ProviderError) this.fail(id, error.code, error.message);
       else if (active.reason !== 'cancelled') {
         const code = error instanceof StorageError ? error.code : batch ? 'STORAGE_FAILED' : 'PROVIDER_FAILED';
         const message = code === 'INVALID_AUDIO' ? '생성된 음원을 검증하지 못했습니다. 다시 생성해 주세요.'
@@ -196,6 +199,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
       }
     } finally {
       clearTimeout(timeout);
+      active.controller.abort();
       if (batch) this.discard(batch);
       this.stages.delete(id);
       if (this.active === active) this.active = undefined;

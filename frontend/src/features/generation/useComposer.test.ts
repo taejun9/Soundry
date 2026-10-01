@@ -5,7 +5,43 @@ import { forgetProjectDraft, useComposer } from './useComposer';
 
 const mock: ProviderSummary = { id: 'mock', model: 'demo-fixture', isMock: true, configured: true, generationEnabled: false, notice: 'Demo', capabilities: { modes: ['instrumental'], settings: [], maxVariations: 4, seedSupported: false, canCancelRemote: false } };
 
+const cli: ProviderSummary = { id: 'cli', model: 'test-composer', isMock: false, configured: true, generationEnabled: true, notice: 'AI composition and local synthesis', capabilities: { modes: ['instrumental'], settings: ['genre', 'mood', 'bpm', 'durationSeconds', 'seed'], maxVariations: 4, seedSupported: true, canCancelRemote: false, bpmRange: { min: 40, max: 220 }, durationRangeSeconds: { min: 90, max: 180 } } };
+
 describe('tab-memory composer lifecycle', () => {
+  it('keeps CLI defaults on the server and validates actual seed/range boundaries before submission', () => {
+    const scope = effectScope(); const composer = scope.run(() => useComposer('cli-input', ref(cli)))!;
+    composer.draft.prompt = 'A layered original instrumental';
+    expect(composer.validate()).toEqual({ prompt: composer.draft.prompt, settings: {}, variationCount: 2 });
+    Object.assign(composer.draft, { mode: 'instrumental', genre: 'Jazz', mood: 'Warm', bpm: '220', durationSeconds: '180', seed: 's'.repeat(64), variationCount: 4 });
+    expect(composer.validate()?.settings).toEqual({ mode: 'instrumental', genre: 'Jazz', mood: 'Warm', bpm: 220, durationSeconds: 180, seed: 's'.repeat(64) });
+    composer.draft.seed += 's';
+    expect(composer.validate()).toBeNull(); expect(composer.errors.value.seed).toContain('64');
+    composer.draft.seed = ''; composer.draft.durationSeconds = '89'; composer.draft.bpm = '221'; composer.draft.mode = 'vocal';
+    expect(composer.validate()).toBeNull(); expect(Object.keys(composer.errors.value).sort()).toEqual(['bpm', 'durationSeconds', 'mode']);
+    scope.stop(); forgetProjectDraft('cli-input');
+  });
+
+  it('clears a legacy long seed when the provider changes to CLI or its input is reused, while preserving the original idea', async () => {
+    const provider = ref<ProviderSummary>({ ...cli, id: 'other' });
+    const scope = effectScope(); const composer = scope.run(() => useComposer('cli-legacy', provider))!;
+    composer.draft.prompt = 'Keep this idea'; composer.draft.seed = 's'.repeat(100);
+    expect(composer.validate()?.settings.seed).toHaveLength(100);
+    provider.value = cli; await nextTick();
+    expect(composer.draft.seed).toBe(''); expect(composer.draft.prompt).toBe('Keep this idea'); expect(composer.capabilityNotice.value).toBeTruthy();
+    composer.reuse({ generationId: 'past', prompt: 'Previous idea', settings: { seed: 's'.repeat(65), durationSeconds: 30 }, variationCount: 2 });
+    expect(composer.validate()?.settings).toEqual({}); expect(composer.sourceGenerationId.value).toBe('past'); expect(composer.capabilityNotice.value).toContain('초기화');
+    scope.stop(); forgetProjectDraft('cli-legacy');
+  });
+
+  it('disables an otherwise valid CLI draft until installation and login are ready', async () => {
+    const provider = ref<ProviderSummary>({ ...cli, configured: false, generationEnabled: false });
+    const scope = effectScope(); const composer = scope.run(() => useComposer('cli-unavailable', provider))!;
+    composer.draft.prompt = 'Keep this private draft';
+    expect(composer.readyToGenerate.value).toBe(false);
+    provider.value = cli; await nextTick(); expect(composer.readyToGenerate.value).toBe(true);
+    expect(composer.draft.prompt).toBe('Keep this private draft');
+    scope.stop(); forgetProjectDraft('cli-unavailable');
+  });
   it('restores only the selected project and forgets a deleted project', () => {
     const provider = ref<ProviderSummary | null>(mock);
     const firstScope = effectScope();

@@ -1,3 +1,4 @@
+import { ProviderError } from '../providers/provider-error.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { constants, lstatSync, renameSync, rmdirSync, unlinkSync } from 'node:fs';
@@ -116,7 +117,7 @@ export class StorageService implements BatchStorage {
     } catch (error) {
       this.discardBatch(moved);
       if (signal.aborted) cancelled(signal);
-      if (error instanceof StorageError) throw error;
+      if (error instanceof StorageError || error instanceof ProviderError) throw error;
       throw new StorageError('STORAGE_FAILED');
     } finally {
       if (directoryIdentity) {

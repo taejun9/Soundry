@@ -1,7 +1,7 @@
 import { computed, onScopeDispose, ref } from 'vue';
 import type { CreateGenerationRequest, GenerationInput, GenerationSummary, TrackSummary } from '../../../../shared/contracts';
 import * as generationApi from '../../api/generations';
-import { ApiError, errorMessage } from '../../api/client';
+import { ApiError, errorMessage, isCliSetupError } from '../../api/client';
 
 export const isPending = (job: GenerationSummary) => job.status === 'queued' || job.status === 'processing';
 const uncertainRequests = new Map<string, CreateGenerationRequest>();
@@ -134,7 +134,7 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
     } catch (reason) {
       if (disposed) return;
       if (!uncertain.value || uncertain.value.requestKey !== body.requestKey) return;
-      if (reason instanceof ApiError && reason.status >= 400 && reason.status < 500 && reason.status !== 408) {
+      if (reason instanceof ApiError && ((reason.status >= 400 && reason.status < 500 && reason.status !== 408) || isCliSetupError(reason))) {
         clearUncertain(body.requestKey);
         submitError.value = errorMessage(reason);
       } else {

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { ProviderService, readMusicProvider } from './provider.service.js';
 
 describe('selected provider configuration', () => {
-  it('defaults to mock and accepts only the explicit mock value', () => {
-    expect(readMusicProvider(undefined)).toBe('mock');
+  it('defaults to CLI while retaining explicit mock mode', () => {
+    expect(readMusicProvider(undefined)).toBe('cli');
+    expect(readMusicProvider('cli')).toBe('cli');
     expect(readMusicProvider('mock')).toBe('mock');
     const providers = new ProviderService('mock');
     expect(providers.current.id).toBe('mock');

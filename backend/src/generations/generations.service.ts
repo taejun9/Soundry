@@ -7,7 +7,7 @@ import { DatabaseService } from '../database/database.service.js';
 import { generations, projects, tracks } from '../database/schema.js';
 import { trackSummary } from '../tracks/track-summary.js';
 import { ProviderService } from '../providers/provider.service.js';
-import { canonicalSettings, encodeGenerationCursor, validateCreateGeneration } from './generation-request.js';
+import { canonicalSettings, encodeGenerationCursor, storedInputCapabilities, validateCreateGeneration } from './generation-request.js';
 import type { GenerationCursor } from './generation-request.js';
 import { JobManager, MAX_ACTIVE_GENERATIONS } from './job-manager.js';
 
@@ -74,7 +74,7 @@ export class GenerationsService {
   }
 
   create(projectId: string, body: unknown): CreateGenerationResult {
-    const input = validateCreateGeneration(body, this.providers.current.capabilities);
+    const input = validateCreateGeneration(body, storedInputCapabilities);
     const settingsJson = canonicalSettings(input.settings);
     const result = this.database.db.transaction(() => {
       this.projectExists(projectId);
@@ -85,6 +85,9 @@ export class GenerationsService {
         }
         return { id: existing.id, created: false };
       }
+      validateCreateGeneration(body, this.providers.current.capabilities);
+      this.providers.validateInput(input);
+      this.providers.assertConfigured();
       if (!this.jobs.accepting) throw new AppError(503, 'SERVER_STOPPING', '서버가 종료 중입니다. 다시 연결한 뒤 제출해 주세요.');
       if (input.sourceGenerationId) {
         const source = this.database.db.select({ projectId: generations.projectId }).from(generations).where(eq(generations.id, input.sourceGenerationId)).get();

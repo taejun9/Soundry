@@ -9,7 +9,7 @@ import { ProvidersController } from './providers/providers.controller.js';
 import { ProviderService } from './providers/provider.service.js';
 import { GenerationsController } from './generations/generations.controller.js';
 import { GenerationsService } from './generations/generations.service.js';
-import { DEFAULT_GENERATION_TIMEOUT_MS, GENERATION_RUNTIME, JobManager } from './generations/job-manager.js';
+import { GENERATION_RUNTIME, JobManager } from './generations/job-manager.js';
 import { StorageService } from './storage/storage.service.js';
 import type { ApplicationOptions } from './app.js';
 import { TracksController } from './tracks/tracks.controller.js';
@@ -23,7 +23,7 @@ export class AppModule {
       controllers: [HealthController, ProjectsController, ProvidersController, GenerationsController, TracksController],
       providers: [
         { provide: StorageConfig, useValue: storage }, { provide: ProviderService, useValue: providers },
-        { provide: GENERATION_RUNTIME, useValue: { timeoutMs: options.generationTimeoutMs ?? DEFAULT_GENERATION_TIMEOUT_MS } },
+        { provide: GENERATION_RUNTIME, useValue: { timeoutMs: options.generationTimeoutMs ?? providers.timeoutMs } },
         options.storageOverride ? { provide: StorageService, useValue: options.storageOverride } : StorageService,
         DatabaseService, ProjectsService, GenerationsService, JobManager, TracksService,
       ],

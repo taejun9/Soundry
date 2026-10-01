@@ -30,6 +30,28 @@ beforeEach(() => { vi.useFakeTimers(); forgetGenerationRequest('project-one'); }
 afterEach(() => { scopes.splice(0).forEach(scope => scope.stop()); forgetGenerationRequest('project-one'); vi.useRealTimers(); });
 
 describe('generation request lifecycle', () => {
+  it.each(['CLI_NOT_INSTALLED', 'CLI_LOGIN_REQUIRED', 'CLI_AUTH_UNSUPPORTED', 'CLI_UNAVAILABLE'])('treats a confirmed preflight %s rejection as unsubmitted without automatic retries', async code => {
+    const { api, state } = setup();
+    api.createGeneration.mockRejectedValueOnce(new ApiError('설치 또는 로그인을 확인해 주세요.', 503, code));
+    await state.submit({ prompt: 'Original CLI idea', settings: {}, variationCount: 1 });
+    expect(state.uncertain.value).toBeNull(); expect(state.jobs.value).toEqual([]); expect(state.submitError.value).toContain('로그인');
+    await vi.advanceTimersByTimeAsync(30_000); expect(api.createGeneration).toHaveBeenCalledTimes(1);
+    await state.submit({ prompt: 'Updated idea after configuration', settings: {}, variationCount: 1 });
+    expect(api.createGeneration).toHaveBeenCalledTimes(2);
+    expect(api.createGeneration.mock.calls[1]?.[1].requestKey).not.toBe(api.createGeneration.mock.calls[0]?.[1].requestKey);
+  });
+
+  it.each(['CLI_LIMIT_REACHED', 'CLI_TIMEOUT', 'CLI_FAILED', 'CLI_INVALID_OUTPUT', 'CLI_OUTPUT_TOO_LARGE'])('keeps %s as a terminal failure with no result or automatic composition retry', async errorCode => {
+    const { api, state } = setup();
+    const pending = jobFixture({ provider: 'cli', model: 'test-composer', status: 'processing', stage: 'generating' });
+    api.listGenerations.mockResolvedValueOnce({ items: [pending], nextCursor: null });
+    api.getGeneration.mockResolvedValueOnce({ ...pending, status: 'failed', stage: null, errorCode, errorMessage: '작곡을 완료하지 못했어요. 원인을 확인해 주세요.', finishedAt: '2026-10-01T00:00:03.000Z' });
+    await state.refresh(); await vi.advanceTimersByTimeAsync(2000);
+    expect(state.jobs.value[0]).toMatchObject({ status: 'failed', errorCode, errorMessage: expect.stringContaining('원인'), tracks: [] });
+    expect(state.pendingCount.value).toBe(0); expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(30_000); expect(api.createGeneration).not.toHaveBeenCalled(); expect(api.getGeneration).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps an immutable uncertain request and reconfirms with its original key only on user action', async () => {
     const { api, state } = setup();
     api.createGeneration.mockRejectedValueOnce(new ApiError('offline', 0, 'NETWORK_ERROR'));

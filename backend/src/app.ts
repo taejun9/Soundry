@@ -8,6 +8,7 @@ import { createLocalBoundary, readUiPort } from './config/local-boundary.js';
 import { StorageConfig } from './config/storage-config.js';
 import { ProviderService } from './providers/provider.service.js';
 import type { MusicGenerationProvider } from './providers/music-generation-provider.js';
+import type { CompositionRunner } from './providers/cli-runner.js';
 import type { BatchStorage } from './storage/storage.types.js';
 
 export interface ApplicationOptions {
@@ -16,13 +17,14 @@ export interface ApplicationOptions {
   musicProvider?: string;
   /** In-process integration test dependencies, never environment or HTTP options. */
   providerOverride?: MusicGenerationProvider;
+  cliRunnerOverride?: CompositionRunner;
   storageOverride?: BatchStorage;
   generationTimeoutMs?: number;
 }
 
 export async function createApplication(options: ApplicationOptions = {}): Promise<NestExpressApplication> {
   const uiPort = readUiPort(options.uiPort ?? process.env.UI_PORT);
-  const providers = new ProviderService(options.musicProvider ?? process.env.MUSIC_PROVIDER, options.providerOverride);
+  const providers = new ProviderService(options.musicProvider ?? process.env.MUSIC_PROVIDER, options.providerOverride, options.cliRunnerOverride);
   const storage = new StorageConfig(options.dataDir);
   const app = await NestFactory.create<NestExpressApplication>(AppModule.register(storage, providers, options), {
     logger: false,

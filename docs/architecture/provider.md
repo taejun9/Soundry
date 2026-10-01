@@ -75,12 +75,16 @@ Soundry는 job ID, project ID, 경로, filename, DB transaction을 소유한다.
 - 테스트에서 지연·실패·취소·잘못된 bytes를 제어할 수 있게 dependency를 주입하되 실제 앱 UI에 디버그 옵션을 노출할 필요는 없다.
 - 어떠한 외부 네트워크·키 없이 workflow를 끝낼 수 있어야 한다.
 
-## 실제 provider 도입 gate
+## Codex CLI 작곡 공급자
 
-Phase 8에서 fal.ai, local model 또는 다른 API 중 하나를 선택하고 endpoint의 공식 문서·모델명·입출력 schema·포맷·취소·시간 제한·비용·이용 조건을 기록한다. 지금은 fal adapter나 특정 모델명·요금을 만들어 넣지 않는다.
+2026-10-01 사용자 요청으로 유료 음악 API를 제외했다. `cli`는 설치된 Codex CLI를 shell 없이 실행하고 stdin으로 프롬프트·선택 설정을 전달한다. 기존 ChatGPT 로그인만 허용하며 API 키 환경변수를 전달하지 않는다. 기본 provider는 cli, 명시적 mock은 계속 지원한다.
 
-외부 provider이면 프롬프트와 선택 설정이 전송된다는 설명을 생성 UI에 표시한다. key는 backend `.env`에만 둔다. 참조 오디오 전송은 현재 범위에 없으므로 구현하지 않는다. 자동 재시도는 없고 사용자의 Retry는 새 작업/외부 비용을 발생시킬 수 있다.
+CLI 응답은 JSON schema로 제한된 악보다. Soundry는 섹션·패턴·악기·음표의 타입/범위/개수/연산량을 다시 검증한 뒤 자체 renderer로 stereo 44.1kHz PCM16 WAV를 만든다. 모델이 반환한 코드나 명령을 실행하지 않는다. 고정 fixture 복제나 음원 반복 연장으로 실제 작곡 성공을 대신하지 않는다.
 
-원격 URL은 adapter가 검증한 공급자 host/HTTPS에서만 가져온다. redirect 대상도 같은 정책으로 검사하고 내부 주소를 거부한다. 파일을 bounded streaming으로 받아 media signature·크기·포맷을 검증한다. 현재 저장 구현은 선택된 공급자의 WAV(PCM 또는 IEEE-float32)를 검증한다. MP3 등 다른 출력이 필요하면 해당 공급자 계획에서 검증기를 먼저 확장한다. 앱 전체 기본 파일 상한은 track당 100 MiB로 두되 모델 선정 시 예상 길이에 맞춰 명시적으로 재검토한다. 이를 통과한 결과를 StorageService에 전달하며 원격 URL을 영구 audioPath로 저장하지 않는다.
+기능은 instrumental, genre/mood, BPM 40–220, duration 90–180초(기본150), seed 문자열 최대64자, variations1–4다. BPM은 실제 합성에 사용된 악보 tempo이며 오디오 분석값을 추정한 것이 아니다. seed는 합성의 미세 연주·음색 재현에 사용하며 같은 LLM 출력까지 보장하지 않는다.
 
-provider가 취소를 지원하지 않더라도 로컬 결과 수집을 중단하고 늦은 성공을 폐기한다. UI는 로컬 취소와 공급자 과금 중단을 같은 뜻으로 표시하지 않는다. 재시작 후 외부 job이 계속될 수 있으므로 자동 중복 요청은 하지 않는다.
+CLI는 빈 전용 임시 폴더, read-only sandbox, 명시적 비대화형 실행, 개인 config·MCP·shell 등 도구 비활성화, 제한된 환경·출력 크기·시간을 사용한다. 앱은 인증 파일을 읽거나 복사하지 않는다. 사용자 기본 CLI 설정을 수정하지 않으며 기존 실행 안전 규칙을 무시하지 않는다. 취소 시 현재 subprocess를 종료하고 늦은 결과를 버린다. renderer도 반복적으로 event loop를 양보하고 AbortSignal을 검사한다.
+
+설치/로그인 상태를 비동기로 확인해 기존 프로젝트·재생 화면을 막지 않는다. 미준비 상태에서 신규 생성은 명확히 거부하지만, 이미 접수한 동일 requestKey는 기존 작업을 반환한다. 실패 시 원시 stderr·내부 경로·프롬프트를 공개하지 않고 정제한 오류를 표시한다. 자동 새 요청·유료 API fallback은 없다.
+
+CLI를 통한 텍스트 추론에는 기존 계정의 전송 정책과 사용 한도가 적용된다. 완전 오프라인·무제한 무료 음악 모델이라고 표시하지 않는다. 음원 합성과 저장은 로컬이며 노래·가창은 지원하지 않는다. 실제 작곡부터 저장·재생·다운로드까지 검증한 뒤 완료로 기록한다.

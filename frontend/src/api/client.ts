@@ -5,6 +5,17 @@ export class ApiError extends Error {
   }
 }
 
+const cliSetupErrors: Record<string, string> = {
+  CLI_NOT_INSTALLED: 'Codex CLI를 찾을 수 없어요. CLI를 설치한 뒤 공급자 정보를 다시 확인해 주세요.',
+  CLI_LOGIN_REQUIRED: 'Codex CLI 로그인이 필요해요. ChatGPT 계정으로 로그인한 뒤 공급자 정보를 다시 확인해 주세요.',
+  CLI_AUTH_UNSUPPORTED: 'Codex CLI를 ChatGPT 계정으로 로그인해 주세요. API 키 로그인은 지원하지 않습니다.',
+  CLI_UNAVAILABLE: 'Codex CLI 상태를 확인하지 못했어요. CLI 실행 상태를 확인한 뒤 공급자 정보를 다시 불러와 주세요.',
+};
+
+export function isCliSetupError(error: unknown): error is ApiError {
+  return error instanceof ApiError && error.status === 503 && Object.hasOwn(cliSetupErrors, error.code);
+}
+
 function responseError(payload: unknown, status: number): ApiError {
   let code = 'REQUEST_FAILED';
   let message = '요청을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.';
@@ -15,6 +26,7 @@ function responseError(payload: unknown, status: number): ApiError {
       if (status < 500 && 'message' in error && typeof error.message === 'string') message = error.message;
     }
   }
+  if (status === 503 && Object.hasOwn(cliSetupErrors, code)) message = cliSetupErrors[code]!;
   if (status === 404) message = '요청한 항목을 찾을 수 없어요.';
   if (status === 409 && code === 'PROJECT_BUSY') message = '진행 중인 음악 생성이 있어요. 작업을 취소하거나 완료된 뒤 삭제해 주세요.';
   return new ApiError(message, status, code);
