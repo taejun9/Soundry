@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, useId } from 'vue';
 import type { DeleteResult, ProjectSummary } from '../../../../shared/contracts';
-import { createProject, deleteProject, renameProject } from '../../api/projects';
+import { createProject, renameProject } from '../../api/projects';
 import { errorMessage } from '../../api/client';
 import ModalDialog from '../../components/ModalDialog.vue';
+import { useAudioPlayer } from '../../audio/context';
+import { deleteProjectWithPlayback } from './deleteProject';
+
+const player = useAudioPlayer();
 
 const props = defineProps<{ mode: 'create' | 'rename' | 'delete'; project?: ProjectSummary }>();
 const emit = defineEmits<{ close: []; saved: [project: ProjectSummary]; deleted: [result: DeleteResult] }>();
@@ -30,7 +34,7 @@ async function submit() {
   busy.value = true;
   try {
     if (props.mode === 'delete' && props.project) {
-      const result = await deleteProject(props.project.id, controller.signal);
+      const result = await deleteProjectWithPlayback(props.project.id, controller.signal, player);
       if (active) emit('deleted', result);
     } else {
       const project = props.mode === 'rename' && props.project

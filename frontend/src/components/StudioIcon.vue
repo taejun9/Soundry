@@ -1,5 +1,9 @@
 <script setup lang="ts">
 const paths = {
+  play: 'm8 4 13 8-13 8V4Z',
+  pause: 'M7 4v16M17 4v16',
+  download: 'M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4',
+  volume: 'm11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',
   chevron: 'm6 9 6 6 6-6',
   edit: 'm16 3 5 5M4 20l5-1L21 7a2 2 0 0 0-5-4L4 15v5Z',
   trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',

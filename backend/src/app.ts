@@ -28,6 +28,8 @@ export async function createApplication(options: ApplicationOptions = {}): Promi
     logger: false,
     bodyParser: false,
     abortOnError: false,
+    // A paused audio download must not keep shutdown and the data-root lock pending.
+    forceCloseConnections: true,
   });
   app.disable('x-powered-by');
   app.set('trust proxy', false);

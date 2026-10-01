@@ -1,5 +1,6 @@
 import type { CreateGenerationRequest, GenerationSettings, GenerationSummary, Page, TrackSummary } from '../../../shared/contracts';
 import { ApiError, requestJson } from './client';
+import { hasLocalTrackUrls } from '../audio/track-urls';
 
 const record = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const nullableString = (value: unknown) => value === null || typeof value === 'string';
@@ -15,7 +16,7 @@ function settings(value: unknown): value is GenerationSettings {
 }
 function isTrack(value: unknown): value is TrackSummary {
   return record(value) && ['id', 'projectId', 'generationId', 'title', 'prompt', 'audioUrl', 'downloadUrl', 'mimeType', 'provider'].every(key => typeof value[key] === 'string') &&
-    typeof value.variationIndex === 'number' && Number.isInteger(value.variationIndex) && value.variationIndex >= 0 && value.variationIndex < 4 &&
+    hasLocalTrackUrls(value as unknown as TrackSummary) && typeof value.variationIndex === 'number' && Number.isInteger(value.variationIndex) && value.variationIndex >= 0 && value.variationIndex < 4 &&
     positive(value.byteSize) && Number.isInteger(value.byteSize) && nullablePositive(value.durationSeconds) && nullablePositive(value.bpm) &&
     ['genre', 'mood', 'seed', 'model'].every(key => nullableString(value[key])) && typeof value.favorite === 'boolean' && date(value.createdAt);
 }

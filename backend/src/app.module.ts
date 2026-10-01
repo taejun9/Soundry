@@ -12,18 +12,20 @@ import { GenerationsService } from './generations/generations.service.js';
 import { DEFAULT_GENERATION_TIMEOUT_MS, GENERATION_RUNTIME, JobManager } from './generations/job-manager.js';
 import { StorageService } from './storage/storage.service.js';
 import type { ApplicationOptions } from './app.js';
+import { TracksController } from './tracks/tracks.controller.js';
+import { TracksService } from './tracks/tracks.service.js';
 
 @Module({})
 export class AppModule {
   static register(storage: StorageConfig, providers: ProviderService, options: ApplicationOptions): DynamicModule {
     return {
       module: AppModule,
-      controllers: [HealthController, ProjectsController, ProvidersController, GenerationsController],
+      controllers: [HealthController, ProjectsController, ProvidersController, GenerationsController, TracksController],
       providers: [
         { provide: StorageConfig, useValue: storage }, { provide: ProviderService, useValue: providers },
         { provide: GENERATION_RUNTIME, useValue: { timeoutMs: options.generationTimeoutMs ?? DEFAULT_GENERATION_TIMEOUT_MS } },
         options.storageOverride ? { provide: StorageService, useValue: options.storageOverride } : StorageService,
-        DatabaseService, ProjectsService, GenerationsService, JobManager,
+        DatabaseService, ProjectsService, GenerationsService, JobManager, TracksService,
       ],
     };
   }

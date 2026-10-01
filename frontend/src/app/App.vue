@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, provide, ref, watch } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import StudioIcon from '../components/StudioIcon.vue';
 import ConnectionStatus from '../components/ConnectionStatus.vue';
+import AudioPlayer from '../audio/AudioPlayer.vue';
+import { createAudioController } from '../audio/controller';
+import { audioControllerKey } from '../audio/context';
+
+const player = createAudioController(new Audio(), window.location.href);
+provide(audioControllerKey, player);
+onBeforeUnmount(() => player.dispose());
 
 const route = useRoute();
 const menuOpen = ref(false);
@@ -50,6 +57,7 @@ watch(() => route.fullPath, async () => {
         <RouterView />
       </main>
       <footer class="studio-footer"><span>아이디어부터, 한 곡씩.</span><span>Made for your sound.</span></footer>
+      <AudioPlayer />
     </div>
   </div>
 </template>

@@ -1,6 +1,6 @@
 # Local REST API 설계
 
-base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 조회/편집/재생/다운로드 endpoint는 후속 Phase의 계약이다.
+base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 원본 재생/다운로드도 구현했다. 트랙 조회/편집·보관함 endpoint는 후속 Phase의 계약이다.
 
 ## 공통 계약
 
@@ -54,7 +54,7 @@ Track DTO는 id, projectId, generationId, variationIndex, title, prompt, audioUr
 
 ## 재생/다운로드
 
-원본 bytes와 일치하는 Content-Type, Content-Length, Accept-Ranges를 제공한다. 단일 유효 Range는 206 + Content-Range, unsatisfiable은 416, Range가 없으면 200이다. 다중 Range는 MVP에서 무시하고 full 200을 보내는 정책으로 고정한다. HEAD는 GET과 같은 metadata만 반환한다. 대용량 파일은 stream으로 처리한다.
+원본 bytes와 일치하는 Content-Type, Content-Length, Accept-Ranges를 제공한다. 단일 유효 Range는 206 + Content-Range, unsatisfiable은 416, Range가 없으면 200이다. 다중 Range는 MVP에서 무시하고 full 200을 보내는 정책으로 고정한다. HEAD는 Range를 무시하고 full GET의 metadata와 빈 body를 반환한다. malformed Range는 full 200으로 처리하며 validator를 제공하지 않는 현재 구현은 If-Range가 있으면 full 200을 반환한다. 대용량 파일은 stream으로 처리한다.
 
 track title은 표시용이며 CR/LF·경로 구분자 등을 제거한 안전한 attachment filename으로만 변환한다. UUID audioPath를 사용자 filename으로 덮어쓰지 않는다. 지원하지 않는 WAV/MP3 변환 요청은 추가하지 않고 원본 포맷을 내려준다.
 
