@@ -372,6 +372,9 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .track-copy { min-width: 0; flex: 1; }
 .track-copy h3 { font-size: 12px; font-weight: 560; overflow-wrap: anywhere; line-height: 1.6; }
 .track-copy p { font-size: 9px; color: #aec0bf; line-height: 1.7; margin-top: 3px; overflow-wrap: anywhere; }
+.track-musical-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; }
+.track-bpm { white-space: nowrap; }
+.track-genre { min-width: 0; overflow-wrap: anywhere; }
 .playback-pending { font-size: 9px; color: #a6b4b6; border: 1px solid #506363; padding: 4px 6px; border-radius: 4px; margin-left: auto; }
 .history-footnote { color: #91a5af; font-size: 10px; line-height: 1.8; margin-top: 24px; }
 .history-error { font-size: 11px; }

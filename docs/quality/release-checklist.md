@@ -71,3 +71,7 @@ git diff --check
 ## 끝마디 실사용 보완
 
 [plan-014 리뷰](../reviews/plan-014-score-endings.md):마지막반복의부분마디를정확한요청길이로마감하도록수정했다. 기존실패악보의parse/150초렌더와새실제CLI팝곡의앱저장·다운로드PASS. 현재전체41files/443tests및lint/type/build/base/audioPASS,독립리뷰추가P1/P2없음. 앞선433개는plan013완료시점기록이다.
+
+## 최종 모바일 곡 정보 표시
+
+[plan-015 리뷰](../reviews/plan-015-track-metadata-spacing.md): 실제 20곡 점검에서 발견한 BPM·긴 장르명 붙음 현상을 보완했다. frontend lint/type/build·base/diff 및 독립 소스·모바일 이미지 리뷰 PASS. 실제 320px/1280px에서 가로 넘침 없이 BPM 묶음과 장르 간격을 확인했다. 누락값은 기존 v-if의 소스 검토 범위이며 이번 표시 변경에서 전체 443개 테스트를 재실행하지는 않았다.
