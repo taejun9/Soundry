@@ -1,3 +1,7 @@
+/**
+ * 공급자 선택 설정과 공개 summary의 정보 경계를 검증한다.
+ * 기본 CLI/명시 Mock을 구분하고 오타 fallback·내부 설정 노출·capability 객체의 외부 변경을 막는다.
+ */
 import { describe, expect, it } from 'vitest';
 import { ProviderService, readMusicProvider } from './provider.service.js';
 
@@ -18,6 +22,7 @@ describe('selected provider configuration', () => {
     }
   });
 
+  // 허용 필드를 정확히 비교하고 반환 capability를 변경해도 다음 summary가 영향을 받지 않아야 한다.
   it('returns only public, independent summary data', () => {
     const providers = new ProviderService('mock');
     const summary = providers.summary();

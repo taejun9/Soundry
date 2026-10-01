@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 저장된 입력의 복사·작성칸 재사용·결과 이동을 제공한다.
+ * 복사는 브라우저 권한 실패를 안내하고 재사용/결과 이동의 실제 처리는 상위 화면이 결정한다.
+ */
 import { onBeforeUnmount, ref, watch } from 'vue';
 import type { PromptSummary } from '../../../../shared/contracts';
 import StudioIcon from '../../components/StudioIcon.vue';
@@ -9,8 +13,10 @@ const { items, nextCursor, loading, error, refresh, more } = usePromptHistory(pr
 const notice = ref(''); let active = true; let copying = 0;
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const settingsLabels: Record<string, string> = { mode: '유형', genre: '장르', mood: '분위기', bpm: 'BPM', durationSeconds: '길이(초)', seed: '시드' };
+/** 저장된 선택 설정을 한국어 이름과 함께 표시한다. 빈 설정에는 값을 추정해 넣지 않는다. */
 function settingsText(item: PromptSummary) { return Object.entries(item.settings).map(([key, value]) => `${settingsLabels[key]}: ${key === 'mode' ? value === 'instrumental' ? '연주곡' : '보컬' : value}`).join(' · '); }
 const statuses = { queued: '대기', processing: '처리 중', completed: '완료', failed: '실패', cancelled: '취소' };
+/** 연속 복사 요청에서는 마지막 결과만 안내하고 clipboard가 없거나 거부되면 수동 선택 방법을 알려준다. */
 async function copy(item: PromptSummary) {
   const request = ++copying;
   try { await navigator.clipboard.writeText(item.prompt); if (active && request === copying) notice.value = '프롬프트를 복사했어요.'; }
@@ -20,6 +26,7 @@ watch(() => props.refreshKey, () => { void refresh(); }, { immediate: true });
 onBeforeUnmount(() => { active = false; });
 </script>
 <template>
+  <!-- 접힌 프롬프트는 원문을 펼쳐 선택할 수 있다. 재사용은 입력 가져오기이고 결과 보기는 저장 이력으로 이동한다. -->
   <section class="panel prompt-history" aria-labelledby="prompt-history-title">
     <div class="section-heading"><h2 id="prompt-history-title">프롬프트 이력</h2><button type="button" class="icon-button" aria-label="프롬프트 이력 새로고침" :disabled="loading" @click="refresh"><StudioIcon name="refresh" /></button></div>
     <p class="history-status">예전 아이디어를 가져와 새로운 음악으로 이어가세요. 결과가 없는 작업도 남아 있어요.</p>

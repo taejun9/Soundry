@@ -1,15 +1,21 @@
+/**
+ * 단일 플레이어의 곡 전환, pause/ended/error와 play Promise 경쟁을 검증한다.
+ * FakeAudio의 이벤트와 지연 Promise를 직접 제어하여 실제 브라우저 타이밍에 의존하지 않고 늦은 응답을 재현한다.
+ */
 import { describe, expect, it } from 'vitest';
 import { createAudioController, type AudioPort } from './controller';
 import { trackFixture } from '../features/generation/test-fixtures';
 import { audioTime } from './time';
 import { FakeAudio } from './test-audio';
 
+/** 각 사례에 독립된 API 대역과 상태 수명을 만들어 다른 테스트의 요청/상태가 섞이지 않게 한다. */
 function setup() {
   const audio = new FakeAudio();
   const player = createAudioController(audio as unknown as AudioPort, 'http://127.0.0.1:5174/projects/demo');
   return { audio, player, track: trackFixture() };
 }
 const secondTrack = () => ({ ...trackFixture(), id: 'track-two', audioUrl: '/api/tracks/track-two/audio', downloadUrl: '/api/tracks/track-two/download', title: 'Second song' });
+/** 테스트 대역의 재생 시작을 확정하여 이후 이름 변경/삭제가 재생 상태에 주는 영향을 검사한다. */
 async function start(context: ReturnType<typeof setup>) {
   const pending = context.player.toggle(context.track);
   context.audio.ready(); context.audio.requests[0]!.resolve(); await pending;

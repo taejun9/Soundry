@@ -1,3 +1,7 @@
+/**
+ * 작성 중인 문자열 초안과 서버로 보낼 GenerationInput 사이의 순수 변환·검증 경계.
+ * 빈 선택값은 공급자 기본값을 뜻하며, 현재 capability와 앱 상한을 통과한 값만 요청에 넣는다.
+ */
 import type { GenerationInput, GenerationSettings, MusicMode, ProviderCapabilities, SettingKey } from '../../../../shared/contracts';
 
 export interface ComposerDraft {
@@ -11,22 +15,28 @@ export interface ComposerDraft {
   variationCount: number;
 }
 export type ReusableGeneration = GenerationInput & { generationId: string };
+/** 원본 snapshot을 바꾸지 않고 숫자 요청값을 입력칸에서 편집할 문자열로 변환한다. */
 export function draftFromGeneration(input: GenerationInput): ComposerDraft {
   return { prompt: input.prompt, mode: input.settings.mode ?? '', genre: input.settings.genre ?? '', mood: input.settings.mood ?? '', bpm: input.settings.bpm?.toString() ?? '', durationSeconds: input.settings.durationSeconds?.toString() ?? '', seed: input.settings.seed ?? '', variationCount: input.variationCount };
 }
 export type DraftErrors = Partial<Record<keyof ComposerDraft, string>>;
+/** 선택 설정은 비워 두고 기본 요청 수만 2개로 시작한다. 공급자 상한은 후속 정규화에서 반영한다. */
 export function emptyDraft(): ComposerDraft {
   return { prompt: '', mode: '', genre: '', mood: '', bpm: '', durationSeconds: '', seed: '', variationCount: 2 };
 }
+/** seed는 설정 목록과 seedSupported가 모두 참일 때만 활성화한다. */
 export function supportsSetting(caps: ProviderCapabilities | null, key: SettingKey): boolean {
   return Boolean(caps?.settings.includes(key) && (key !== 'seed' || caps.seedSupported));
 }
+/** 공급자 상한이 커도 앱의 최대 4곡 제한을 넘기지 않는다. */
 export function maxVariations(caps: ProviderCapabilities | null): number {
   return Math.min(4, caps?.maxVariations ?? 4);
 }
 
+/** CLI의 입력 계약은 64자이고 기존 공급자 입력과 재사용할 때도 해당 제한을 적용한다. */
 export function seedCharacterLimit(providerId?: string): number { return providerId === 'cli' ? 64 : 120; }
 
+/** 공급자 변경/재사용 시 지원하지 않는 선택값만 초기화한다. prompt와 유효 설정은 보존하고 변경 필드를 알려준다. */
 export function sanitizeDraft(draft: ComposerDraft, caps: ProviderCapabilities, seedLimit = 120): { draft: ComposerDraft; changed: (keyof ComposerDraft)[] } {
   const next = { ...draft };
   if (next.mode && !caps.modes.includes(next.mode)) next.mode = '';
@@ -45,6 +55,7 @@ export function sanitizeDraft(draft: ComposerDraft, caps: ProviderCapabilities, 
   return { draft: next, changed };
 }
 
+/** 제출 단계에서는 범위 초과값을 임의 보정하지 않고 필드 오류를 반환하여 사용자의 의도를 확인하게 한다. */
 export function prepareGenerationInput(draft: ComposerDraft, caps: ProviderCapabilities, seedLimit = 120): { input: GenerationInput | null; errors: DraftErrors } {
   const errors: DraftErrors = {};
   const prompt = draft.prompt.trim();

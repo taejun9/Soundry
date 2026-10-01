@@ -1,3 +1,7 @@
+/**
+ * 음원 이름 변경·삭제와 플레이어/대화상자 수명의 연결을 검증한다.
+ * 실제 controller에 FakeAudio를 주입해 이름만 바꿀 때 재생 위치가 유지되고 삭제 요청 전에는 정지하는지 확인한다.
+ */
 import { effectScope, type EffectScope } from 'vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrackDetail } from '../../../../shared/contracts';
@@ -8,10 +12,14 @@ import { FakeAudio } from '../../audio/test-audio';
 import { trackFixture } from '../generation/test-fixtures';
 import { useTrackDialog } from './useTrackDialog';
 
+/** 응답 완료 순서를 테스트가 제어하여 늦은 응답과 화면 이탈 경쟁을 재현한다. */
 function deferred<T>() { let resolve!: (value: T) => void; let reject!: (error: unknown) => void; const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; }); return { promise, resolve, reject }; }
 const scopes: EffectScope[] = []; const players: ReturnType<typeof createAudioController>[] = [];
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => { scopes.splice(0).forEach(scope => scope.stop()); players.splice(0).forEach(player => player.dispose()); });
+/** 서버가 돌려주는 요청 설정과 실제 음원 정보를 별도로 가진 상세 응답을 만든다. */
 function detail(): TrackDetail { return { ...trackFixture(), requestedSettings: { mode: 'instrumental' }, requestedVariationCount: 2 }; }
+/** 각 사례에 독립된 API 대역과 상태 수명을 만들어 다른 테스트의 요청/상태가 섞이지 않게 한다. */
 function setup() {
   const audio = new FakeAudio(); const player = createAudioController(audio as unknown as AudioPort, 'http://127.0.0.1:5174'); players.push(player);
   const api = { ...trackApi, getTrack: vi.fn().mockResolvedValue(detail()), updateTrack: vi.fn().mockResolvedValue({ ...detail(), title: 'New name' }), deleteTrack: vi.fn().mockResolvedValue({ deleted: true, cleanupPending: false }) };
@@ -19,6 +27,7 @@ function setup() {
   const dialog = scope.run(() => useTrackDialog('track-one', 'project-one', player, api))!;
   return { audio, player, api, scope, dialog };
 }
+/** 테스트 대역의 재생 시작을 확정하여 이후 이름 변경/삭제가 재생 상태에 주는 영향을 검사한다. */
 async function start(context: ReturnType<typeof setup>) { const promise = context.player.toggle(trackFixture()); context.audio.ready(); context.audio.requests[0]!.resolve(); await promise; }
 
 describe('track editing lifecycle', () => {

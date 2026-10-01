@@ -1,3 +1,7 @@
+/**
+ * 보관함 페이지 추가와 이름 변경·즐겨찾기 해제·삭제가 조회와 경쟁하는 경우를 검증한다.
+ * 마지막 표시 항목이 사라져도 이전 페이지가 남아 있으면 다시 읽고 전체 재조회로 불확실한 해제를 확인한다.
+ */
 import { effectScope, type EffectScope } from 'vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LibraryTrackSummary, Page } from '../../../../shared/contracts';
@@ -5,10 +9,14 @@ import { trackFixture } from '../generation/test-fixtures';
 import { useLibrary } from './useLibrary';
 import { useFavorites } from '../tracks/useFavorites';
 import { ApiError } from '../../api/client';
+/** 식별자와 로컬 URL이 서로 맞는 즐겨찾기 음원을 만들어 페이지 중복·삭제 사례에 사용한다. */
 function track(id = 'track-one'): LibraryTrackSummary { return { ...trackFixture(), id, favorite: true, projectName: 'Studio project', audioUrl: `/api/tracks/${id}/audio`, downloadUrl: `/api/tracks/${id}/download` }; }
+/** 응답 완료 순서를 테스트가 제어하여 늦은 응답과 화면 이탈 경쟁을 재현한다. */
 function deferred() { let resolve!: (value: Page<LibraryTrackSummary>) => void; const promise = new Promise<Page<LibraryTrackSummary>>(done => { resolve = done; }); return { promise, resolve }; }
 const scopes: EffectScope[] = [];
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => scopes.splice(0).forEach(scope => scope.stop()));
+/** 각 사례에 독립된 API 대역과 상태 수명을 만들어 다른 테스트의 요청/상태가 섞이지 않게 한다. */
 function setup() { const list = vi.fn().mockResolvedValue({ items: [track()], nextCursor: null }); const scope = effectScope(); scopes.push(scope); const state = scope.run(() => useLibrary(list))!; return { list, scope, state }; }
 
 describe('favorite library state', () => {

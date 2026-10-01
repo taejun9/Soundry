@@ -1,6 +1,6 @@
 # 품질 규칙
 
-프로젝트·생성 이력·단일 플레이어·음원 관리와 보관함을 검증한다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책·DB/API와 frontend 상태 회귀, production build, dev launcher smoke 및 Mock WAV 재현성을 확인한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
+프로젝트·생성 이력·단일 플레이어·음원 관리와 보관함을 검증한다. 문서 구조·저장 경계와 함께 lint, strict 타입 검사, backend 정책·DB/API와 frontend 상태 회귀, production build, dev launcher smoke, Mock WAV 재현성과 음악 제작·패키징 도구의 회귀를 확인한다. 실행되지 않는 명령을 완료한 검증처럼 기록하지 않는다.
 
 ## 계획과 작업 경계
 
@@ -12,7 +12,7 @@
 
 ## 현재 실행할 검증
 
-저장소 루트에서 Python 3.10 이상과 Git으로 실행한다. 별도 Python 패키지는 필요하지 않다.
+아래 문서·저장 경계 검사는 저장소 루트에서 Python 3.10 이상과 Git으로 실행하며 별도 Python 패키지는 필요하지 않다. 전체 `npm run qa`에는 프로젝트의 Node.js/npm과 음악 QA용 NumPy도 필요하다.
 
 ```sh
 python3 harness/scripts/verify_base.py
@@ -39,4 +39,20 @@ QA 결과와 리뷰 판단을 분리한다. 리뷰는 요청 범위 충족, 제�
 
 ## 앱 구현 단계의 추가 검증
 
-현재 명령은 `npm run qa`(lint/typecheck/test/build/base/audio)와 `npm run qa:smoke`(개발 서버·proxy·포트 충돌·종료)다. smoke 전에 다른 Soundry dev 서버를 종료한다. DB 무결성·마이그레이션, 생성 작업 상태 전이·취소·복구, provider 오류, loopback API와 파일 경로 경계, 음원 재생·내보내기 등 위험에 맞는 검증을 각 구현 계획에 배정한다. 존재하지 않는 명령을 현재 QA 통과 조건으로 삼지 않는다.
+현재 명령은 `npm run qa`(lint/typecheck/test/build/base/audio/music)와 `npm run qa:smoke`(개발 서버·proxy·포트 충돌·종료)다. smoke 전에 다른 Soundry dev 서버를 종료한다. DB 무결성·마이그레이션, 생성 작업 상태 전이·취소·복구, provider 오류, loopback API와 파일 경로 경계, 음원 재생·내보내기 등 위험에 맞는 검증을 각 구현 계획에 배정한다. 존재하지 않는 명령을 현재 QA 통과 조건으로 삼지 않는다.
+
+`npm run qa:music`은 `harness/scripts/qa-music.mjs`가 실행한다. launcher는 `SOUNDRY_PYTHON`에 지정한 실행 파일 또는 기본 `python3`에서 Python 3.10 이상과 NumPy를 먼저 확인한다. 준비되지 않았거나 어느 검사든 실패하면 0이 아닌 종료 코드를 반환하며 자동 설치·검사 생략을 하지 않는다. `SOUNDRY_PYTHON`은 음악 QA 전용이며 `qa:base`와 `qa:audio`의 `python3` 선택은 바꾸지 않는다.
+
+```sh
+npm run qa:music
+SOUNDRY_PYTHON=/path/to/python3 npm run qa
+```
+
+두 번째 명령의 `/path/to/python3`는 NumPy를 사용할 수 있는 Python 실행 파일로 바꾼다. 음악 QA는 실제 작곡이나 사용자 음원을 호출하지 않는 다음 경계를 검증한다.
+
+- Node 배치 회귀: 응답 대역으로 requestKey·checkpoint·재개·공급자·로컬 다운로드와 중복 제출 경계를 확인한다.
+- Python 실제 변환: 임시 90초 stereo PCM16을 실제 PCM24로 변환하고 독립 `wave` reader와 신호 검사로 포맷·길이·headroom·원본 보존을 확인한다.
+- Python 20곡 metadata 구성: 이 단계의 변환·복사에만 대역을 적용해 검증된 PCM24 파일을 독립 복제하고 seed 연결·공개 기록·비공개 필드 제외를 확인한다. 서로 다른 20곡의 실제 PCM24 변환을 검증했다고 기록하지 않는다.
+- Python 원본 유지 20곡: 변환/복사 대역 없이 실제 패키징하여 PCM16 바이트·SHA256 일치, 서로 다른 inode와 `nlink=1`, 무변환 기록을 전수 확인한다. 이어 업로드 복사본 수정 뒤 원본 불변과 복제 실패 경계를 검사한다. macOS의 실제 복사는 APFS copy-on-write를 사용한다.
+
+합성 fixture는 전달할 완성 음원에 포함하지 않는다. 테스트 대역의 적용 범위와 실제 파일 검증 범위를 결과 기록에서 구분한다.

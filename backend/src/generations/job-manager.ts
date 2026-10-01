@@ -1,3 +1,7 @@
+/**
+ * 동시 실행 1개의 메모리 FIFO worker다. DB가 상태의 기준이며 queue와 화면 단계는 일시적 상태다.
+ * 공급자·저장·DB 사이의 비동기 경계에서 취소/시간초과/종료를 처리하고 모든 variation을 함께 공개한다.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -24,6 +28,8 @@ const restartMessage = '서버가 종료되어 작업이 중단되었습니다. 
 function abortError(): DOMException { return new DOMException('작업이 중단되었습니다.', 'AbortError'); }
 
 /** Even an adapter that settles late cannot hold the local worker or publish its output. */
+// signal을 무시하는 구현도 로컬 worker를 붙잡지 못하도록 결과와 취소를 경쟁시킨다.
+// 늦게 성공한 결과는 전용 정리 함수로 넘겨 파일/stream이 공개되거나 남지 않게 한다.
 function withCancellation<T>(pending: Promise<T>, signal: AbortSignal, discardLate: (value: T) => void): Promise<T> {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -47,6 +53,7 @@ function withCancellation<T>(pending: Promise<T>, signal: AbortSignal, discardLa
   });
 }
 
+// 공급자 결과도 외부 입력이다. DB commit 전에 모델과 실제 metadata의 타입·유한값·길이를 검사한다.
 function validateMetadata(audio: StoredAudio): void {
   if (typeof audio.model !== 'string' || !audio.model.trim() || audio.model.length > 120 || audio.model.includes('\0')) throw new StorageError('INVALID_AUDIO');
   const { bpm, genre, mood, seed } = audio.metadata;
@@ -56,6 +63,7 @@ function validateMetadata(audio: StoredAudio): void {
   }
 }
 
+// 소비하지 않는 오디오 iterator를 닫되 비협조적인 return()을 기다리지 않는다. 내부 오류 원문은 기록하지 않는다.
 function releaseSources(sources: readonly ProviderTrack[]): void {
   for (const source of sources) {
     try {
@@ -86,6 +94,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
   get accepting(): boolean { return !this.closing; }
   stage(id: string): GenerationStage | null { return this.stages.get(id) ?? null; }
 
+  // 프로세스가 재시작되면 미완료 요청을 실패로 마감한다. 자동 재작곡이나 계정 한도 재사용은 하지 않는다.
   onModuleInit(): void {
     this.database.db.transaction(() => {
       const interrupted = this.database.db.select({ projectId: generations.projectId }).from(generations).where(inArray(generations.status, ['queued', 'processing'])).all();
@@ -94,11 +103,13 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     }, { behavior: 'immediate' });
   }
 
+  // 접수 service의 DB commit 이후 호출된다. 실제 시작은 다음 event-loop turn으로 미뤄 HTTP 응답을 막지 않는다.
   enqueue(id: string): void {
     this.queue.push(id);
     this.schedule();
   }
 
+  // 아직 시작하지 않은 항목은 queue에서 제거한다. 실행 중이면 최초 중단 사유를 보존하고 signal을 전달한다.
   cancel(id: string): void {
     const queued = this.queue.indexOf(id);
     if (queued !== -1) this.queue.splice(queued, 1);
@@ -108,6 +119,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // running/scheduled가 하나만 존재하도록 해 서로 다른 프로젝트도 전역 FIFO 순서로 처리한다.
   private schedule(): void {
     if (this.closing || this.running || this.scheduled || this.queue.length === 0) return;
     this.scheduled = setImmediate(() => {
@@ -126,6 +138,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  // queued/processing에만 조건부 UPDATE한다. 늦은 실패가 completed/cancelled 상태를 되돌릴 수 없다.
   private fail(id: string, code: string, message: string): void {
     this.database.db.transaction(() => {
       const row = this.database.db.select({ projectId: generations.projectId }).from(generations).where(eq(generations.id, id)).get();
@@ -135,12 +148,14 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     }, { behavior: 'immediate' });
   }
 
+  // DB에 공개하지 못한 이번 batch의 파일만 보상 삭제한다. 실패한 정리는 다음 시작 복구 대상으로 남는다.
   private discard(batch: readonly StoredAudio[]): void {
     try {
       if (this.storage.discardBatch(batch)) console.warn('Soundry: 생성 중단 후 일부 임시 음원을 정리하지 못했습니다. 다음 시작 시 정리합니다.');
     } catch { console.warn('Soundry: 생성 중단 후 파일 정리가 필요합니다. 저장 폴더 상태를 확인해 주세요.'); }
   }
 
+  // 짧은 transaction에서 queued를 processing으로 점유한 뒤 긴 공급자/파일 작업은 transaction 밖에서 실행한다.
   private async run(id: string): Promise<void> {
     const row = this.database.db.transaction(() => {
       const current = this.database.db.select().from(generations).where(and(eq(generations.id, id), eq(generations.status, 'queued'))).get();
@@ -169,6 +184,8 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
       if (batch.length !== row.variationCount) throw new StorageError('INVALID_AUDIO');
       for (const audio of batch) validateMetadata(audio);
       const stored = batch;
+      // 모든 파일이 검증·이동된 뒤 트랙 INSERT와 completed 전이를 하나의 transaction으로 묶는다.
+      // 그 사이 취소가 먼저 commit되었다면 결과를 공개하지 않고 finally에서 전체 batch를 정리한다.
       const committed = this.database.db.transaction(() => {
         const current = this.database.db.select({ status: generations.status }).from(generations).where(eq(generations.id, id)).get();
         if (signal.aborted || current?.status !== 'processing') return false;
@@ -184,6 +201,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
         this.database.touchProject(row.projectId);
         return true;
       }, { behavior: 'immediate' });
+      // DB가 파일 참조를 소유하게 된 경우에만 보상 삭제 목록에서 제거한다.
       if (committed) batch = undefined;
     } catch (error) {
       if (active.reason === 'shutdown') this.fail(id, 'SERVER_RESTARTED', restartMessage);
@@ -206,6 +224,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // 신규 접수를 닫고 예약/대기 실행을 비운 뒤 현재 worker를 중단한다. 이 await가 끝나야 DB 종료 훅이 잠금을 해제한다.
   async onModuleDestroy(): Promise<void> {
     this.closing = true;
     if (this.scheduled) clearImmediate(this.scheduled);

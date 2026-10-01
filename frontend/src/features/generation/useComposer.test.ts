@@ -1,3 +1,7 @@
+/**
+ * 탭 메모리 초안의 프로젝트 격리, 공급자 변경, 과거 입력 재사용을 검증한다.
+ * Vue scope 종료를 화면 이탈로 사용하고 공급자 기본값·원본 입력·프롬프트 보존을 함께 확인한다.
+ */
 import { effectScope, nextTick, ref } from 'vue';
 import { describe, expect, it } from 'vitest';
 import type { ProviderSummary } from '../../../../shared/contracts';

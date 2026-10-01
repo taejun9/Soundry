@@ -1,6 +1,6 @@
 # 실행 준비와 출시 체크리스트
 
-기록일: 2026-10-01. Phase 1–7·9는 main `9876ff6` 기준으로 완료했다. 아래 테스트 수는 각 Phase 완료 당시 기록이며 현재 전체 테스트 수와 구분한다. 기존 리뷰의 “후속 Phase” 표현은 그 리뷰 시점의 잔여 범위다.
+최종 갱신일: 2026-10-02. Phase 1–7·9는 main `9876ff6` 기준으로 완료했다. 아래 테스트 수는 각 Phase 완료 당시 기록이며 현재 전체 테스트 수와 구분한다. 기존 리뷰의 “후속 Phase” 표현은 그 리뷰 시점의 잔여 범위다.
 
 Phase 10의 Mock workflow 최종 검증에 이어, plan-013에서 기본 경로를 **Codex CLI 작곡·로컬 WAV 합성**으로 전환했다. 실제 150초 곡의 생성·저장·화면 재생·원본 다운로드를 검증했다. 요청한 20곡의 제작과 Downloads 패키징도 완료했으며 아래에서 앱 검증과 구분해 기록한다.
 
@@ -57,7 +57,7 @@ Chrome·Safari 결과는 표에 적힌 동작만 보장한다. native 화면 자
 
 ## 재현 명령과 데이터 범위
 
-저장소 루트에서 실행한다. 개발 서버 smoke에 필요한 API 3000과 선택한 UI 포트가 비어 있어야 한다.
+전체 QA는 Python 3.10 이상과 NumPy가 필요하며, 기본 Python에 NumPy가 없으면 [README의 SOUNDRY_PYTHON 안내](../../README.md#검증)를 따른다. 저장소 루트에서 실행한다. 개발 서버 smoke에 필요한 API 3000과 선택한 UI 포트가 비어 있어야 한다.
 
 ```sh
 npm ci
@@ -75,3 +75,7 @@ git diff --check
 ## 최종 모바일 곡 정보 표시
 
 [plan-015 리뷰](../reviews/plan-015-track-metadata-spacing.md): 실제 20곡 점검에서 발견한 BPM·긴 장르명 붙음 현상을 보완했다. frontend lint/type/build·base/diff 및 독립 소스·모바일 이미지 리뷰 PASS. 실제 320px/1280px에서 가로 넘침 없이 BPM 묶음과 장르 간격을 확인했다. 누락값은 기존 v-if의 소스 검토 범위이며 이번 표시 변경에서 전체 443개 테스트를 재실행하지는 않았다.
+
+## 전체 코드 설명과 재검증
+
+[plan-016 리뷰](../reviews/plan-016-quality-release.md)와 [전체 검증 기록](plan-016-verification.md): 앱 443 tests, Node 16 tests, Python 21항목 및 lint/typecheck/build/base/audio/smoke PASS. 기존 코드 140개 전수 주석 보강과 QA launcher 추가, 프로세스 테스트 동기화 개선, 실제 IAB 주요 기능·반응형 검증, 기존 Downloads 20곡 전수 검사와 독립 리뷰를 완료했다.

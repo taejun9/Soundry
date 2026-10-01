@@ -21,7 +21,7 @@ CLI 전환은 실제 150초 곡의 생성·저장·화면 재생·탐색·원본
 
 ## 설치와 실행
 
-앱 실행에는 Node.js 24 LTS(24.12 이상, 25 미만)와 npm 11이 필요합니다. 전체 QA에는 Python 3.10 이상과 Git도 사용합니다. 저장소 루트에서 고정된 lockfile로 설치합니다.
+앱 실행에는 Node.js 24 LTS(24.12 이상, 25 미만)와 npm 11이 필요합니다. 전체 QA에는 Python 3.10 이상, NumPy와 Git도 필요합니다. 문서·Mock WAV 검사는 Python 표준 라이브러리만 사용하고, 음악 변환·패키징 QA는 NumPy를 사용합니다. 저장소 루트에서 고정된 lockfile로 설치합니다.
 
 ```sh
 npm ci
@@ -88,9 +88,17 @@ UI_PORT=5174 npm run qa:smoke
 git diff --check
 ```
 
-`qa`는 lint, strict 타입 검사, 자동 테스트, 두 workspace 빌드, 문서·저장 경계 검사와 Mock WAV 검사를 실행합니다. `qa:smoke`는 임시 데이터 폴더로 개발 서버를 띄워 health, Vite proxy, 포트 충돌과 Ctrl-C 종료를 검사합니다. 사용하려는 UI 포트와 API 3000은 비어 있어야 합니다.
+`qa`는 lint, strict 타입 검사, 자동 테스트, 두 workspace 빌드, 문서·저장 경계 검사, Mock WAV 검사와 `qa:music`을 순서대로 실행합니다. `qa:music`은 배치 도구의 Node 회귀 테스트와 Python 음원 변환·패키징 검사를 실행합니다. `qa:smoke`는 임시 데이터 폴더로 개발 서버를 띄워 health, Vite proxy, 포트 충돌과 Ctrl-C 종료를 검사합니다. 사용하려는 UI 포트와 API 3000은 비어 있어야 합니다.
 
-개별 명령은 `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run qa:base`, `npm run qa:audio`입니다. 자동 QA는 실제 AI 작곡·음질이나 모든 브라우저의 동작을 보장하지 않습니다. 브라우저별 확인 결과와 미완료 gate는 [출시 체크리스트](docs/quality/release-checklist.md)에 기록합니다.
+음악 QA는 `harness/scripts/qa-music.mjs`가 Python 3.10 이상과 NumPy를 먼저 확인한 뒤 실행합니다. 기본 `python3`가 이 조건을 충족하지 않으면 아래 `/path/to/python3`를 준비된 Python의 실행 파일 경로로 바꿔 지정합니다. 의존성을 자동 설치하거나 실패한 검사를 건너뛰지 않습니다. `SOUNDRY_PYTHON`은 음악 QA에만 적용되며 문서·Mock WAV 검사는 계속 `python3`를 사용합니다.
+
+```sh
+SOUNDRY_PYTHON=/path/to/python3 npm run qa
+```
+
+음악 QA는 실제 90초 PCM24 변환을 검증합니다. 20곡 metadata 구성 검사에서는 검증된 PCM24 파일을 복제하는 변환 대역과 복사 대역을 사용하며, 별도의 원본 유지 20곡 검사는 대역 없이 바이트·SHA256·독립 파일을 확인합니다. 자세한 범위는 [음악 도구 검증](harness/music/README.md#도구-자체-검증)을 참고합니다.
+
+개별 명령은 `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, `npm run qa:base`, `npm run qa:audio`, `npm run qa:music`입니다. 자동 QA는 실제 AI 작곡·음질이나 모든 브라우저의 동작을 보장하지 않습니다. 브라우저별 확인 결과와 미완료 gate는 [출시 체크리스트](docs/quality/release-checklist.md)에 기록합니다.
 
 ## 구조와 공급자 설정
 
@@ -99,6 +107,8 @@ git diff --check
 - `shared/`: JSON 전송 타입만 공유.
 - `harness/`: 개발 서버 실행·검증 도구와 작업 템플릿.
 - `docs/`: 설계·계획·QA·리뷰 기록.
+
+직접 작성한 프런트엔드·백엔드·공유 타입·검증 도구와 설정 코드에는 모듈 목적, 주요 함수·상태, 비동기·파일 경계, 테스트 의도를 한국어 주석으로 설명합니다. JSON은 표준 문법이 주석을 허용하지 않고, lockfile·빌드 산출물은 도구가 다시 생성하므로 직접 주석을 넣지 않습니다. 이 파일들의 역할과 사용법은 관련 코드와 문서에 설명합니다.
 
 `MUSIC_PROVIDER=cli`가 기본입니다. 기존 Codex 로그인을 CLI가 직접 사용하며 앱은 인증 파일을 읽거나 복사하지 않습니다. 음악 프롬프트와 설정만 작곡 요청에 포함합니다. API 키 환경변수를 CLI에 넘기지 않고, Fal이나 다른 유료 음악 API로 전환하지 않습니다. 인증·네트워크·사용 한도·악보 오류는 생성 실패로 표시합니다.
 

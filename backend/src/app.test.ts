@@ -1,3 +1,7 @@
+/**
+ * 실제 loopback HTTP 요청으로 접근 경계와 정제된 API 오류 계약을 확인한다.
+ * Host/Origin, preflight, 변경 요청 헤더, JSON 크기/압축/구문 오류 및 정보 비노출을 함께 검증한다.
+ */
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -11,12 +15,14 @@ let app: NestExpressApplication;
 let port: number;
 const uiOrigin = 'http://127.0.0.1:5173';
 const temporaryRoots: string[] = [];
+// 매 앱에 임시 저장 루트를 제공해 기본 data 폴더를 만들거나 사용자 DB를 읽지 않도록 한다.
 function testDataDir(): string {
   const root = mkdtempSync('/private/tmp/soundry-boundary-');
   temporaryRoots.push(root);
   return root;
 }
 
+// 브라우저의 자동 CORS 처리를 거치지 않는 Node HTTP로 잘못된 헤더도 직접 보내 서버 자체의 차단을 검증한다.
 function callApi(options: { port?: number; path?: string; method?: string; headers?: Record<string, string>; body?: string } = {}): Promise<HttpResult> {
   return new Promise((resolve, reject) => {
     const body = options.body;
@@ -52,6 +58,7 @@ afterAll(async () => {
   for (const root of temporaryRoots) rmSync(root, { recursive: true, force: true });
 });
 
+// 실제 listener는 임의 포트를 사용하고 Host는 앱이 허용하는 값으로 설정해 네트워크 충돌 없이 정책을 확인한다.
 describe('local API boundary', () => {
   it('returns only the public health contract', async () => {
     const result = await callApi();
@@ -70,6 +77,7 @@ describe('local API boundary', () => {
     expect(summary.capabilities).toEqual({ modes: ['instrumental'], settings: [], maxVariations: 4, seedSupported: false, canCancelRemote: false });
   });
 
+  // X-Forwarded-Host가 허용 주소여도 실제 Host 검증을 우회해서는 안 된다.
   it('rejects a non-allowlisted Host even with an approved forwarded Host', async () => {
     const result = await callApi({ headers: { host: 'attacker.example:3000', 'x-forwarded-host': 'localhost:3000' } });
     expect(result.status).toBe(403);
@@ -139,6 +147,7 @@ describe('local API boundary', () => {
     expect(result.status).toBe(415);
   });
 
+  // 민감해 보이는 합성 입력을 넣고 오류가 이를 반사하지 않는지 확인한다. 실제 비밀 값은 사용하지 않는다.
   it('returns safe JSON for malformed input without reflecting contents', async () => {
     const result = await callApi({ method: 'POST', headers: { origin: uiOrigin, 'content-type': 'application/json' }, body: '{"secret-token"' });
     expect(result.status).toBe(400);
@@ -152,6 +161,7 @@ describe('local API boundary', () => {
     expect(JSON.parse(result.body).error.code).toBe('PAYLOAD_TOO_LARGE');
   });
 
+  // 압축 후 작은 body가 압축 해제로 커지는 경로를 허용하지 않는지 parser 경계에서 확인한다.
   it('rejects compressed JSON bodies before decompression', async () => {
     const result = await callApi({ method: 'POST', headers: { origin: uiOrigin, 'content-type': 'application/json', 'content-encoding': 'gzip' }, body: '{}' });
     expect(result.status).toBe(415);

@@ -1,6 +1,6 @@
 # Soundry 초기 설계
 
-상태: **2026-09-30 사용자 전체 구현 승인, Phase 1–7·9 검증, Phase 8 실제 생성 gate 대기**. 이 문서는 구현 완료를 뜻하지 않는다. 아래 13개 결정은 첨부 기획 28항에 대응한다. 근거와 확인일은 [출처](../references/official-sources.md)에 있다.
+상태: **2026-09-30 사용자 전체 구현 승인, Phase 1–10 구현 및 CLI 실제 생성·20곡 제작 검증 완료**. 이 문서는 설계 결정을 설명하며 최신 실행 근거와 미수행 범위는 [출시 체크리스트](../quality/release-checklist.md)를 따른다. 아래 13개 결정은 첨부 기획 28항에 대응한다. 근거와 확인일은 [출처](../references/official-sources.md)에 있다.
 
 ## 1. 기술 스택
 
@@ -124,7 +124,7 @@ POST는 DB에 queued 저장 후 202와 generation ID를 반환한다. DB 기록 
 
 완료와 취소는 Generation status를 조건으로 한 transaction으로 경쟁을 해결한다. 취소가 먼저 기록되면 늦게 도착한 결과를 저장하지 않고 정리한다. 완료가 먼저면 취소 요청은 terminal 상태를 반환한다. 원격 취소 성공이나 과금 중단은 별도 provider 능력이므로 보장하지 않는다.
 
-MVP batch는 요청한 variations 전체가 검증되어야 completed다. 하나라도 실패하면 batch 전체 failed, staged 파일 정리, 부분 Track은 공개하지 않는다. retry/regenerate는 새 Generation으로 만든다. 오류 후 자동 유료 재시도는 없다. timeout은 Mock 30초, 실제 provider는 Phase 8에서 공급자 문서에 맞춘 유한한 값으로 확정한다.
+MVP batch는 요청한 variations 전체가 검증되어야 completed다. 하나라도 실패하면 batch 전체 failed, staged 파일 정리, 부분 Track은 공개하지 않는다. retry/regenerate는 새 Generation으로 만든다. 오류 후 자동 유료 재시도는 없다. timeout은 Mock 작업 30초, CLI 작곡 호출 240초, 여러 variation의 작곡·합성을 포함한 CLI 작업 전체 20분으로 제한한다.
 
 ## 9. Audio playback
 
@@ -144,7 +144,7 @@ Vue `ref/reactive/computed`와 composable + app-level provide/inject로 시작�
 
 ## 12. MVP 경계
 
-[제품 범위](../product/product.md)에 정의한 CRUD·생성·비교·플레이어·즐겨찾기·원본 다운로드를 포함한다. Mock workflow는 외부 통신 없이 확인 가능해야 한다. 실제 AI는 공급자 선택과 키가 갖춰진 Phase 8에서 검증한다. local-first가 offline AI 추론을 뜻하지 않는다.
+[제품 범위](../product/product.md)에 정의한 CRUD·생성·비교·플레이어·즐겨찾기·원본 다운로드를 포함한다. Mock workflow는 외부 통신 없이 확인 가능해야 한다. 실제 AI는 Phase 8에서 기존 ChatGPT 로그인 기반 Codex CLI 작곡·로컬 합성으로 검증했으며 앱에 API 키를 입력하지 않는다. 검증 근거는 plan-013/014와 테스트 음원 제작 보고서를 따른다. local-first가 offline AI 추론을 뜻하지 않는다.
 
 ## 13. 구현 순서와 미확정 사항
 

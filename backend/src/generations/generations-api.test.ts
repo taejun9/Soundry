@@ -1,3 +1,7 @@
+/**
+ * HTTP 생성 접수부터 실제 Mock WAV 저장·조회·취소·재시작까지 검증한다.
+ * 중복 요청 방지, immutable snapshot, project 경계, 페이지 탐색 및 안전한 오류 DTO를 확인하며 외부 AI는 호출하지 않는다.
+ */
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
@@ -20,6 +24,7 @@ let database: DatabaseService;
 let dataDir: string;
 let port: number;
 
+// 동일 dataDir로 다시 열 수 있는 실제 앱을 만들되 공급자는 지연 없는 Mock 또는 이 테스트의 대역만 쓴다.
 async function start(provider: MusicGenerationProvider = new MockProvider({ delayMs: 0 })): Promise<void> {
   app = await createApplication({ dataDir, uiPort: '5173', musicProvider: 'mock', providerOverride: provider });
   await app.listen(0, '127.0.0.1');
@@ -27,6 +32,7 @@ async function start(provider: MusicGenerationProvider = new MockProvider({ dela
   port = ((app.getHttpServer() as Server).address() as AddressInfo).port;
 }
 
+// JSON을 실제 loopback HTTP로 보내 요청 key·body·상태 코드와 controller 경계까지 함께 검증한다.
 function api<T = unknown>(method: string, path: string, body?: unknown): Promise<Result<T>> {
   return new Promise((resolve, reject) => {
     const content = body === undefined ? undefined : JSON.stringify(body);
@@ -61,6 +67,7 @@ async function create(projectId: string, body: Record<string, unknown> = {}): Pr
   return result.body;
 }
 
+// 고정 sleep 뒤 성공을 가정하지 않고 상태를 유한 시간 polling한다. 다른 최종 상태에 도달하면 즉시 실패시킨다.
 async function waitForStatus(id: string, status: GenerationStatus): Promise<GenerationSummary> {
   const deadline = Date.now() + 5000;
   for (;;) {
@@ -74,6 +81,7 @@ async function waitForStatus(id: string, status: GenerationStatus): Promise<Gene
   }
 }
 
+// 페이지 정렬 검사용 row만 직접 삽입한다. 이 fixture의 존재를 실제 작곡 성공 근거로 사용하지 않는다.
 function seedCompleted(projectId: string, createdAt: string): { id: string; createdAt: string } {
   const id = randomUUID();
   database.client.prepare('INSERT INTO generations (id, project_id, prompt, settings_json, provider, model, status, variation_count, request_key, created_at, started_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -90,6 +98,7 @@ afterEach(async () => {
 });
 
 describe('generation HTTP API', () => {
+  // 순차 재전송뿐 아니라 동시에 같은 requestKey를 보내도 row/provider 실행은 하나여야 한다.
   it('accepts once and returns the same generation for sequential and concurrent identical request keys', async () => {
     const provider = new MockProvider({ delayMs: 20 });
     const generate = vi.spyOn(provider, 'generate');
@@ -115,6 +124,7 @@ describe('generation HTTP API', () => {
     expect(terminalRepeat.body.status).toBe('completed');
   });
 
+  // 키의 유일 범위가 project임을 확인하고 같은 project의 내용 변경은 충돌로 구분한다.
   it('rejects request-key content changes while allowing the same key in another project', async () => {
     await start();
     const first = await project('첫 프로젝트');
@@ -161,6 +171,7 @@ describe('generation HTTP API', () => {
     expect((await api<Page<GenerationSummary>>('GET', `/projects/${owner.id}/generations`)).body.items).toEqual([]);
   });
 
+  // 재시도는 새 row이며 원본을 수정하지 않아야 한다. 다른 project 원본을 참조하는 요청은 차단한다.
   it('accepts an explicit retry only with a source in the same project and preserves the original snapshot', async () => {
     await start();
     const owner = await project();
@@ -217,6 +228,7 @@ describe('generation HTTP API', () => {
     }
   });
 
+  // 완료 상태 외에도 실제 bytes와 SHA·파일 개수·DTO 공개 필드·재시작 후 상태를 확인한다.
   it('saves every actual mock variation, exposes only public DTO fields, and persists completion across restart', async () => {
     await start();
     const owner = await project();
@@ -253,6 +265,7 @@ describe('generation HTTP API', () => {
     expect(readdirSync(join(dataDir, 'audio')).sort()).toEqual(complete.tracks.map((track) => `${track.id}.wav`).sort());
   });
 
+  // 작업 중 삭제 충돌과 queued/processing 취소를 함께 재현해 사용자 경고와 멱등 최종 상태를 검증한다.
   it('blocks active project deletion, cancels queued/processing jobs idempotently, and keeps cancelled sources immutable', async () => {
     await start(new MockProvider({ delayMs: 5000 }));
     const owner = await project();
@@ -288,6 +301,7 @@ describe('generation HTTP API', () => {
     expect(readdirSync(join(dataDir, 'audio'))).toEqual([]);
   });
 
+  // 대역이 임의 내부 오류를 던져도 provider 원문이 공개 DTO에 들어가지 않는지 확인한다.
   it('returns safe failed DTOs without reflecting provider exception details', async () => {
     const provider = new MockProvider();
     vi.spyOn(provider, 'generate').mockRejectedValue(new Error(`synthetic-secret-token https://private.example.test/output?key=synthetic ${dataDir}`));

@@ -1,5 +1,10 @@
+/**
+ * 브라우저 미디어의 비동기 경계를 재현하는 테스트 전용 대역. 실제 음원이나 네트워크를 사용하지 않는다.
+ * play 완료·실패와 metadata/event 시점을 테스트가 직접 결정하여 재생 경쟁을 결정적으로 검증한다.
+ */
 import { vi } from 'vitest';
 
+/** play가 실제로 언제 끝나는지 테스트가 결정하도록 resolve/reject를 외부로 제공한다. */
 function deferred() {
   let resolve!: () => void;
   let reject!: (error: unknown) => void;

@@ -29,3 +29,7 @@
 - [Codex 인증](https://learn.chatgpt.com/docs/auth): ChatGPT 로그인과 API 키 과금 방식 구분. Soundry는 기존 ChatGPT 로그인만 사용하고 유료 API 키 방식은 허용하지 않는다.
 - JSON 악보를 자체 renderer로 합성하는 방식과 악기/시간/연산량 제한은 Soundry의 설계 결정이다. Codex가 WAV를 직접 반환하는 기능이라고 주장하지 않는다.
 - 이전 Fal 후보 조사와 잔액/키 조건은 사용자 요청으로 폐기했다. 현재 구현 근거는 plan-013이며 기존 역사 기록은 당시 상태를 설명한다.
+
+## 업로드 파일 검증 — 2026-10-01
+
+[SoundCloud Upload Requirements](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements): 지원 WAV, stereo, 16-bit/44.1kHz 이상과 −0.5~−1dBFS 권장 headroom을 확인했다. plan-016의 기존20곡 파일 검사에 적용했으며 실제 업로드·계정 잔여량·권리 승인을 의미하지 않는다.

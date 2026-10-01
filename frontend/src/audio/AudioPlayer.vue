@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * App이 제공한 재생 상태를 조작하는 고정 하단 플레이어. 별도의 Audio 인스턴스를 만들지 않는다.
+ * 실제 패널 높이를 측정해 본문 끝이 가려지지 않게 하고 metadata가 없으면 탐색을 비활성화한다.
+ */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { providerResultLabel } from '../features/generation/provider-display';
 import StudioIcon from '../components/StudioIcon.vue';
@@ -12,8 +16,11 @@ const height = ref(76);
 let observer: ResizeObserver | undefined;
 const status = computed(() => state.error ? '재생 오류' : state.loading ? '불러오는 중' : state.ended ? '재생 완료' : state.playing ? '재생 중' : '일시 정지');
 const seekText = computed(() => `${audioTime(state.currentTime)} / ${audioTime(state.duration)}`);
+/** range 입력의 문자열 초를 controller의 유한 범위 검증으로 전달한다. */
 function seek(event: Event) { player.seek(Number((event.target as HTMLInputElement).value)); }
+/** 화면의 0–100% 값을 미디어 API의 0–1 값으로 변환한다. */
 function volume(event: Event) { player.setVolume(Number((event.target as HTMLInputElement).value) / 100); }
+// 오류 문구·반응형 줄바꿈으로 높이가 달라져도 spacer를 실제 높이와 맞춘다.
 onMounted(() => {
   if (!panel.value) return;
   const measure = () => { height.value = Math.ceil(panel.value?.getBoundingClientRect().height ?? 76); };
@@ -23,6 +30,7 @@ onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
+  <!-- 고정 패널의 측정 높이만큼 여백을 예약한다. range의 실제 값과 읽기 쉬운 aria-valuetext를 함께 제공한다. -->
   <div class="player-spacer" :style="{ height: `${height}px` }" aria-hidden="true"></div>
   <section ref="panel" class="audio-player" aria-label="음악 플레이어">
     <div v-if="!state.track" class="player-empty"><span class="player-art"><StudioIcon name="sound" /></span><div><p>어떤 사운드를 들어볼까요?</p><span>음원 카드의 재생 버튼을 눌러 보세요.</span></div></div>

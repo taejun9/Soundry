@@ -6,13 +6,15 @@ Soundry의 Codex CLI 작곡과 로컬 합성으로 장르 16곡, 참고 방향 4
 
 ## 준비와 파일 구성
 
-모든 명령은 저장소 루트에서 실행한다. 앱 설치는 [프로젝트 README](../../README.md)를 따른다. 배치 실행에는 프로젝트가 요구하는 Node.js 24와 실행 중인 Soundry API가 필요하다. WAV 검사와 패키징에는 Python 3.10 이상과 NumPy가 필요하며, 아래 `python3`는 NumPy를 사용할 수 있는 Python을 가리켜야 한다.
+모든 명령은 저장소 루트에서 실행한다. 앱 설치는 [프로젝트 README](../../README.md)를 따른다. 배치 실행에는 프로젝트가 요구하는 Node.js 24와 실행 중인 Soundry API가 필요하다. WAV 검사와 패키징에는 Python 3.10 이상과 NumPy가 필요하며, 아래 `python3`는 NumPy를 사용할 수 있는 Python을 가리켜야 한다. `npm run qa:music`의 launcher는 `SOUNDRY_PYTHON`으로 다른 Python 실행 파일을 지정할 수 있고 기본값은 `python3`다. 직접 Python 명령을 실행할 때는 아래 `python3`를 해당 실행 파일 경로로 바꾼다. 의존성을 자동 설치하지 않는다.
 
 | 파일 | 역할 |
 | --- | --- |
 | `track-plan.json` | 20곡의 제목·장르·콘셉트·프롬프트·생성 설정. 목표 BPM은 측정값이 아니다. |
 | `cli_batch_runner.mjs` | 로컬 앱 API를 통한 순차 제작, 중단 후 재개, 원본 다운로드 |
 | `audio_tools.py` | WAV 검사, PCM24 export, 원본을 보존하는 업로드 패키징. 네트워크나 생성 모델은 호출하지 않는다. |
+| `qa_audio_tools.py` | 임시 WAV로 실제 변환, metadata 구성과 원본 유지 패키징의 경계를 검증 |
+| `../scripts/qa-music.mjs` | Python/NumPy 준비 확인 후 Node·Python 음악 QA를 순서대로 실행 |
 | `data/music/checkpoint.json` | 제출 전에 저장한 requestKey, Generation ID, 프로젝트 연결 정보 |
 | `data/music/completed-manifest.json` | 다운로드와 SHA256 확인을 마친 완료 원본 목록 |
 | `data/music/originals/` | 다운로드한 원본 WAV |
@@ -124,11 +126,31 @@ WAV 검사는 전체 바이트를 디코딩하여 RIFF 경계, PCM16/24/32 또�
 
 ## 도구 자체 검증
 
+루트 `npm run qa`에 음악 QA가 포함되어 있다. 음악 도구만 확인할 때는 다음 명령을 사용한다. Python 3.10 이상과 NumPy 준비 확인이 실패하면 검사를 시작하지 않고 실패를 반환하며, Node 검사 실패 후 Python 검사를 계속 실행하지 않는다.
+
 ```sh
-python3 harness/music/qa_audio_tools.py
-node --test harness/music/cli_batch_runner.test.mjs
+npm run qa:music
 ```
 
-Python 검증은 **21항목**이다. OS 임시 폴더의 합성 sine WAV를 사용해 기본 PCM24 출력, RIFF 손상·실패 경계, 공개 metadata, 원본 유지 패키징, 동일 SHA, 독립 inode, 복사본 수정 후 원본 불변, 복제 실패를 검사하고 임시 파일을 정리한다. 기존 경로의 20곡 패키징은 한 번만 검증하며 이후 원본 유지 검증에는 copy-on-write를 활용한다.
+기본 `python3`에 NumPy가 없다면 `/path/to/python3`를 준비된 Python 실행 파일로 바꿔 지정한다. 이 선택은 음악 QA에만 적용된다.
+
+```sh
+SOUNDRY_PYTHON=/path/to/python3 npm run qa:music
+```
+
+원인을 분리해서 확인할 때는 각 검사를 직접 실행할 수도 있다.
+
+```sh
+node --test harness/music/cli_batch_runner.test.mjs
+python3 harness/music/qa_audio_tools.py
+```
+
+Python 검증은 **21항목**이며 OS 임시 폴더의 합성 sine WAV를 사용한다. 실제 변환과 테스트 대역의 범위는 다음과 같다.
+
+- **90초 PCM24 실제 변환:** stereo 44.1 kHz PCM16을 실제 `export_wav`로 변환한다. Python 표준 `wave` reader로 24 bit·길이·channels·sample rate를 독립 확인하고 신호 검사로 headroom과 원본 불변을 검증한다.
+- **20곡 metadata 구성:** 이 단계에만 변환·복사 대역을 적용한다. 변환 대역은 앞서 검증한 PCM24 한 파일을 각 목적지에 독립 복제하고, 복사 대역은 실제 copier에 위임하면서 macOS의 copy-on-write를 사용한다. 번호별 원본/출력 이름과 seed 연결, 공개 metadata, 비공개 필드 제외, 파일 배치를 검사한다. 서로 다른 20곡을 실제 PCM24로 변환한 end-to-end 검증은 아니다.
+- **원본 유지 20곡 실제 패키징:** 대역 밖에서 `--preserve-original-wav` 경로를 실행한다. 서로 다른 SHA의 PCM16 fixture 20개에 대해 원본·Provenance·Upload_WAV 바이트와 SHA256 일치, 서로 다른 세 inode와 `nlink=1`, 무변환 기록을 전수 확인한다. 이어 업로드 복사본을 수정해 원본과 Provenance가 바뀌지 않는지 검사한다. macOS에서는 실제 APFS copy-on-write를 사용한다.
+
+이외에 RIFF 손상·경로·덮어쓰기·복제 실패와 다른 플랫폼의 독립 복사 경계를 검사한다. 모든 임시 파일은 검사가 끝나면 정리한다.
 
 Node 검증은 **16개 회귀**다. 실제 네트워크 대신 대역 응답을 사용해 제출 전 checkpoint, 응답 유실 후 같은 키 확인, 기존 작업 복구, 공급자 변경 경계, 원본 크기·SHA·로컬 경로 및 중복 제출 방지를 확인한다. 어느 검증도 실제 작곡을 호출하지 않으며 합성 fixture는 사용자 요청의 20곡에 포함되지 않는다.

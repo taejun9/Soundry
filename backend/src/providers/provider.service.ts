@@ -1,3 +1,7 @@
+/**
+ * 서버가 선택한 공급자 하나와 현재 준비 상태를 관리한다. CLI 준비 확인은 앱의 프로젝트/재생 기능 시작을 막지 않는다.
+ * 공개 summary는 capability와 정제한 안내만 포함하고 credential이나 실행 경로를 제공하지 않는다.
+ */
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import type { GenerationInput, ProviderSummary } from '../../../shared/contracts.js';
 import { AppError } from '../api-errors.js';
@@ -7,6 +11,7 @@ import type { CompositionRunner } from './cli-runner.js';
 import type { MusicGenerationProvider } from './music-generation-provider.js';
 import { providerMessage } from './provider-error.js';
 
+// 기본은 실제 CLI이며 명시적인 mock만 허용한다. 오타를 숨기는 fallback은 만들지 않는다.
 export function readMusicProvider(value: string | undefined): 'cli' | 'mock' {
   if (value === undefined || value === 'cli') return 'cli';
   if (value === 'mock') return 'mock';
@@ -24,15 +29,18 @@ export class ProviderService implements OnModuleInit, OnModuleDestroy {
   get timeoutMs(): number { return this.current.id === 'cli' ? CLI_GENERATION_TIMEOUT_MS : 30_000; }
   onModuleInit(): void { void this.refreshConfiguration(); }
   async onModuleDestroy(): Promise<void> { this.probeController.abort(); await this.checking; }
+  // 동시 상태 조회는 같은 probe promise를 공유한다. 종료 signal이 취소되면 새 probe를 만들지 않는다.
   async refreshConfiguration(): Promise<void> {
     if (!(this.current instanceof CliProvider) || this.probeController.signal.aborted) return;
     this.checking ??= this.current.probe(this.probeController.signal).catch(() => undefined).finally(() => { this.checking = undefined; });
     await this.checking;
   }
   validateInput(input: GenerationInput): void { if (this.current.id === 'cli') validateCliInput({ prompt: input.prompt, settings: input.settings, variationCount: input.variationCount }); }
+  // 새 생성 접수 시점에만 준비 상태를 요구한다. 기존 이력과 음원 재생은 준비 여부와 무관하게 유지한다.
   assertConfigured(): void {
     if (this.current instanceof CliProvider && this.current.availability !== 'ready') throw new AppError(503, this.current.availability, providerMessage(this.current.availability));
   }
+  // Mock의 고정 fixture와 실제 CLI 작곡을 명확히 표시하고, CLI 텍스트 전송과 로컬 합성의 경계를 안내한다.
   summary(): ProviderSummary {
     if (this.current.id === 'cli') {
       const availability = this.current instanceof CliProvider ? this.current.availability : 'ready';

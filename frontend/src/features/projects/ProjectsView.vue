@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 프로젝트 대시보드와 생성·수정·삭제 대화상자를 연결한다.
+ * 서버 목록을 기준으로 갱신하고 삭제한 프로젝트의 탭 메모리 초안과 불확실한 요청도 함께 정리한다.
+ */
 import { onMounted, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import type { DeleteResult, ProjectSummary } from '../../../../shared/contracts';
@@ -18,11 +22,13 @@ const dialog = ref<{ mode: 'create' | 'rename' | 'delete'; project?: ProjectSumm
 const notice = ref('');
 const createButton = ref<HTMLButtonElement>();
 
+/** 변경 결과 안내를 지우고 사용자가 선택한 대상/모드를 확인창에 전달한다. */
 function openDialog(mode: 'create' | 'rename' | 'delete', project?: ProjectSummary) {
   notice.value = '';
   dialog.value = { mode, project };
 }
 
+/** 새 프로젝트는 곧바로 작업 공간을 열고 이름 변경은 최신 정렬의 프로젝트 목록을 다시 읽는다. */
 async function saved(project: ProjectSummary) {
   const created = dialog.value?.mode === 'create';
   dialog.value = null;
@@ -31,6 +37,7 @@ async function saved(project: ProjectSummary) {
   await refresh();
 }
 
+/** 삭제 성공 뒤 관련 탭 메모리를 비우고 목록을 새로 읽는다. 없어진 카드 대신 생성 버튼으로 포커스를 복구한다. */
 async function deleted(result: DeleteResult) {
   if (dialog.value?.project) { player.clearProject(dialog.value.project.id); forgetProjectDraft(dialog.value.project.id); forgetGenerationRequest(dialog.value.project.id); }
   dialog.value = null;
@@ -45,6 +52,7 @@ onMounted(() => { void refresh(); });
 </script>
 
 <template>
+  <!-- 첫 사용 안내와 목록 상태를 나누고 각 카드의 열기·이름 변경·삭제는 독립된 조작으로 제공한다. -->
   <section class="page-heading">
     <div><p class="eyebrow accent-text">A SPACE FOR YOUR SOUND</p><h1>나의 프로젝트</h1><p class="page-description">떠오르는 아이디어를 담고, 나만의 사운드를 찾아보세요.</p></div>
     <button ref="createButton" type="button" class="button button-primary" @click="openDialog('create')"><StudioIcon name="plus" />새 프로젝트</button>

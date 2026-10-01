@@ -1,3 +1,7 @@
+/**
+ * 다운로드 client가 수신을 멈춰도 앱 종료가 완료되고 stream FD와 SQLite 잠금이 해제되는지 검증한다.
+ * 큰 sparse WAV fixture와 실제 HTTP backpressure를 사용하며 임시 파일만 만들고 finally에서 정리한다.
+ */
 import { randomUUID } from 'node:crypto';
 import { closeSync, ftruncateSync, mkdtempSync, openSync, rmSync, writeSync } from 'node:fs';
 import type { ReadStream } from 'node:fs';
@@ -14,6 +18,7 @@ import { ProjectsService } from './projects/projects.service.js';
 import { MAX_AUDIO_BYTES } from './storage/storage.service.js';
 import { TracksService } from './tracks/tracks.service.js';
 
+// 정상 종료 시간을 제한해 열린 socket 때문에 app.close가 무한 대기하는 회귀를 재현한다.
 it('closes a stalled audio download, its FD and DB lock before shutdown completes', async () => {
   const root = mkdtempSync('/private/tmp/soundry-shutdown-');
   let app: NestExpressApplication | undefined;
@@ -36,6 +41,7 @@ it('closes a stalled audio download, its FD and DB lock before shutdown complete
     header.writeUInt32LE(16, 16); header.writeUInt16LE(1, 20); header.writeUInt16LE(2, 22);
     header.writeUInt32LE(44100, 24); header.writeUInt32LE(176400, 28); header.writeUInt16LE(4, 32); header.writeUInt16LE(16, 34);
     header.write('data', 36); header.writeUInt32LE(MAX_AUDIO_BYTES - 44, 40);
+    // 헤더와 sparse 길이만 기록해 큰 다운로드 상태를 재현한다. 실제 음악 제작이나 대용량 음원 복사는 필요하지 않다.
     const fd = openSync(join(root, 'audio', `${id}.wav`), 'wx');
     try { writeSync(fd, header); ftruncateSync(fd, MAX_AUDIO_BYTES); } finally { closeSync(fd); }
     const original = service.openAudio.bind(service);
@@ -58,6 +64,7 @@ it('closes a stalled audio download, its FD and DB lock before shutdown complete
     expect(source?.closed).toBe(true);
     expect(source!.bytesRead).toBeLessThan(MAX_AUDIO_BYTES);
     expect(database.client.open).toBe(false);
+    // 연결 종료 상태만 확인하는 것으로 끝내지 않고 같은 루트를 새 앱이 즉시 열 수 있어야 잠금 해제를 입증한다.
     const reopened = await createApplication({ dataDir: root, uiPort: '5173', musicProvider: 'mock' });
     await reopened.init();
     await reopened.close();

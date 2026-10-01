@@ -1,3 +1,7 @@
+/**
+ * 작업 queue의 상태 전이·취소 경쟁·atomic batch·재시작 복구를 제어 가능한 비동기 대역으로 검증한다.
+ * 실제 SQLite transaction을 사용하되 필요한 테스트에서만 실제 storage를 연결해 실패 순서를 정확히 재현한다.
+ */
 import { randomUUID } from 'node:crypto';
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -16,12 +20,14 @@ import { StorageError } from '../storage/storage.types.js';
 import type { BatchStorage, StoredAudio } from '../storage/storage.types.js';
 import { GenerationsService } from './generations.service.js';
 
+// 테스트가 완료/실패 시점을 직접 선택한다. 우연한 timer 순서 대신 취소 전후의 경쟁 결과를 결정적으로 만든다.
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (error: unknown) => void;
   const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
   return { promise, resolve, reject };
 }
+// queue 테스트용 stream placeholder다. WAV 유효성 검증은 실제 StorageService 테스트가 담당한다.
 function source(): ProviderTrack {
   return { audio: { async *[Symbol.asyncIterator]() { yield Buffer.from('test source'); } }, mediaType: 'audio/wav', extension: 'wav', model: 'demo-fixture', metadata: { durationSeconds: 8 } };
 }
@@ -29,12 +35,14 @@ function saved(): StoredAudio {
   const id = randomUUID();
   return { id, audioPath: `audio/${id}.wav`, mimeType: 'audio/wav', byteSize: 64, durationSeconds: 8, model: 'demo-fixture', metadata: {} };
 }
+// 저장 결과와 discard 호출을 관측하는 대역이다. 파일 복사를 생략해 상태/transaction 검증에 집중한다.
 function fakeStorage(): BatchStorage & { saveBatch: ReturnType<typeof vi.fn<BatchStorage['saveBatch']>>; discardBatch: ReturnType<typeof vi.fn<BatchStorage['discardBatch']>> } {
   return {
     saveBatch: vi.fn(async (_id, sources) => sources.map(() => saved())),
     discardBatch: vi.fn(() => false),
   };
 }
+// 각 generate 호출과 context를 기록하고 외부에서 resolve/reject하여 FIFO 및 늦은 결과를 재현한다.
 function controlledProvider() {
   const calls: { input: GenerationInput; context: ProviderContext; result: ReturnType<typeof deferred<readonly ProviderTrack[]>> }[] = [];
   const provider: MusicGenerationProvider = {
@@ -50,6 +58,7 @@ function controlledProvider() {
 }
 const apps = new Set<NestExpressApplication>();
 const roots: string[] = [];
+// app별 임시 DB를 소유하고 필요한 provider/storage만 주입한다. 기본 data와 원격 작곡에 접근하지 않는다.
 async function setup(options: Partial<ApplicationOptions> = {}) {
   const dataDir = options.dataDir ?? mkdtempSync('/private/tmp/soundry-jobs-');
   if (!options.dataDir) roots.push(dataDir);
@@ -62,6 +71,7 @@ async function setup(options: Partial<ApplicationOptions> = {}) {
   return { app, dataDir, storage, service, projects, database: app.get(DatabaseService) };
 }
 async function close(app: NestExpressApplication) { await app.close(); apps.delete(app); }
+// 수락 조건을 짧게 재확인하되 제한 시간이 지나면 실패한다. 무한 대기나 임의 긴 sleep으로 통과를 가정하지 않는다.
 async function until<T>(read: () => T, accepts: (value: T) => boolean, timeout = 2500): Promise<T> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
@@ -83,6 +93,7 @@ afterEach(async () => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
+// 전역 직렬 실행, 20개 상한, 중복 키 우선 조회와 프로젝트 수정 시각의 실제 변경 시점을 확인한다.
 describe('generation FIFO and immutable acceptance', () => {
   it('runs one job globally across projects in FIFO order and commits all tracks together', async () => {
     const controlled = controlledProvider();
@@ -154,6 +165,7 @@ describe('generation FIFO and immutable acceptance', () => {
   });
 });
 
+// 취소/timeout 이후 대역이 늦게 성공해도 새 트랙을 공개하거나 다음 작업을 막아서는 안 된다.
 describe('generation cancel, timeout, and late result races', () => {
   it('records cancellation first and discards a provider success that arrives later', async () => {
     const controlled = controlledProvider();
@@ -186,6 +198,7 @@ describe('generation cancel, timeout, and late result races', () => {
     expect(service.get(first.generation.id).status).toBe('failed');
   });
 
+  // saveBatch도 늦게 resolve할 수 있다. 이미 취소된 worker가 늦은 최종 파일 전체를 보상 삭제해야 한다.
   it('discards all final files returned by a save that finishes after cancellation', async () => {
     const storage = fakeStorage();
     const pending = deferred<StoredAudio[]>();
@@ -202,6 +215,7 @@ describe('generation cancel, timeout, and late result races', () => {
     expect(service.get(row.generation.id)).toMatchObject({ status: 'cancelled', tracks: [] });
   });
 
+  // 경쟁의 반대 순서도 확인한다. 완료 commit이 먼저라면 뒤늦은 취소가 원본 파일을 지우면 안 된다.
   it('keeps a completed batch when completion commits before cancellation', async () => {
     const storage = fakeStorage();
     const { service, projects } = await setup({ storageOverride: storage });
@@ -231,6 +245,7 @@ describe('generation cancel, timeout, and late result races', () => {
   });
 });
 
+// 한 variation 실패·DB 실패가 부분 트랙을 남기지 않고 후속 작업은 진행하는지 확인한다.
 describe('atomic batches, safe failures, and recovery', () => {
   it('keeps provider errors private and allows a following job to complete', async () => {
     const controlled = controlledProvider();
@@ -267,6 +282,7 @@ describe('atomic batches, safe failures, and recovery', () => {
     expect(projects.get(project.id).trackCount).toBe(0);
   });
 
+  // DB insert를 의도적으로 실패시켜 all-or-nothing transaction과 파일 보상 삭제가 함께 동작하는지 검사한다.
   it('rolls back the whole track transaction and discards the batch after a database insert failure', async () => {
     const storage = fakeStorage();
     const duplicate = saved();
@@ -281,6 +297,7 @@ describe('atomic batches, safe failures, and recovery', () => {
     expect(projects.get(project.id).trackCount).toBe(0);
   });
 
+  // worker 점유 자체가 실패해도 이미 202로 접수한 row를 영원히 queued로 두어서는 안 된다.
   it('fails a rejected database queue claim instead of leaving an accepted request queued forever', async () => {
     const { service, projects, database } = await setup();
     const project = projects.create('작업 점유 실패');
@@ -291,6 +308,7 @@ describe('atomic batches, safe failures, and recovery', () => {
     expect((await terminal(service, second.generation.id)).status).toBe('completed');
   });
 
+  // 요청값과 실제 provider metadata를 다르게 두어 추정값 복사가 UI에서 확인된 사실처럼 보이는 회귀를 막는다.
   it('does not copy requested settings into actual track metadata', async () => {
     const provider: MusicGenerationProvider = { id: 'mock', capabilities: { ...mockCapabilities(), settings: ['bpm', 'genre'] }, async generate() { return [source()]; } };
     const { service, projects } = await setup({ providerOverride: provider });
@@ -310,6 +328,7 @@ describe('atomic batches, safe failures, and recovery', () => {
     expect(storage.discardBatch).toHaveBeenCalledExactlyOnceWith([invalid]);
   });
 
+  // 재시작 복구는 실패 마감이며 자동 provider 재호출이 아님을 호출 수로 검증한다.
   it('marks persisted queued/processing rows failed on restart without submitting them again', async () => {
     const initial = await setup();
     const project = initial.projects.create('재시작');
@@ -331,6 +350,7 @@ describe('atomic batches, safe failures, and recovery', () => {
     expect(controlled.calls).toHaveLength(0);
   });
 
+  // DB가 닫힌 뒤 worker가 쓰기를 시도하지 않도록 종료 순서를 검사하고 남은 queued는 다음 시작에서 복구한다.
   it('aborts a hanging worker before the database closes and recovers queued work at next start', async () => {
     const controlled = controlledProvider();
     const initial = await setup({ providerOverride: controlled.provider });

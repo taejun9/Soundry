@@ -1,3 +1,7 @@
+/**
+ * 오디오 stream을 temp에 기록·검증하고 최종 UUID 파일로 이동하는 batch 저장소다.
+ * 소유 파일/디렉터리의 device와 inode를 추적해 검사 중 파일 교체를 탐지하고, 실패/취소에는 이번 batch만 정리한다.
+ */
 import { ProviderError } from '../providers/provider-error.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
@@ -18,6 +22,7 @@ function cancelled(signal: AbortSignal): void {
   if (signal.aborted) throw new DOMException('음악 저장이 취소되었습니다.', 'AbortError');
 }
 
+// iterator.next가 영원히 대기해도 취소가 저장 루프를 풀어주도록 signal과 경쟁시킨다. 완료 후 listener를 제거한다.
 async function nextChunk(iterator: AsyncIterator<Uint8Array>, signal: AbortSignal): Promise<IteratorResult<Uint8Array>> {
   cancelled(signal);
   return new Promise((resolve, reject) => {
@@ -31,6 +36,7 @@ async function nextChunk(iterator: AsyncIterator<Uint8Array>, signal: AbortSigna
 export class StorageService implements BatchStorage {
   constructor(@Inject(StorageConfig) private readonly storage: StorageConfig) {}
 
+  // job UUID와 결과 개수를 검증한 뒤 0700 전용 temp 폴더에만 새 파일을 만든다. 기존 작업 폴더를 덮어쓰지 않는다.
   async saveBatch(generationId: string, sources: readonly ProviderTrack[], signal: AbortSignal): Promise<StoredAudio[]> {
     cancelled(signal);
     if (!uuid.test(generationId) || sources.length < 1 || sources.length > 4) throw new StorageError('INVALID_AUDIO');
@@ -62,6 +68,7 @@ export class StorageService implements BatchStorage {
           createdParts.push(part);
           this.assertOwnedDirectory(directory, directoryIdentity);
           iterator = source.audio[Symbol.asyncIterator]();
+          // stream chunk의 byte 타입·빈 chunk 연속 수·총크기를 검증한다. 유효하지 않거나 끝없는 빈 stream은 거부한다.
           for (;;) {
             const result = await nextChunk(iterator, signal);
             if (result.done) break;
@@ -76,6 +83,7 @@ export class StorageService implements BatchStorage {
             bytes += chunk.byteLength;
             if (bytes > MAX_AUDIO_BYTES) throw new StorageError('AUDIO_TOO_LARGE');
             let written = 0;
+            // 파일 write가 부분 쓰기를 반환할 수 있으므로 남은 byte를 반복 기록한다. 0byte 진행은 저장 실패로 처리한다.
             while (written < chunk.byteLength) {
               cancelled(signal);
               const result = await file.write(chunk, written, chunk.byteLength - written);
@@ -93,6 +101,7 @@ export class StorageService implements BatchStorage {
         cancelled(signal);
         this.assertOwnedDirectory(directory, directoryIdentity);
         this.assertOwnedPart(part);
+        // 확장자나 provider 주장만 믿지 않고 닫힌 파일의 WAV 구조·실제 길이를 독립 검사한다.
         const measured = await inspectWav(path, bytes, signal, part);
         const track: StoredAudio = {
           id, audioPath: `audio/${id}.wav`, mimeType: 'audio/wav', byteSize: bytes,
@@ -102,6 +111,7 @@ export class StorageService implements BatchStorage {
         staged.push({ part, track });
       }
       // Validation finishes for every variation before publishing any final file.
+      // 모든 variation 검사가 끝난 후에만 최종 경로로 이동한다. 중간 이동 실패는 moved 목록을 보상 삭제한다.
       for (const item of staged) {
         cancelled(signal);
         const target = this.storage.resolveAudioPath(item.track.audioPath);
@@ -120,6 +130,7 @@ export class StorageService implements BatchStorage {
       if (error instanceof StorageError || error instanceof ProviderError) throw error;
       throw new StorageError('STORAGE_FAILED');
     } finally {
+      // cleanup도 생성 당시 inode의 파일만 지운다. 교체된 경로나 링크는 건드리지 않고 다음 복구 필요를 안내한다.
       if (directoryIdentity) {
         try {
           this.assertOwnedDirectory(directory, directoryIdentity);
@@ -137,17 +148,20 @@ export class StorageService implements BatchStorage {
     }
   }
 
+  // 상위 temp 안전성과 생성 당시 디렉터리 identity를 함께 확인해 이름만 같은 다른 폴더를 소유했다고 보지 않는다.
   private assertOwnedDirectory(path: string, identity: Identity): void {
     this.storage.assertSafeTemp();
     const info = lstatSync(path, { bigint: true });
     if (!info.isDirectory() || info.isSymbolicLink() || info.dev !== identity.dev || info.ino !== identity.ino) throw new StorageError('STORAGE_FAILED');
   }
 
+  // 일반 파일·단일 링크·동일 device/inode 조건이 모두 맞아야 검사/rename/unlink 대상으로 다룬다.
   private assertOwnedPart(part: OwnedPart): void {
     const info = lstatSync(part.path, { bigint: true });
     if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1n || info.dev !== part.dev || info.ino !== part.ino) throw new StorageError('STORAGE_FAILED');
   }
 
+  // DB commit 실패나 늦은 취소 결과에서 호출한다. true는 삭제 성공이 아니라 후속 정리가 남았다는 뜻이다.
   discardBatch(batch: readonly StoredAudio[]): boolean {
     let pending = false;
     for (const track of batch) if (!this.storage.removeAudio(track.audioPath)) pending = true;

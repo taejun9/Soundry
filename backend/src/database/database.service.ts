@@ -1,3 +1,7 @@
+/**
+ * SQLite 연결·migration·데이터 폴더 단일 소유권을 함께 관리한다.
+ * 복구와 파일 청소는 DB 잠금과 schema 검증이 성공한 뒤에만 수행하며, 종료는 작업 관리자 정리 이후에 이루어진다.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import BetterSqlite3 from 'better-sqlite3';
@@ -14,6 +18,7 @@ export class DatabaseService implements OnApplicationShutdown {
   readonly client: BetterSqlite3.Database;
   readonly db: BetterSQLite3Database<typeof schema>;
 
+  // 두 번째 서버가 migration이나 orphan 삭제를 시작하지 못하도록 첫 schema 조회보다 먼저 EXCLUSIVE 잠금을 잡는다.
   constructor(@Inject(StorageConfig) storage: StorageConfig) {
     storage.assertSafe();
     this.client = new BetterSqlite3(storage.databasePath);
@@ -24,6 +29,7 @@ export class DatabaseService implements OnApplicationShutdown {
       this.client.exec('BEGIN EXCLUSIVE; COMMIT;');
       this.client.pragma('foreign_keys = ON');
       this.client.pragma('busy_timeout = 5000');
+      // 다른 앱의 DB나 미래 schema를 자동 변환/초기화하지 않는다. migration 이력과 버전이 맞는 DB만 연다.
       const version = this.client.pragma('user_version', { simple: true });
       const tables = this.client.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
       if (typeof version !== 'number' || version > 1 || (tables.length > 0 && !tables.some((table) => table.name === '__drizzle_migrations'))) {
@@ -36,6 +42,7 @@ export class DatabaseService implements OnApplicationShutdown {
       // Verify the required tables before touching any audio files.
       this.db.select().from(schema.projects).limit(1).all();
       this.db.select().from(schema.generations).limit(1).all();
+      // 실제 테이블을 읽을 수 있는지 확인한 후에만 참조 집합을 만들어 파일 청소를 허용한다.
       const references = this.db.select({ path: schema.tracks.audioPath }).from(schema.tracks).all();
       const staleTempPending = storage.removeStaleTemp();
       if (storage.removeOrphanAudio(new Set(references.map((track) => track.path))) || staleTempPending) {
@@ -48,6 +55,7 @@ export class DatabaseService implements OnApplicationShutdown {
     }
   }
 
+  // 동일 밀리초 안의 연속 변경도 최신 목록에 반영되도록 수정 시각을 최소 1ms 증가시킨다.
   touchProject(id: string): void {
     const current = this.db.select({ updatedAt: schema.projects.updatedAt }).from(schema.projects).where(eq(schema.projects.id, id)).get();
     if (!current) return;
@@ -55,6 +63,7 @@ export class DatabaseService implements OnApplicationShutdown {
     this.db.update(schema.projects).set({ updatedAt: next }).where(eq(schema.projects.id, id)).run();
   }
 
+  // 종료 훅이 중복 호출되어도 이미 닫힌 연결을 다시 닫지 않는다.
   onApplicationShutdown(): void {
     if (this.client.open) this.client.close();
   }

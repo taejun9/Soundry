@@ -1,3 +1,7 @@
+/**
+ * 즐겨찾기의 중복 클릭·서로 다른 음원 동시 변경·응답 유실을 검증한다.
+ * 서버 확정 전에는 원본 상태를 바꾸지 않고 재생을 유지하며 오래된 재조회가 새 오류를 지우지 않게 한다.
+ */
 import { effectScope, type EffectScope } from 'vue';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TrackDetail } from '../../../../shared/contracts';
@@ -9,10 +13,14 @@ import { useFavorites } from './useFavorites';
 import { useGenerations } from '../generation/useGenerations';
 import * as generationApi from '../../api/generations';
 import { jobFixture } from '../generation/test-fixtures';
+/** 서버가 돌려주는 요청 설정과 실제 음원 정보를 별도로 가진 상세 응답을 만든다. */
 function detail(favorite = true): TrackDetail { return { ...trackFixture(), favorite, requestedSettings: {}, requestedVariationCount: 1 }; }
+/** 응답 완료 순서를 테스트가 제어하여 늦은 응답과 화면 이탈 경쟁을 재현한다. */
 function deferred<T>() { let resolve!: (value: T) => void; let reject!: (error: unknown) => void; const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; }); return { promise, resolve, reject }; }
 const scopes: EffectScope[] = []; const players: ReturnType<typeof createAudioController>[] = [];
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => { scopes.splice(0).forEach(scope => scope.stop()); players.splice(0).forEach(player => player.dispose()); });
+/** 각 사례에 독립된 API 대역과 상태 수명을 만들어 다른 테스트의 요청/상태가 섞이지 않게 한다. */
 function setup() {
   const audio = new FakeAudio(); const player = createAudioController(audio as unknown as AudioPort, 'http://127.0.0.1:5174'); players.push(player);
   const update = vi.fn().mockResolvedValue(detail()); const saved = vi.fn();

@@ -1,3 +1,7 @@
+/**
+ * Mock이 실제 재생 가능한 fixture stream을 반환하되 AI 생성처럼 행동하지 않는 계약을 검증한다.
+ * manifest·RIFF·SHA·길이를 교차 확인하고 generate 이전부터 소비 종료까지 취소/실패/자원 해제를 검사한다.
+ */
 import { createHash } from 'node:crypto';
 import { createReadStream, readFileSync } from 'node:fs';
 import type { ReadStream } from 'node:fs';
@@ -12,9 +16,11 @@ import type { ProviderContext } from './music-generation-provider.js';
 
 const fixtureRoot = join(REPOSITORY_ROOT, 'backend', 'fixtures', 'audio');
 const input: GenerationInput = { prompt: '수학 합성 데모 테스트', settings: {}, variationCount: 2 };
+// signal과 단계 callback을 동시에 관측해 취소 후 saving 같은 잘못된 진행 이벤트가 발생하는지 확인한다.
 function context(controller = new AbortController()) {
   return { signal: controller.signal, onStage: vi.fn<ProviderContext['onStage']>() };
 }
+// 작은 8초 테스트 fixture만 수집한다. 운영 다운로드/저장은 전체 byte를 메모리에 모으지 않는다.
 async function collect(source: AsyncIterable<Uint8Array>) {
   const chunks: Buffer[] = [];
   for await (const chunk of source) chunks.push(Buffer.from(chunk));
@@ -25,6 +31,7 @@ async function expectAbort(promise: Promise<unknown>) {
   await expect(promise).rejects.toMatchObject({ name: 'AbortError', message: '음악 생성이 취소되었습니다.' });
 }
 
+// 결과 수 1–4를 모두 소비해 fixture 순환과 stream 독립성을 확인한다. 요청 prompt에 따른 합성은 주장하지 않는다.
 describe('MockProvider real WAV contract', () => {
   it('returns 1–4 complete WAV streams, cycling independent sources with actual metadata', async () => {
     const manifest = JSON.parse(readFileSync(join(fixtureRoot, 'manifest.json'), 'utf8')) as {
@@ -94,6 +101,7 @@ describe('MockProvider real WAV contract', () => {
   });
 });
 
+// 취소 위치를 지연 중·미소비·소비 중·멈춘 stream으로 나누어 모든 비동기 경계를 확인한다.
 describe('MockProvider cancellation and failures', () => {
   it('honors cancellation before generate without stage updates or file access', async () => {
     const controller = new AbortController();
@@ -126,6 +134,7 @@ describe('MockProvider cancellation and failures', () => {
     expect(openAudio).not.toHaveBeenCalled();
   });
 
+  // 대역 호출 수 대신 실제 ReadStream의 closed 상태를 확인해 FD가 남지 않는지 검증한다.
   it('destroys a real file stream when cancelled during consumption', async () => {
     const controller = new AbortController();
     let source: ReadStream | undefined;
@@ -155,6 +164,7 @@ describe('MockProvider cancellation and failures', () => {
     expect(source.destroyed).toBe(true);
   });
 
+  // consumer의 조기 break도 정상 종료 경로이므로 generator finally가 원본 stream을 닫아야 한다.
   it('closes the source when a consumer stops early', async () => {
     const source = Readable.from([Buffer.from('first'), Buffer.from('second')]);
     const tracks = await new MockProvider({ delayMs: 0, openAudio: () => source }).generate(input, context());
@@ -178,6 +188,7 @@ describe('MockProvider cancellation and failures', () => {
     expect(openAudio).not.toHaveBeenCalled();
   });
 
+  // 파일 열기와 중간 읽기 양쪽에서 원시 경로/에러가 노출되지 않고 source가 정리되어야 한다.
   it('sanitizes source-open and mid-stream errors and releases the source', async () => {
     for (const midStream of [false, true]) {
       const source = new Readable({ read() { this.destroy(new Error('/private/example FAL_KEY=example')); } });

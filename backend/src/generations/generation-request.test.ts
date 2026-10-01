@@ -1,3 +1,7 @@
+/**
+ * 생성 요청 키/원본 참조, 목록 cursor, canonical settings의 런타임 계약을 단위 검증한다.
+ * 동일 입력 재전송 비교가 안전하려면 ID·날짜·base64url·JSON key 순서가 일관되어야 한다.
+ */
 import { describe, expect, it } from 'vitest';
 import type { GenerationSettings, ProviderCapabilities } from '../../../shared/contracts.js';
 import { AppError } from '../api-errors.js';
@@ -11,6 +15,7 @@ const capabilities: ProviderCapabilities = {
   seedSupported: true, canCancelRemote: false, bpmRange: { min: 40, max: 240 }, durationRangeSeconds: { min: 90, max: 180 },
 };
 const encoded = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+// 의도한 AppError/400/INVALID_INPUT인지 검사해 파싱 중 예상치 못한 예외와 구분한다.
 function rejects(action: () => unknown) {
   try { action(); throw new Error('Expected invalid input'); }
   catch (error) {
@@ -20,6 +25,7 @@ function rejects(action: () => unknown) {
   }
 }
 
+// 음악 입력 검증을 재사용하면서도 요청 전용 필드의 누락·null·알 수 없는 키를 놓치지 않아야 한다.
 describe('generation request validation', () => {
   it('normalizes request identifiers and delegates musical input into a fresh snapshot', () => {
     const value = { requestKey: id, sourceGenerationId: sourceId, prompt: '  새벽 산책  ', settings: { genre: ' Ambient ', bpm: 90 } };
@@ -57,6 +63,7 @@ describe('generation request validation', () => {
   });
 });
 
+// 같은 경계를 여러 인코딩으로 허용하지 않고 실제 밀리초 UTC 시각과 UUID의 두 필드만 받는다.
 describe('generation list cursors', () => {
   it('round-trips createdAt/id and normalizes UUID case', () => {
     const cursor = encodeGenerationCursor({ createdAt, id });
@@ -93,6 +100,7 @@ describe('generation list cursors', () => {
   });
 });
 
+// 키 삽입 순서만 같은 값으로 취급한다. 의미가 다른 설정은 서로 다른 요청으로 남아야 한다.
 describe('canonical generation settings', () => {
   it('makes equivalent insertion orders identical without mutating the settings', () => {
     const first: GenerationSettings = { seed: '000042', mood: '고요한 밤', bpm: 92.5, genre: 'Jazz', durationSeconds: 150, mode: 'instrumental' };

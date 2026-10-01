@@ -3,8 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.12 <25", "npm": ">=11 <12" },
-  "workspaces": ["frontend", "backend"],
+  "engines": {
+    "node": ">=24.12 <25",
+    "npm": ">=11 <12"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "dev": "node harness/scripts/dev.mjs",
     "lint": "eslint . --max-warnings 0",
@@ -13,8 +19,9 @@
     "build": "npm run build --workspaces",
     "qa:base": "python3 harness/scripts/verify_base.py",
     "qa:smoke": "node harness/scripts/smoke.mjs",
-    "qa": "npm run lint && npm run typecheck && npm test && npm run build && npm run qa:base && npm run qa:audio",
-    "qa:audio": "node backend/fixtures/audio/generate.mjs --check && python3 harness/scripts/verify_audio_fixtures.py"
+    "qa": "npm run lint && npm run typecheck && npm test && npm run build && npm run qa:base && npm run qa:audio && npm run qa:music",
+    "qa:audio": "node backend/fixtures/audio/generate.mjs --check && python3 harness/scripts/verify_audio_fixtures.py",
+    "qa:music": "node harness/scripts/qa-music.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

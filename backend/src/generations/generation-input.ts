@@ -1,3 +1,7 @@
+/**
+ * 공급자와 HTTP 계층이 함께 사용하는 음악 입력 계약이다. 요청을 새 객체로 정규화해 이후 입력 변경과 분리한다.
+ * 앱의 기본 상한과 현재 공급자 capability를 모두 적용하며 지원하지 않는 설정을 조용히 무시하지 않는다.
+ */
 import type { GenerationInput, GenerationSettings, MusicMode, ProviderCapabilities, SettingKey } from '../../../shared/contracts.js';
 import { AppError } from '../api-errors.js';
 
@@ -6,12 +10,14 @@ function invalid(message: string): never { throw new AppError(400, 'INVALID_INPU
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+// 문자열 길이는 trim한 실제 입력을 기준으로 제한하고 NUL을 거부한다.
 function text(value: unknown, max: number, label: string): string {
   if (typeof value !== 'string' || value.includes('\0')) invalid(`${label} 형식을 확인해 주세요.`);
   const cleaned = value.trim();
   if (!cleaned || cleaned.length > max) invalid(`${label}: 1–${max}자로 입력해 주세요.`);
   return cleaned;
 }
+// JSON 밖의 내부 호출도 고려해 NaN/Infinity를 거부하고 공급자가 명시한 실제 허용 범위를 적용한다.
 function numeric(value: unknown, range: { min: number; max: number } | undefined, label: string): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) invalid(`${label}에 올바른 숫자를 입력해 주세요.`);
   if (range && (value < range.min || value > range.max)) invalid(`${label}: ${range.min}–${range.max} 범위로 입력해 주세요.`);
@@ -19,6 +25,7 @@ function numeric(value: unknown, range: { min: number; max: number } | undefined
 }
 
 /** Validates the immutable musical input. Request keys/project references are checked by the job API. */
+// requestKey·프로젝트 관계는 여기서 다루지 않는다. 음악 입력만 검증해 provider 단독 호출에도 재사용한다.
 export function validateGenerationInput(value: unknown, capabilities: ProviderCapabilities): GenerationInput {
   if (!object(value) || Object.keys(value).some((key) => !['prompt', 'settings', 'variationCount'].includes(key))) {
     invalid('지원하지 않는 생성 입력입니다.');
@@ -32,6 +39,7 @@ export function validateGenerationInput(value: unknown, capabilities: ProviderCa
   const rawSettings = value.settings === undefined ? {} : value.settings;
   if (!object(rawSettings) || Object.keys(rawSettings).some((key) => !settingKeys.has(key))) invalid('지원하지 않는 설정입니다.');
   const settings: GenerationSettings = {};
+  // mode는 별도 enum으로, 나머지 필드는 settings capability와 seedSupported까지 확인한다.
   for (const [key, raw] of Object.entries(rawSettings)) {
     if (key === 'mode') {
       if (typeof raw !== 'string' || !capabilities.modes.includes(raw as MusicMode)) invalid('현재 공급자가 지원하지 않는 음악 모드입니다.');

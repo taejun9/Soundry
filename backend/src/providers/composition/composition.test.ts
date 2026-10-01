@@ -1,3 +1,7 @@
+/**
+ * 자작 악보로 구조 검증과 로컬 DSP를 독립 검증한다. 실제 원격 작곡이나 주관적 청취 품질 검증은 아니다.
+ * 잘못된 관계/과도한 발음량, 정확한 끝 길이, PCM 신호 수준·동역학·stereo, 재현성 및 취소 응답성을 확인한다.
+ */
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +14,7 @@ import type { Instrument, Note, Part } from './schema.js';
 const input: GenerationInput = { prompt: '따뜻한 재즈 신스 연주곡 테스트', settings: { durationSeconds: 90 }, variationCount: 1 };
 function note(beat: number, pitch: number, duration = 0.375, velocity = 0.7): Note { return { beat, pitch, duration, velocity }; }
 /** Authored score used only for DSP tests; provider has no automatic fallback composition. */
+// intro/verse/chorus/bridge/outro의 대비가 있는 합성 fixture다. duration/BPM에 맞춰 마지막 섹션을 계산한다.
 function composition(duration = 90, bpm = 120): Composition {
   const total = Math.ceil(duration * bpm / 240), lengths = [4, 12, 12, 8, total - 36];
   let startBar = 0;
@@ -38,6 +43,7 @@ function composition(duration = 90, bpm = 120): Composition {
   };
 }
 /** Synthetic ending case only: no production/user score is copied into this fixture. */
+// 마지막 패턴이 곡 끝을 넘어가는 경우만 따로 만들어 정상적인 부분 마디 종료를 과도하게 거부하는 회귀를 잡는다.
 function partialEnding(duration = 150): Composition {
   const score = composition(duration, 112);
   score.patterns.push({ id: 'ending_figure', bars: 4, notes: [60, 64, 67, 72].map((pitch, index) => note(index * 4, pitch, 1)) });
@@ -47,6 +53,7 @@ function partialEnding(duration = 150): Composition {
   return score;
 }
 function copy(): Composition { return structuredClone(composition()); }
+// 테스트에서만 WAV를 메모리로 수집해 header/sample 통계를 독립적으로 계산한다.
 async function collect(score: Composition, duration = 90): Promise<Buffer> {
   const chunks: Uint8Array[] = [];
   for await (const chunk of renderComposition(score, duration, new AbortController().signal)) chunks.push(chunk);
@@ -54,6 +61,7 @@ async function collect(score: Composition, duration = 90): Promise<Buffer> {
 }
 function digest(bytes: Buffer): string { return createHash('sha256').update(bytes).digest('hex'); }
 
+// PCM16 bytes를 직접 읽어 peak/RMS/DC/stereo 차이와 1초 구간별 음량을 측정한다. renderer 내부 수치를 재사용하지 않는다.
 function signalStats(bytes: Buffer) {
   let peak = 0, square = 0, difference = 0, mean = 0, clipped = 0;
   const frames = (bytes.length - 44) / 4, blockRms: number[] = [];
@@ -72,6 +80,7 @@ function signalStats(bytes: Buffer) {
   return { peak, rms: Math.sqrt(square / (frames * 2)), stereoDifference: Math.sqrt(difference / frames), mean: mean / (frames * 2), clipped, blockRms };
 }
 
+// 정상 객체를 하나씩 변형해 어느 제한이 깨졌는지 명확히 한다. getter 실행 여부도 검사해 검증 자체의 부작용을 막는다.
 describe('bounded composition score', () => {
   it('exports strict schema without arbitrary extension fields and copies supported data', () => {
     expect(COMPOSITION_SCHEMA.additionalProperties).toBe(false);
@@ -124,6 +133,7 @@ describe('bounded composition score', () => {
     const gap = copy(); gap.parts = gap.parts.filter((part) => part.startBar !== 16);
     expect(() => parseComposition(gap, input)).toThrow(CompositionError);
   });
+  // 오디오 buffer를 만들기 전에 동시 발음량을 차단해야 메모리/CPU를 낭비하지 않는다.
   it('rejects excessive polyphony before allocating audio buffers', () => {
     const score = copy();
     for (let transpose = 1; transpose < 14; transpose++) score.parts.push({ ...score.parts[0]!, transpose });
@@ -136,6 +146,7 @@ describe('bounded composition score', () => {
       expect(() => parseComposition(score, { ...input, settings: { ...input.settings, ...settings } })).toThrow(CompositionError);
     }
   });
+  // 끝 안에서 시작한 마지막 반복만 허용한다. 종료 이후에 새 반복을 추가하는 경우는 아래 별도 사례에서 거부한다.
   it.each([[68, 1], [64, 2], [66, 1]])('accepts the final partial pattern at bar %i with %i repetitions', (startBar, repeats) => {
     const score = partialEnding();
     for (const part of score.parts.filter((part) => part.patternId === 'ending_figure')) { part.startBar = startBar; part.repeats = repeats; }
@@ -163,6 +174,7 @@ describe('bounded composition score', () => {
   });
 });
 
+// 포맷 성공만 보지 않고 정확한 요청 길이, 무음/클리핑/DC와 섹션별 강약도 실제 sample에서 확인한다.
 describe('local musical WAV renderer', () => {
   it('renders an overhanging four-bar ending as exactly 150 seconds with its existing fade', async () => {
     const bytes = await collect(partialEnding(), 150);
@@ -208,6 +220,7 @@ describe('local musical WAV renderer', () => {
     // Different sections must have different musical content, not repeated WAV padding.
     expect(digest(bytes.subarray(44 + 10 * 176_400, 44 + 14 * 176_400))).not.toBe(digest(bytes.subarray(44 + 34 * 176_400, 44 + 38 * 176_400)));
   }, 30_000);
+  // 같은 score/seed는 같은 SHA, 음표 또는 seed 변경은 다른 SHA여야 한다. LLM 작곡 결과 재현성을 뜻하지 않는다.
   it('is byte reproducible for the same score/seed and changes when notes or seed change', async () => {
     const a = await collect(copy()), b = await collect(copy());
     expect(digest(a)).toBe(digest(b));
@@ -236,6 +249,7 @@ describe('local musical WAV renderer', () => {
     const controller = new AbortController(); controller.abort(new Error('/private/auth-token'));
     await expect(renderComposition(copy(), 90, controller.signal)[Symbol.asyncIterator]().next()).rejects.toMatchObject({ name: 'AbortError', message: '음악 생성이 취소되었습니다.' });
   });
+  // 렌더링 중 timer 기반 취소가 실행되어야 UI/API가 장시간 DSP 때문에 멈추지 않는다.
   it('yields the event loop and cancels during synthesis before producing WAV bytes', async () => {
     const controller = new AbortController(), reader = renderComposition(copy(), 90, controller.signal)[Symbol.asyncIterator]();
     const started = performance.now(), pending = reader.next();
@@ -251,6 +265,7 @@ describe('local musical WAV renderer', () => {
     await expect(reader.next()).rejects.toMatchObject({ name: 'AbortError' });
     await expect(source[Symbol.asyncIterator]().next()).rejects.toMatchObject({ code: 'COMPOSITION_STREAM_CONSUMED' });
   }, 30_000);
+  // parse 이후 caller가 객체를 바꿔도 renderer 시작 시 재검증이 비용 제한을 지켜야 한다.
   it('defensively rejects a mutated score instead of rendering unbounded input', async () => {
     const score = copy(); score.parts[0]!.repeats = Infinity;
     await expect(renderComposition(score, 90, new AbortController().signal)[Symbol.asyncIterator]().next()).rejects.toMatchObject({ code: 'INVALID_COMPOSITION' });

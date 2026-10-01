@@ -1,3 +1,7 @@
+/**
+ * 프로젝트를 가로지르는 Library 목록과 즐겨찾기 lifecycle을 검증한다.
+ * 필터 적용 순서·timestamp tie·cursor anchor 삭제·수정/삭제/재시작과 공개 DTO의 실제 metadata를 확인한다.
+ */
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
@@ -19,6 +23,7 @@ let port: number;
 let database: DatabaseService;
 let projectA: ProjectSummary;
 let projectB: ProjectSummary;
+// 임시 SQLite와 임의 loopback 포트로 독립 서버를 시작해 사용자 프로젝트를 건드리지 않는다.
 async function start() {
   app = await createApplication({ dataDir: root, uiPort: '5173', musicProvider: 'mock' });
   await app.listen(0, '127.0.0.1');
@@ -44,6 +49,8 @@ async function api<T = unknown>(method: string, path: string, body?: unknown): P
     req.on('error', reject); req.end(content);
   });
 }
+// 대부분 목록 검증은 row만 필요하다. 삭제/재시작 사례에만 실제 자체 WAV를 복사해 불필요한 파일 생성을 줄인다.
+// 요청 seed와 합성 내부 오류 문자열을 넣어 공개 DTO가 이를 누출하지 않는지 확인한다.
 function seed(owner: string, favorite = false, createdAt = '2026-10-01T00:00:00.000Z', withAudio = false) {
   const generationId = randomUUID();
   const id = randomUUID();
@@ -55,6 +62,7 @@ function seed(owner: string, favorite = false, createdAt = '2026-10-01T00:00:00.
   if (withAudio) copyFileSync(join(REPOSITORY_ROOT, 'backend/fixtures/audio/demo-01.wav'), join(root, audioPath));
   return { id, generationId, projectId: owner, favorite, createdAt, audioPath };
 }
+// 목록 요청은 항상 성공 상태를 확인한 뒤 page를 반환해 잘못된 오류 body가 빈 목록처럼 취급되지 않게 한다.
 async function list(query = '') {
   const response = await api<Page<LibraryTrackSummary>>('GET', `/tracks${query ? '?' + query : ''}`);
   expect(response.status).toBe(200);
@@ -92,6 +100,7 @@ describe('Library HTTP list and favorite lifecycle', () => {
     expect(app!.get(ProjectsService).get(projectB.id).updatedAt).toBe(projectB.updatedAt);
   });
 
+  // 필터를 limit 이후에 적용하면 페이지가 비거나 누락되므로 여러 프로젝트와 favorite 상태를 교차 배치한다.
   it('applies true, false and project filters before limit/cursor and keeps pages disjoint', async () => {
     const rows = Array.from({ length: 12 }, (_, i) => seed(i < 6 ? projectA.id : projectB.id, i % 2 === 0));
     const favorites = await list('favorite=true');
@@ -111,6 +120,7 @@ describe('Library HTTP list and favorite lifecycle', () => {
     expect(new Set(seen).size).toBe(seen.length);
   });
 
+  // cursor는 row 참조가 아니라 정렬 위치다. 기준 row 삭제와 제목/favorite 수정에도 탐색이 이어져야 한다.
   it('keeps cursor progress valid when the anchor is deleted and does not reorder on favorite/title changes', async () => {
     const rows = Array.from({ length: 5 }, () => seed(projectA.id, true)).sort((a, b) => b.id.localeCompare(a.id));
     const first = await list('favorite=true&limit=2');
@@ -148,6 +158,7 @@ describe('Library HTTP list and favorite lifecycle', () => {
     expect(database.client.pragma('foreign_key_check')).toEqual([]);
   });
 
+  // 파일이 없어도 metadata 조회는 가능하지만 요청 추정값/파일 경로/내부 오류는 summary에 섞이지 않아야 한다.
   it('exposes a strict public DTO with actual metadata only, even if the audio file is missing', async () => {
     const row = seed(projectA.id, true);
     const item = (await list('favorite=true')).items[0]!;

@@ -1,3 +1,7 @@
+/**
+ * 작은 로컬 앱의 명시적인 의존성 그래프다. DB·작업 관리자·스토리지는 앱 인스턴스마다 하나씩 공유한다.
+ * 테스트 대역도 같은 주입 경계를 통과하므로 HTTP/서비스 테스트가 운영 조립 방식과 어긋나지 않는다.
+ */
 import { Module } from '@nestjs/common';
 import type { DynamicModule } from '@nestjs/common';
 import { HealthController } from './health.controller.js';
@@ -17,6 +21,7 @@ import { TracksService } from './tracks/tracks.service.js';
 
 @Module({})
 export class AppModule {
+  // 설정 객체를 useValue로 공유하고, 실제 공급자에 맞는 전체 생성 제한 시간을 작업 관리자에 전달한다.
   static register(storage: StorageConfig, providers: ProviderService, options: ApplicationOptions): DynamicModule {
     return {
       module: AppModule,

@@ -1,7 +1,12 @@
+/**
+ * 프로젝트 API의 mutation 헤더, 응답 모양, 파일 정리 경고와 충돌 안내를 검증한다.
+ * 쓰기 응답 유실은 결과 불확실로 안내하고 중복 저장을 만드는 자동 재전송이 없는지 확인한다.
+ */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createProject, deleteProject, listProjects } from './projects';
 
 const signal = () => new AbortController().signal;
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe('project API client', () => {

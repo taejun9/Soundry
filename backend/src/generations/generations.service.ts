@@ -1,3 +1,7 @@
+/**
+ * 생성 요청의 영속 접수와 이력 조회를 담당한다. 실제 공급자 실행은 JobManager에 위임한다.
+ * 요청 snapshot은 불변이며 같은 requestKey는 새 호출 없이 기존 작업으로 연결한다.
+ */
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
@@ -26,6 +30,7 @@ export class GenerationsService {
     if (!this.database.db.select({ id: projects.id }).from(projects).where(eq(projects.id, projectId)).get()) throw new AppError(404, 'NOT_FOUND', '프로젝트를 찾을 수 없습니다.');
   }
 
+  // 여러 Generation의 트랙을 한 번 조회한 뒤 그룹에 배치한다. 실제 진행률을 모르면 null이며 단계는 실행 중에만 노출한다.
   private summaries(rows: GenerationRow[]): GenerationSummary[] {
     if (rows.length === 0) return [];
     const audio = this.database.db.select().from(tracks).where(inArray(tracks.generationId, rows.map((row) => row.id))).orderBy(tracks.variationIndex).all();
@@ -41,12 +46,14 @@ export class GenerationsService {
     });
   }
 
+  // 단건/목록이 같은 DTO 변환을 사용해 내부 파일 경로나 임의 공급자 payload가 응답에 섞이지 않게 한다.
   get(id: string): GenerationSummary {
     const row = this.database.db.select().from(generations).where(eq(generations.id, id)).get();
     if (!row) throw new AppError(404, 'NOT_FOUND', '생성 작업을 찾을 수 없습니다.');
     return this.summaries([row])[0]!;
   }
 
+  // 프로젝트 존재 확인 후 createdAt/ID 내림차순 경계로 탐색한다. limit+1은 다음 페이지 유무만 확인한다.
   list(projectId: string, limit: number, cursor?: GenerationCursor): Page<GenerationSummary> {
     this.projectExists(projectId);
     const position = cursor ? or(lt(generations.createdAt, cursor.createdAt), and(eq(generations.createdAt, cursor.createdAt), lt(generations.id, cursor.id))) : undefined;
@@ -55,6 +62,7 @@ export class GenerationsService {
     return { items: this.summaries(selected), nextCursor: rows.length > limit ? encodeGenerationCursor(selected[selected.length - 1]!) : null };
   }
 
+  // 성공·실패·취소 및 결과를 삭제한 작업도 이력에 남긴다. trackCount는 현재 결과 수를 계산한다.
   prompts(projectId: string, limit: number, cursor?: GenerationCursor): Page<PromptSummary> {
     this.projectExists(projectId);
     const position = cursor ? or(lt(generations.createdAt, cursor.createdAt), and(eq(generations.createdAt, cursor.createdAt), lt(generations.id, cursor.id))) : undefined;
@@ -73,6 +81,8 @@ export class GenerationsService {
     };
   }
 
+  // 기존 키 조회를 준비 상태/queue cap보다 먼저 수행해 네트워크 재전송이 새로운 유료 작업을 만들지 않게 한다.
+  // 같은 키에 입력이 달라지면 409로 거부하고, 새 작업만 현재 공급자의 입력 제한을 검사한다.
   create(projectId: string, body: unknown): CreateGenerationResult {
     const input = validateCreateGeneration(body, storedInputCapabilities);
     const settingsJson = canonicalSettings(input.settings);
@@ -89,6 +99,7 @@ export class GenerationsService {
       this.providers.validateInput(input);
       this.providers.assertConfigured();
       if (!this.jobs.accepting) throw new AppError(503, 'SERVER_STOPPING', '서버가 종료 중입니다. 다시 연결한 뒤 제출해 주세요.');
+      // 원본 참조는 같은 프로젝트의 이력으로 한정한다. retry/regenerate는 원본 row를 수정하지 않는다.
       if (input.sourceGenerationId) {
         const source = this.database.db.select({ projectId: generations.projectId }).from(generations).where(eq(generations.id, input.sourceGenerationId)).get();
         if (!source || source.projectId !== projectId) throw new AppError(400, 'INVALID_INPUT', '같은 프로젝트의 생성 이력만 재사용할 수 있습니다.');
@@ -104,10 +115,12 @@ export class GenerationsService {
       this.database.touchProject(projectId);
       return { id, created: true };
     }, { behavior: 'immediate' });
+    // queued row의 commit이 끝난 뒤에만 메모리 queue에 넣는다. 응답 전에 중단되어도 다음 시작에서 복구 상태로 전환된다.
     if (result.created) this.jobs.enqueue(result.id);
     return { status: result.created ? 202 : 200, generation: this.get(result.id) };
   }
 
+  // DB에 취소를 먼저 기록하고 나서 실행 중 signal을 중단한다. 완료 transaction과 선착순으로 하나의 최종 상태만 남는다.
   cancel(id: string): GenerationSummary {
     this.database.db.transaction(() => {
       const row = this.database.db.select().from(generations).where(eq(generations.id, id)).get();

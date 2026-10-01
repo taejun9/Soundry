@@ -1,5 +1,10 @@
+/**
+ * CLI 준비 오류는 사용 가능한 한국어 안내로 제한하고 서버 내부 출력은 숨기는지 검증한다.
+ * fetch를 대체해 실제 CLI나 네트워크를 호출하지 않으며, 알려지지 않은 5xx에도 같은 정보 경계를 적용한다.
+ */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { requestJson } from './client';
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => vi.unstubAllGlobals());
 
 describe('CLI preflight error boundary', () => {

@@ -1,5 +1,10 @@
+/**
+ * 목록에서 사라진 버튼의 포커스 복구 조건을 검증한다.
+ * DOM 갱신 전후의 activeElement를 바꾸어 사용자 이동을 존중하고 제거된 제목으로 이동하지 않는지 확인한다.
+ */
 import { describe, expect, it, vi } from 'vitest';
 import { restoreRemovedControlFocus } from './removal-focus';
+/** DOM 전체 대신 연결 여부와 focus 호출만 관찰하는 최소 대역을 만든다. */
 function target(isConnected = true) { return { isConnected, focus: vi.fn() }; }
 describe('focus after a list item disappears', () => {
   it('waits until the DOM update before focusing the surviving list heading', async () => {

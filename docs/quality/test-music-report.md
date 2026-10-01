@@ -131,3 +131,7 @@ backend_bootstrap이 83개 파일을 전수 검토해 PASS로 판정했다. 20�
 README·release checklist·roadmap·제작 보고서·계획의 완료 수치와 검증 범위를 독립 검토했고 추가 지적 없이 PASS했다. 문서 base·diff 및 곡목 정합성 검사도 통과했다. QA 이후 계획을 completed로 이동하고 [같은 이름의 리뷰](../reviews/plan-004-test-music.md)에 근거와 한계를 기록했다.
 
 음원은 다운로드 폴더에 준비됐으며 SoundCloud에 직접 업로드하지 않았다. 이 기록을 포함한 변경은 프로젝트의 commit → main 병합·push → 병합 브랜치 삭제 → 사용이 끝난 관리형 worktree archive 순서를 따른다. 최종 모바일 점검에서 발견한 BPM·장르명 간격도 [plan015](../reviews/plan-015-track-metadata-spacing.md)에서 보완했다. 실제 320px/1280px 표시와 독립 리뷰를 통과했으며 음원 파일은 바꾸지 않았다.
+
+## 2026-10-02 전수 재검증
+
+plan-016에서 기존 Downloads 83개 파일·20곡을 다시 검사했다. 전곡150초·stereo PCM16/44.1kHz, 고유 SHA20개, 앱/배치/Provenance/Upload_WAV의 SHA와 독립파일, metadata·provenance 일치 및 신호경고0을 확인했다. 기존 음원은 보존했으며 새 원격 작곡·중복 복사·SoundCloud 업로드·전곡청취는 수행하지 않았다. 상세 근거는 [전체 검증 기록](plan-016-verification.md)과 [독립 리뷰](../reviews/plan-016-quality-release.md)에 있다.

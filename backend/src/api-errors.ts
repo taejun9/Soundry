@@ -1,3 +1,7 @@
+/**
+ * 외부에 공개할 오류와 내부 예외를 분리하는 API 경계다.
+ * 사용자가 조치할 수 있도록 앱이 작성한 문구만 허용하고, SQL·경로·요청 본문·공급자 원문은 응답에 싣지 않는다.
+ */
 import { Catch, HttpException } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { ErrorRequestHandler, Response } from 'express';
@@ -22,11 +26,14 @@ const errors: Record<number, SafeError> = {
   500: { code: 'INTERNAL_ERROR', message: '요청을 처리하지 못했습니다. 다시 시도해 주세요.' },
 };
 
+// 알려진 HTTP 상태는 고정 문구로 변환하고, 목록에 없는 오류는 내부 오류 문구로 축약한다.
 function sendError(response: Response, status: number): void {
   response.status(status).json({ error: errors[status] ?? errors[500] });
 }
 
 // Express parser errors run before Nest routes. Never return their raw message/body.
+// 본문 파서는 Nest controller보다 먼저 실행되므로 Express 단계에서 별도로 오류를 정제한다.
+// 에러 객체에 포함될 수 있는 원문 JSON은 읽거나 응답에 복사하지 않는다.
 export const jsonErrorHandler: ErrorRequestHandler = (error: unknown, _request, response, _next) => {
   const type = typeof error === 'object' && error !== null && 'type' in error ? error.type : undefined;
   const status = type === 'entity.too.large' ? 413
@@ -38,6 +45,7 @@ export const jsonErrorHandler: ErrorRequestHandler = (error: unknown, _request, 
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  // AppError만 검증된 공개 문구를 보유한다. 나머지 HttpException도 메시지는 신뢰하지 않는다.
   catch(exception: unknown, host: ArgumentsHost): void {
     if (exception instanceof AppError) {
       host.switchToHttp().getResponse<Response>().status(exception.getStatus()).json({ error: { code: exception.publicCode, message: exception.publicMessage } });

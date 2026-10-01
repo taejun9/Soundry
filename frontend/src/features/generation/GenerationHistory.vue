@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 서버 생성 이력을 작업별로 묶어 보여주는 표시 컴포넌트. 조회·변경 의도는 상위로 전달한다.
+ * 요청 설정과 출력 metadata를 구분하고 실제 진행률이 없는 작업에는 단계 이름만 표시한다.
+ */
 import type { GenerationSummary, TrackSummary } from '../../../../shared/contracts';
 import StudioIcon from '../../components/StudioIcon.vue';
 import FavoriteButton from '../tracks/FavoriteButton.vue';
@@ -16,6 +20,7 @@ defineProps<{
 }>();
 const emit = defineEmits<{ refresh: []; more: []; cancel: [id: string]; retry: [job: GenerationSummary]; edit: [mode: 'rename' | 'delete', track: TrackSummary]; favorite: [track: TrackSummary] }>();
 const dateFormat = new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+/** 실제 서버 상태와 단계만 설명하고 알 수 없는 진행률 숫자를 만들지 않는다. */
 function statusLabel(job: GenerationSummary) {
   if (job.status === 'processing') {
     if (job.stage === 'saving') return '음원 저장 중';
@@ -24,15 +29,18 @@ function statusLabel(job: GenerationSummary) {
   }
   return { queued: '순서 기다리는 중', completed: '완료', failed: '실패', cancelled: '취소됨' }[job.status];
 }
+/** 실제 길이가 없는 결과는 미확인으로 남긴다. */
 function duration(seconds: number | null) {
   if (seconds === null) return '길이 미확인';
   return `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 }
 const settingLabels: Record<string, string> = { mode: '음악 유형', genre: '장르', mood: '분위기', bpm: 'BPM', durationSeconds: '요청 길이(초)', seed: '시드' };
+/** 저장된 요청값을 읽기 쉽게 표시하며 결과 metadata로 변환하지 않는다. */
 function settingValue(key: string, value: string | number | undefined) { return key === 'mode' ? (value === 'instrumental' ? '연주곡' : '보컬 포함') : value ?? ''; }
 </script>
 
 <template>
+  <!-- 로딩·통신 오류·빈 결과를 구분하고 완료/실패/취소 이력을 계속 보인다. 모든 재생 버튼은 같은 controller를 쓴다. -->
   <section class="panel generation-history" aria-labelledby="history-title">
     <div class="section-heading"><h2 id="history-title">생성 이력</h2><button type="button" class="icon-button" aria-label="생성 이력 새로고침" :disabled="loading || loadingMore" @click="emit('refresh')"><StudioIcon name="refresh" /></button></div>
     <p class="history-status" role="status">{{ pendingCount ? `${pendingCount}개 작업 처리 중 · 다른 화면으로 이동해도 계속 처리됩니다.` : `불러온 작업 ${jobs.length}개` }}</p>

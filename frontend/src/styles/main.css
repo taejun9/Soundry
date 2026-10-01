@@ -1,5 +1,8 @@
+/* Soundry의 공통 시각 언어와 기능별 화면 스타일. 토큰 → 셸 → 기능 → 각 반응형 보완 순으로 적용한다.
+   뒤쪽 기능 규칙은 앞의 공통 규칙을 의도적으로 보완하므로 주석 추가 시 선언 순서와 우선순위를 유지한다. */
 @import 'tailwindcss';
 
+/* Tailwind와 일반 CSS가 공유하는 배경·강조색·폰트 토큰. 폰트 파일을 외부에서 자동 내려받지 않는다. */
 @theme {
   --color-studio-bg: #101112;
   --color-studio-panel: #17191b;
@@ -7,6 +10,7 @@
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
 
+/* 기본 대비와 브라우저 기본 폼의 dark 색 체계를 설정한다. 미지원 글꼴은 시스템 한글 글꼴로 대체한다. */
 :root {
   font-family: var(--font-sans);
   color: #f3f4f2;
@@ -19,6 +23,7 @@
   --border: #292c2e;
 }
 
+/* 기본 요소 초기화와 키보드 초점 표시. outline은 제거하지 않고 읽기 순서의 시작에 skip-link를 둔다. */
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
 button, input, textarea { font: inherit; }
@@ -33,6 +38,7 @@ h1, h2, h3, p { margin: 0; }
 .studio-icon { width: 21px; height: 21px; flex-shrink: 0; }
 .skip-link { position: fixed; top: -80px; left: 20px; z-index: 100; border-radius: 8px; padding: 12px 20px; color: #101112; background: var(--color-studio-accent); }
 .skip-link:focus { top: 12px; }
+/* 데스크톱 셸은 고정 사이드바 폭만큼 본문을 밀어 겹침을 방지한다. 모바일에서는 아래 media 규칙이 해제한다. */
 .studio-shell { display: flex; min-height: 100dvh; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: 232px; z-index: 20; background: #141617; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
 .brand-row { padding: 32px 27px 39px; }
@@ -51,6 +57,7 @@ nav { display: grid; gap: 7px; }
 .sidebar-bottom { margin-top: auto; padding-top: 40px; }
 .private-note { display: flex; align-items: center; gap: 9px; padding: 12px 8px; font-size: 11px; color: #939b9f; }
 .private-note .studio-icon { width: 13px; height: 13px; }
+/* 서버 연결 상태는 텍스트와 함께 색을 보조적으로 사용한다. 아이콘 버튼은 셸 전체에서 같은 크기/초점 정책을 쓴다. */
 .connection-card { padding: 13px 12px; border: 1px solid #303537; background: #1c1f20; border-radius: 9px; }
 .connection-heading { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 550; }
 .connection-dot { width: 6px; height: 6px; border-radius: 50%; background: #a4abb0; flex-shrink: 0; }
@@ -64,6 +71,7 @@ nav { display: grid; gap: 7px; }
 .connection-heading .studio-icon { width: 14px; height: 14px; }
 .build-label { display: block; color: #868e92; font-size: 8px; letter-spacing: 1.5px; margin: 19px 8px 0; }
 .menu-toggle { display: none; }
+/* 본문 폭과 상단 경로·제목·공통 버튼. min-height로 기본 클릭 영역을 확보하고 긴 이름은 기능별로 줄바꿈한다. */
 .studio-body { margin-left: 232px; width: calc(100% - 232px); display: flex; flex-direction: column; }
 .topbar { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 48px; border-bottom: 1px solid #242729; }
 .breadcrumb { display: flex; align-items: center; gap: 14px; font-size: 12px; color: #91989e; }
@@ -84,6 +92,7 @@ h1 { font-size: clamp(27px, 2.5vw, 34px); line-height: 1.35; font-weight: 720; l
 .button-primary:disabled { background: #343f2d; color: #b0c2a2; }
 .button-secondary { background: #24282a; border: 1px solid #363b3e; color: #d8dddf; }
 .button-secondary:hover { background: #303638; }
+/* 첫 사용 안내와 CSS 레코드 장식. 장식은 실제 음원 파형이나 분석 결과를 의미하지 않는다. */
 .welcome-panel { display: flex; justify-content: space-between; overflow: hidden; min-height: 275px; background: #1a211b; border: 1px solid #34402f; border-radius: 12px; margin-bottom: 37px; }
 .welcome-copy { padding: 30px 35px 32px; position: relative; z-index: 1; }
 .small-tag { font-size: 8px; line-height: 1; letter-spacing: 1.5px; color: #b4cca3; display: inline-block; }
@@ -112,6 +121,7 @@ h1 { font-size: clamp(27px, 2.5vw, 34px); line-height: 1.35; font-weight: 720; l
 .availability-note { margin-top: 16px; color: #b8c1c5; font-size: 10px; background: #24292b; padding: 6px 10px; border-radius: 5px; }
 .studio-footer { display: flex; justify-content: space-between; gap: 20px; padding: 0 48px 25px; color: #828c91; font-size: 10px; }
 .outline-tag { border: 1px solid #3a4246; border-radius: 5px; color: #b6c0c5; padding: 6px 10px; font-size: 10px; white-space: nowrap; }
+/* 작성/결과 열은 minmax(0, ...)로 긴 프롬프트가 전체 viewport를 밀어내지 않게 한다. */
 .workspace-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 22px; align-items: stretch; }
 .panel { background: var(--color-studio-panel); border: 1px solid #2c3235; border-radius: 11px; padding: 27px; }
 .muted-copy { font-size: 12px; color: #a4adb2; line-height: 1.85; margin-top: 13px; }
@@ -128,6 +138,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .not-found { min-height: 60vh; }
 .not-found h1 { font-size: 29px; }
 
+/* 넓은 화면에서는 읽기 폭을 무제한 늘리지 않고 주로 여백과 환영 장식만 확대한다. */
 @media (min-width: 1600px) {
   .main-content { padding-top: 60px; }
   .welcome-panel { min-height: 305px; }
@@ -135,6 +146,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .record-disc { width: 250px; height: 250px; }
 }
 
+/* 태블릿 폭의 셸: 사이드바를 좁히고 작업 영역을 한 열로 바꿔 입력과 결과의 최소 폭을 확보한다. */
 @media (max-width: 1100px) {
   .sidebar { width: 205px; }
   .studio-body { margin-left: 205px; width: calc(100% - 205px); }
@@ -148,6 +160,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .workspace-results .empty-state { min-height: 260px; }
 }
 
+/* 모바일 셸: 사이드바를 문서 흐름에 넣고 명시적으로 연 메뉴만 표시한다. 본문 왼쪽 보정도 제거한다. */
 @media (max-width: 760px) {
   .studio-shell { display: block; }
   .sidebar { position: relative; width: 100%; border-right: 0; border-bottom: 1px solid var(--border); }
@@ -183,16 +196,18 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .library-panel .empty-state { min-height: 350px; padding-left: 0; padding-right: 0; }
 }
 
+/* 운영체제의 동작 줄이기 설정에서는 전환·회전·부드러운 스크롤을 끈다. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
 }
 
-/* Project management */
+/* 프로젝트 관리: 카드, 상태 안내, 확인 대화상자와 작업 공간 진입 화면. */
 .nav-hint { display: block; font-size: 10px; color: #96a38e; font-weight: 400; margin-top: 3px; }
 .project-count { font-size: 11px; color: #9ba79f; font-weight: 400; margin-left: 9px; }
 .refresh-link { color: #aab4b9; background: transparent; font-size: 11px; gap: 7px; }
 .refresh-link:disabled { color: #737e83; }
 .text-link { background: transparent; }
+/* 프로젝트 목록은 가용 폭에 맞춰 열 수를 정한다. min(100%, 240px)로 작은 화면의 가로 넘침을 막는다. */
 .project-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 20px; }
 .project-card { background: #191d1f; border: 1px solid #30393e; border-radius: 11px; overflow: hidden; min-width: 0; transition: border-color 150ms; }
 .project-card:hover { border-color: #627852; }
@@ -210,6 +225,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .project-actions button:hover { color: #f4f7f9; background: #2a3439; }
 .project-actions button .studio-icon { width: 14px; height: 14px; }
 .project-actions .delete-action { margin-left: auto; color: #c79c93; }
+/* 완료 안내와 오류 안내는 같은 정보 구조를 유지하고 경계/색을 달리한다. 긴 서버 안내는 줄바꿈한다. */
 .notice-banner, .error-banner { padding: 15px 18px; margin: 0 0 20px; border: 1px solid #415539; border-radius: 8px; background: #222d20; color: #c8e2b9; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
 .error-banner { background: #302424; color: #f0c3bc; border-color: #624340; }
 .error-banner .button { margin-top: 12px; }
@@ -217,6 +233,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .list-status { color: #a6b2b9; font-size: 11px; text-align: center; margin-top: 18px; }
 .loading-spinner { display: block; width: 25px; height: 25px; border: 2px solid #3c4a3a; border-top-color: #bedb9c; border-radius: 50%; margin-bottom: 8px; animation: studio-spin 900ms linear infinite; }
 @keyframes studio-spin { to { transform: rotate(360deg); } }
+/* native dialog의 top layer를 사용한다. 작은 화면에서도 최대 높이를 제한하고 내부 세로 스크롤을 허용한다. */
 .modal-dialog { position: fixed; inset: 0; margin: auto; width: min(470px, calc(100vw - 36px)); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 27px; color: #e9eff1; background: #1b2023; border: 1px solid #46535a; border-radius: 13px; box-shadow: 0 24px 70px #0008; }
 .modal-dialog::backdrop { background: #070b0ecc; }
 .modal-dialog:focus { outline: none; }
@@ -224,6 +241,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .modal-heading h2 { font-size: 20px; font-weight: 650; letter-spacing: -.6px; }
 .modal-copy { color: #adb9c0; line-height: 1.85; font-size: 12px; }
 .modal-copy strong { color: #eff4f6; }
+/* 입력의 기본 대비·검증 오류·설명 영역을 통일한다. 오류 영역 높이를 예약해 입력 중 레이아웃 이동을 줄인다. */
 .text-input { width: 100%; min-height: 47px; padding: 12px 14px; border: 1px solid #51616b; background: #11171a; color: #e8f0f4; border-radius: 7px; font-size: 14px; outline-offset: 3px; }
 .text-input::placeholder { color: #8e9da6; }
 .text-input[aria-invalid='true'] { border-color: #e9a095; }
@@ -261,9 +279,10 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .project-count { display: block; margin-left: 0; margin-top: 3px; }
 }
 
-/* Capability-aware composition */
+/* 공급자 지원 범위에 맞춘 작성 폼: 안내, 예문, 필드 검증과 세부 설정. */
 .composer-panel { min-width: 0; }
 .workspace-grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, .85fr); align-items: start; }
+/* 공급자 출처와 전송 안내를 폼 앞에 보여준다. 지원 불가 설정은 아래 disabled 스타일로 구분한다. */
 .provider-panel { margin: 23px 0; padding: 13px 15px; border: 1px solid #40503c; border-radius: 8px; background: #202a21; color: #b6c7ac; font-size: 11px; line-height: 1.85; }
 .provider-heading { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 3px; }
 .provider-badge { font-size: 11px; color: #daedc7; font-weight: 600; overflow-wrap: anywhere; }
@@ -275,6 +294,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .provider-warning { color: #f0c191; margin-top: 8px; }
 .provider-error { margin-top: 20px; }
 .compact-notice { font-size: 11px; padding: 12px 14px; }
+/* 예문 선택은 실제 제출과 떨어진 영역에 둔다. 선택값의 긴 텍스트가 버튼을 밀지 않도록 축소를 허용한다. */
 .preset-block { border-top: 1px solid #323c40; padding-top: 17px; margin-top: 22px; }
 .preset-block .field-label { margin-top: 0; }
 .optional-label { color: #93a4ad; font-size: 10px; font-weight: 400; margin-left: 6px; }
@@ -297,6 +317,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .variation-row .field-label { margin: 0; }
 .variation-row .field-help { margin: 5px 0 0; font-size: 10px; }
 .variation-select { width: 83px; min-width: 83px; font-size: 12px; padding: 10px 11px; }
+/* 접을 수 있는 선택 설정은 native details 상태를 사용하고 키보드 초점은 테두리 안에 그린다. */
 .advanced-settings { border: 1px solid #3a454b; border-radius: 8px; margin-top: 7px; overflow: hidden; }
 .advanced-settings summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px; font-size: 12px; font-weight: 600; cursor: pointer; list-style: none; }
 .advanced-settings summary::-webkit-details-marker { display: none; }
@@ -305,6 +326,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .advanced-settings[open] summary > .studio-icon { transform: rotate(180deg); }
 .advanced-settings summary:focus-visible { outline-offset: -4px; border-radius: 6px; }
 .advanced-intro { padding: 0 15px; margin: 0 0 17px; color: #a6b7c0; font-size: 11px; line-height: 1.8; }
+/* 선택 설정은 두 열이며 긴 입력은 전체 열을 차지한다. 모바일에서는 한 열과 16px 입력 글자로 전환한다. */
 .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 17px 13px; padding: 0 15px 19px; }
 .setting-field { min-width: 0; }
 .setting-field .field-label { margin: 0 0 9px; font-size: 11px; }
@@ -334,10 +356,11 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .input-counter { font-size: 9px; }
 }
 
-/* Persisted generation jobs */
+/* 저장된 생성 작업: 상태, 원본 입력, variation 결과와 접수 확인 안내. */
 .job-workspace-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .generation-history { min-width: 0; }
 .history-status { color: #a8b8be; font-size: 11px; line-height: 1.8; margin-top: 10px; margin-bottom: 21px; }
+/* 작업 카드와 결과 음원은 순서 있는 데이터의 표시다. 상태색은 서버 상태를 보조하고 가짜 진행 막대는 만들지 않는다. */
 .generation-list, .result-tracks { list-style: none; padding: 0; margin: 0; }
 .generation-list { display: grid; gap: 19px; }
 .generation-card { min-width: 0; padding: 17px; border: 1px solid #3b484e; border-radius: 9px; background: #151c20; }
@@ -365,6 +388,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .job-error { font-size: 11px; color: #f0bfb3; line-height: 1.8; margin-top: 13px; overflow-wrap: anywhere; }
 .generation-actions { display: flex; justify-content: flex-end; margin-top: 15px; }
 .generation-actions .button { font-size: 10px; padding: 8px 12px; min-height: 39px; }
+/* 한 작업의 variation 비교 목록. 제목·BPM·장르는 줄바꿈을 허용하고 재생/다운로드 조작 폭을 보존한다. */
 .result-tracks { display: grid; gap: 10px; margin-top: 14px; }
 .result-track { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border: 1px solid #37494c; background: #212e2e; border-radius: 7px; }
 .track-symbol { color: #b4d29b; display: grid; place-items: center; }
@@ -379,6 +403,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .history-footnote { color: #91a5af; font-size: 10px; line-height: 1.8; margin-top: 24px; }
 .history-error { font-size: 11px; }
 .history-error p + p { margin-top: 8px; }
+/* 접수 응답 유실은 작업 실패와 구분되는 확인 영역으로 강조한다. 원래 프롬프트 줄바꿈을 유지한다. */
 .uncertain-submission { border: 1px solid #756440; border-radius: 9px; background: #2c291c; color: #e1d2a6; padding: 20px; margin-bottom: 20px; }
 .uncertain-submission h2 { font-size: 16px; margin-bottom: 9px; }
 .uncertain-submission p { font-size: 12px; line-height: 1.9; overflow-wrap: anywhere; }
@@ -388,20 +413,24 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 @media (max-width: 1100px) { .job-workspace-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .generation-history { padding: 20px 16px; } .generation-card { padding: 14px; } .playback-pending { flex-basis: auto; } }
 
-/* Shared, persistent audio player */
+/* 모든 화면이 공유하는 고정 오디오 플레이어와 접근성 레이블. */
+/* 보조 기술용 레이블은 시각적으로만 숨긴다. display:none을 쓰지 않아 range와 상태 안내의 접근 가능한 이름을 유지한다. */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .track-play { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%; background: #34453b; color: #d4ebc2; border: 1px solid #5b7151; }
 .track-play:hover, .track-play.is-current { background: #b9ed91; color: #182613; }
 .track-play .studio-icon { width: 19px; height: 19px; }
 .track-download.icon-button { width: 42px; height: 42px; color: #c3d7cc; }
 .track-download:hover { background: #354640; }
+/* 컴포넌트가 측정한 실제 고정 플레이어 높이를 본문에 예약한다. flex 축소로 여백이 사라지지 않게 한다. */
 .player-spacer { flex-shrink: 0; }
+/* 플레이어는 화면 하단에 고정하고 safe-area 여백을 더한다. 왼쪽 위치는 셸의 사이드바 폭과 함께 변경해야 한다. */
 .audio-player { position: fixed; z-index: 25; left: 232px; right: 0; bottom: 0; padding: 16px 25px max(16px, env(safe-area-inset-bottom)); border-top: 1px solid #455144; background: #1c2522; box-shadow: 0 -10px 35px #0003; }
 .player-empty { display: flex; gap: 14px; align-items: center; }
 .player-empty p { font-size: 12px; color: #d4e0d4; }
 .player-empty span:not(.player-art) { display: block; margin-top: 5px; font-size: 10px; color: #9cb1a4; }
 .player-art { width: 45px; height: 45px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; background: #344637; border: 1px solid #4f6746; color: #bcdca7; }
 .player-art.is-playing { background: #b9ed91; color: #2b3d21; }
+/* 재생 정보·조작·음량·부가 행동을 이름 있는 grid 영역으로 배치해 좁은 화면에서는 행만 재배열한다. */
 .player-grid { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(160px, 1.4fr) 120px 80px; grid-template-areas: 'track transport volume actions'; align-items: center; gap: 19px; }
 .player-track { grid-area: track; display: flex; align-items: center; gap: 12px; min-width: 0; }
 .player-track-copy { min-width: 0; }
@@ -439,13 +468,14 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
   .player-error { font-size: 10px; }
 }
 
-/* Track management and reusable prompt history */
+/* 음원 관리와 프롬프트 재사용: 편집 조작, 결과 위치 이동과 과거 입력. */
 .workspace-write-column { display: grid; gap: 22px; min-width: 0; }
 .result-track.is-current { border-color: #92b973; background: #29382c; }
 .track-edit-actions { display: flex; justify-content: flex-end; gap: 16px; flex-basis: 100%; border-top: 1px solid #3c4d42; padding-top: 6px; }
 .track-edit-actions button { display: inline-flex; align-items: center; gap: 5px; background: transparent; color: #b4cbbf; font-size: 10px; min-height: 34px; }
 .track-edit-actions button:hover { color: #e0f2c9; }
 .track-edit-actions .studio-icon { width: 13px; height: 13px; }
+/* 이력에서 결과 보기로 이동한 카드가 고정 플레이어 아래에 완전히 가려지지 않도록 스크롤 여백을 둔다. */
 .generation-card { scroll-margin-bottom: 200px; scroll-margin-top: 25px; }
 .generation-card:focus { outline: 2px solid #b9ed91; outline-offset: 4px; }
 .prompt-history { min-width: 0; }
@@ -454,6 +484,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .prompt-history-meta { display: flex; flex-wrap: wrap; gap: 9px; justify-content: space-between; font-size: 9px; color: #a3b6ac; margin-bottom: 12px; }
 .past-prompt summary { cursor: pointer; display: flex; gap: 10px; list-style: none; color: #d1dfd5; font-size: 11px; line-height: 1.9; }
 .past-prompt summary::-webkit-details-marker { display: none; }
+/* 접힌 이력은 두 줄로 요약하고 펼친 원문은 선택/복사할 수 있게 별도 표시한다. */
 .past-prompt summary > span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; min-width: 0; flex: 1; }
 .past-prompt .studio-icon { width: 15px; height: 15px; }
 .past-prompt[open] summary .studio-icon { transform: rotate(180deg); }
@@ -466,7 +497,8 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .composer-source { color: #bdd3af; font-size: 10px; line-height: 1.8; margin-top: 12px; }
 @media (max-width: 760px) { .prompt-history { padding: 21px 18px; } .prompt-history-item { padding: 12px; } }
 
-/* Favorites across the local studio */
+/* 여러 프로젝트의 즐겨찾기: 저장 상태와 보관함 음원 카드. */
+/* 보관 여부와 진행 상태를 aria 속성과 같은 선택자로 표시해 시각 상태와 접근성 상태를 맞춘다. */
 .favorite-toggle[aria-pressed='true'] { color: #d2edae; }
 .favorite-toggle[aria-pressed='true'] .studio-icon { fill: #b9df92; stroke: #b9df92; }
 .track-edit-actions button:disabled, .track-edit-actions button[aria-disabled='true'] { color: #82978a; cursor: wait; }
@@ -474,6 +506,7 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 .track-favorite-error { flex-basis: 100%; }
 .library-description { margin: 15px 0 24px; color: #a8bab0; font-size: 11px; line-height: 1.9; }
 .library-title:focus { outline-offset: 5px; }
+/* 보관함은 큰 화면 두 열, 좁은 화면 한 열이다. 각 카드의 음악 정보와 프로젝트 연결은 독립적으로 줄바꿈한다. */
 .library-track-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; list-style: none; margin: 0; padding: 0; }
 .library-track { min-width: 0; border: 1px solid #3b4b42; background: #19231e; padding: 18px; border-radius: 10px; }
 .library-track.is-current { border-color: #9bc478; background: #263425; }

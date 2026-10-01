@@ -1,3 +1,7 @@
+/**
+ * 실제 계정 호출 없이 CLI adapter의 음악 입력·variation·취소·저장 연동을 검증한다.
+ * 작곡 runner는 자작 악보 대역이며 renderer/SQLite/HTTP는 실제 구현을 사용해 90초 WAV와 이력 보존을 확인한다.
+ */
 import { randomUUID } from 'node:crypto';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
@@ -16,6 +20,7 @@ import { ProviderError } from './provider-error.js';
 import { ProviderService } from './provider.service.js';
 import { join } from 'node:path';
 
+// 검증용 자작 120 BPM 악보다. 사용자 곡을 복사하지 않으며 운영 공급자의 자동 fallback으로 사용되지 않는다.
 function score(input: GenerationInput): Composition {
   const total = Math.ceil((input.settings.durationSeconds ?? 150) / 2);
   let startBar = 0;
@@ -40,14 +45,17 @@ function score(input: GenerationInput): Composition {
     ], parts, sections };
 }
 const musicInput: GenerationInput = { prompt: '밤 산책\n원래 만든 재즈 연주곡', settings: { bpm: 120, durationSeconds: 90, genre: 'Jazz', mood: 'warm', seed: 'original-seed' }, variationCount: 2 };
+// runner에 전달한 지침에서 JSON 요청 한 줄을 읽어 정확한 사용자 설정/seed가 전송되었는지 검사한다.
 function fromPrompt(prompt: string): GenerationInput {
   const line = prompt.split('\n').find(value => value.startsWith('{"prompt":'));
   if (!line) throw new Error('No request fixture');
   return JSON.parse(line) as GenerationInput;
 }
+// 준비 완료와 악보 반환만 대역 처리한다. CLI 설치·로그인·원격 사용 한도에는 의존하지 않는다.
 function runner(): CompositionRunner & { probe: ReturnType<typeof vi.fn<CompositionRunner['probe']>>; compose: ReturnType<typeof vi.fn<CompositionRunner['compose']>> } {
   return { probe: vi.fn(async () => 'ready' as const), compose: vi.fn(async prompt => score(fromPrompt(prompt))) };
 }
+// 순차 작곡과 별도 seed, 앱 계산 제한, 엄격한 출력/입력 검증 및 부분 batch 실패를 다룬다.
 describe('CLI composition provider', () => {
   it('composes variations sequentially with explicit musical constraints and distinct bounded seeds', async () => {
     const fake = runner(); let running = 0; let maximum = 0;
@@ -84,6 +92,7 @@ describe('CLI composition provider', () => {
     expect(fake.probe).not.toHaveBeenCalled(); expect(fake.compose).not.toHaveBeenCalled();
     expect(validateCliInput(musicInput).prompt).toContain('\n');
   });
+  // 인증/출력 실패가 Mock 성공으로 바뀌면 실제 작곡을 오인하므로 fallback이 없는지 확인한다.
   it('requires ChatGPT readiness and never falls back to Mock on auth or invalid output', async () => {
     const fake = runner(); fake.probe.mockResolvedValueOnce('CLI_AUTH_UNSUPPORTED');
     const provider = new CliProvider(fake);
@@ -121,6 +130,7 @@ describe('CLI composition provider', () => {
 
 const apps = new Set<NestExpressApplication>(); const directories: string[] = [];
 afterEach(async () => { for (const app of apps) await app.close(); apps.clear(); for (const root of directories.splice(0)) rmSync(root, { recursive: true, force: true }); });
+// 임의 loopback 포트와 전용 dataDir에서 HTTP/DB 통합을 실행하며 종료 시 모든 앱/임시 파일을 회수한다.
 async function appFor(fake: CompositionRunner, root = mkdtempSync('/private/tmp/soundry-cli-api-'), musicProvider = 'cli') {
   if (!directories.includes(root)) directories.push(root);
   const app = await createApplication({ dataDir: root, musicProvider, uiPort: '5173', cliRunnerOverride: fake }); apps.add(app);
@@ -136,6 +146,7 @@ async function appFor(fake: CompositionRunner, root = mkdtempSync('/private/tmp/
   }
   return { app, api, root };
 }
+// queued/processing 동안만 유한 polling해 renderer의 비동기 완료를 기다린다.
 async function terminal(api: Awaited<ReturnType<typeof appFor>>['api'], id: string) {
   for (let count = 0; count < 250; count++) {
     const row = (await api('GET', '/generations/' + id)).value as unknown as GenerationSummary;
@@ -144,6 +155,7 @@ async function terminal(api: Awaited<ReturnType<typeof appFor>>['api'], id: stri
   }
   throw new Error('local fixture generation did not complete');
 }
+// 준비 확인은 health/project를 막지 않아야 하며 같은 키 재전송은 공급자 전환 후에도 원래 결과를 반환해야 한다.
 describe('CLI API and persistence integration', () => {
   it('serves health and projects while readiness is pending; rejects unconfigured new requests before INSERT', async () => {
     const fake = runner(); let ready!: () => void;
@@ -158,6 +170,7 @@ describe('CLI API and persistence integration', () => {
     expect(app.get(DatabaseService).client.prepare('SELECT COUNT(*) n FROM generations').get()).toEqual({ n: 0 });
     expect(fake.compose).not.toHaveBeenCalled();
   });
+  // 합성 WAV의 실제 길이/저장/metadata를 검사한다. 자작 악보 대역 테스트는 실제 원격 작곡 검증과 구분한다.
   it('stores a real 90-second rendered WAV and preserves input/metadata/idempotency across a provider switch', async () => {
     const fake = runner(); const { app, api, root } = await appFor(fake); await app.get(ProviderService).refreshConfiguration();
     const project = (await api('POST', '/projects', { name: '실제 렌더러 통합' })).value;

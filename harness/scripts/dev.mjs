@@ -1,3 +1,7 @@
+/**
+ * 저장소의 두 개발 서버를 한 lifecycle로 실행한다. 어떤 cwd에서 호출해도 root를 기준으로 한다.
+ * 기본 loopback API와 명시한 UI 포트를 선점 확인하고, 한 서버가 실패하면 형제 프로세스도 정리한다.
+ */
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:net';
@@ -7,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const require = createRequire(import.meta.url);
+// .env를 Node 표준 loader로 읽되 내용이나 전체 환경 변수를 로그에 출력하지 않는다.
 const envPath = join(root, '.env');
 if (existsSync(envPath)) process.loadEnvFile(envPath);
 if ((process.env.API_PORT && process.env.API_PORT !== '3000') ||
@@ -21,6 +26,7 @@ if (!/^\d+$/.test(rawUiPort) || !Number.isInteger(Number(rawUiPort)) || Number(r
 }
 const uiPort = Number(rawUiPort);
 
+/** 잠깐 bind한 포트를 즉시 반납한다. 실제 서버는 같은 포트가 이후 선점된 경우에도 실패해야 한다. */
 async function assertAvailable(port) {
   const server = createServer();
   await new Promise((resolve, reject) => {
@@ -39,6 +45,7 @@ try {
 const children = [];
 let stopping = false;
 let monitor;
+/** detached 자식의 process group 전체를 신호로 제어한다. signal 0은 생존 여부만 검사한다. */
 function signalGroup(child, signal) {
   if (!child.pid) return false;
   try { process.kill(-child.pid, signal); return true; } catch (error) {
@@ -46,13 +53,14 @@ function signalGroup(child, signal) {
     return false;
   }
 }
+/** 중복 종료 요청은 무시하고 정상 종료 유예 후 살아 있는 process group에만 강제 종료를 보낸다. */
 function stop(code) {
   if (stopping) return;
   stopping = true;
   clearInterval(monitor);
   process.exitCode = code;
   children.forEach((child) => signalGroup(child, 'SIGTERM'));
-  // An exited wrapper is not proof that its process group has exited.
+  // wrapper가 종료돼도 watch 모드의 손자 프로세스가 남을 수 있어 group 소멸까지 확인한다.
   const forceTimer = setTimeout(() => {
     children.forEach((child) => signalGroup(child, 'SIGKILL'));
   }, 5000);
@@ -63,6 +71,7 @@ function stop(code) {
     }
   }, 50);
 }
+// npm wrapper를 추가하지 않고 현재 Node와 설치된 Vite를 직접 실행해 신호 전달 경로를 줄인다.
 const commands = [
   { name: 'backend', args: ['--watch', '--watch-preserve-output', '--import', 'tsx', 'src/main.ts'] },
   { name: 'frontend', args: [join(dirname(require.resolve('vite/package.json')), 'bin/vite.js')] },
@@ -91,6 +100,7 @@ let checking = false;
 let ready = false;
 let failures = 0;
 const started = Date.now();
+/** 겹치는 health probe를 막고 최초 준비 15초·준비 후 연속 5회 실패를 종료 기준으로 삼는다. */
 async function checkServers() {
   if (checking || stopping) return;
   checking = true;

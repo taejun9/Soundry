@@ -1,3 +1,7 @@
+/**
+ * 검증된 악보를 외부 sample 없이 stereo 44.1 kHz PCM16 WAV로 합성한다.
+ * seed별 음색/위상과 dither를 재현하고, 긴 DSP 반복 중에는 event loop를 양보해 API와 취소 요청이 응답하도록 한다.
+ */
 import { setImmediate as yieldImmediate } from 'node:timers/promises';
 import { CompositionError, expandComposition, parseComposition, releaseFor } from './schema.js';
 import type { Composition, Instrument, MusicalEvent } from './schema.js';
@@ -5,11 +9,15 @@ import type { Composition, Instrument, MusicalEvent } from './schema.js';
 export const SAMPLE_RATE = 44_100;
 const BLOCK = 4_096;
 const TABLE_SIZE = 4_096;
+// 4096개 사인 lookup table로 매 sample의 삼각함수 계산을 줄인다. table 크기는 비트 마스크 wrap에 맞는 2의 거듭제곱이다.
 const sineTable = Float64Array.from({ length: TABLE_SIZE }, (_, index) => Math.sin(index * 2 * Math.PI / TABLE_SIZE));
 function sine(cycles: number): number { return sineTable[(cycles * TABLE_SIZE) & (TABLE_SIZE - 1)]!; }
 function check(signal: AbortSignal): void { if (signal.aborted) throw new DOMException('음악 생성이 취소되었습니다.', 'AbortError'); }
+// 양보 전후에 취소를 확인해 이미 취소된 작업과 양보 중 들어온 취소를 모두 즉시 처리한다.
 async function breathe(signal: AbortSignal): Promise<void> { check(signal); await yieldImmediate(); check(signal); }
+// 문자 seed를 32비트 값으로 바꾼 뒤 결정적 PRNG에 사용한다. 인증/보안 용도의 해시가 아니다.
 function hash(text: string): number { let value = 2_166_136_261; for (const char of text) value = Math.imul(value ^ char.charCodeAt(0), 16_777_619); return value >>> 0; }
+// 전역 Math.random 대신 음표별 상태를 가진 PRNG를 사용해 다른 job 실행 순서에 영향을 받지 않는다.
 function random(seed: number): () => number {
   let state = seed;
   return () => { state = (state + 0x6D2B79F5) >>> 0; let value = Math.imul(state ^ (state >>> 15), 1 | state); value ^= value + Math.imul(value ^ (value >>> 7), 61 | value); return ((value ^ (value >>> 14)) >>> 0) / 4_294_967_296; };
@@ -23,6 +31,8 @@ function decayFor(instrument: Instrument, frequency: number): number {
 }
 
 /** Additive, band-limited tones. Each note has its own seeded phase, dynamics and envelope. */
+// MIDI를 주파수로 변환하고 악기별 배음·detune·감쇠를 더한다. constant-power pan으로 좌우 에너지를 배분한다.
+// 발음 길이는 이미 예산 검증된 이벤트를 사용하고 sample 배열 경계를 넘지 않게 한 번 더 제한한다.
 async function addTone(event: MusicalEvent, left: Float32Array, right: Float32Array, seed: number, signal: AbortSignal): Promise<void> {
   const rng = random(seed), instrument = event.instrument;
   const frequency = 440 * 2 ** ((event.pitch - 69) / 12), step = frequency / SAMPLE_RATE;
@@ -50,6 +60,7 @@ async function addTone(event: MusicalEvent, left: Float32Array, right: Float32Ar
     const envelope = attack * release * release;
     const fundamental = sine(phase), second = sine(phase * 2) * h2, third = sine(phase * 3) * h3;
     let tone: number;
+    // 모든 음색은 제한된 배음의 합이다. 악기마다 배음 비율과 밝기 감쇠를 다르게 해 같은 악보에서도 역할을 구분한다.
     switch (instrument) {
       case 'bass': tone = (fundamental + second * 0.2 + third * 0.07) * (0.55 + 0.45 * decay); break;
       case 'piano': tone = (fundamental + second * 0.42 * bright + third * 0.19 * bright + sine(phase * 4.003) * h4 * 0.08 * bright) * decay; break;
@@ -68,6 +79,7 @@ async function addTone(event: MusicalEvent, left: Float32Array, right: Float32Ar
 }
 
 /** Synthetic percussion: pitch envelopes, filtered noise and metallic partials, no samples. */
+// kick/tom은 내려가는 주파수, snare/clap/hat은 필터링한 noise와 금속성 배음을 사용한다. sample 라이브러리를 읽지 않는다.
 async function addDrum(event: MusicalEvent, left: Float32Array, right: Float32Array, seed: number, signal: AbortSignal): Promise<void> {
   const rng = random(seed), pitch = event.pitch;
   const begin = Math.round(event.start * SAMPLE_RATE), end = Math.min(left.length, begin + Math.ceil(event.length * SAMPLE_RATE));
@@ -96,6 +108,8 @@ async function addDrum(event: MusicalEvent, left: Float32Array, right: Float32Ar
   }
 }
 
+// 짧은 지연선의 감쇠 feedback으로 공간감을 더하고 DC 제거 및 곡 끝 fade를 적용한다.
+// 전체 peak/RMS를 측정해 한 곡에 같은 gain을 사용하므로 섹션 간 강약 차이는 유지한다.
 async function finishMix(left: Float32Array, right: Float32Array, signal: AbortSignal): Promise<number> {
   // Decorrelated, damped stereo feedback delay network. Feedback is strictly below unity.
   const delays = [1_423, 1_777, 2_131, 2_717].map((length) => new Float64Array(length));
@@ -128,6 +142,7 @@ async function finishMix(left: Float32Array, right: Float32Array, signal: AbortS
   return Math.min(0.9 / peak, 0.14 / rms);
 }
 
+// 2채널 × 16bit로 frame당 4byte를 기록한다. RIFF/data 크기는 뒤따르는 실제 PCM byte 수와 같아야 한다.
 function wavHeader(frames: number): Buffer {
   const header = Buffer.alloc(44), bytes = frames * 4;
   header.write('RIFF', 0); header.writeUInt32LE(bytes + 36, 4); header.write('WAVEfmt ', 8); header.writeUInt32LE(16, 16);
@@ -138,6 +153,8 @@ function wavHeader(frames: number): Buffer {
 }
 
 /** Single-use, bounded-memory WAV source. Cancellation yields at most every 4096 sample operations. */
+// 한 번 소비하는 async source다. 최대 180초의 좌우 mix buffer를 사용하고 출력 PCM은 4096 frame씩 전달한다.
+// 첫 PCM을 만들기 전에 악보를 다시 검증·복사해 호출자가 나중에 원본 객체를 바꾸는 영향도 차단한다.
 export function renderComposition(score: Composition, durationSeconds: number, signal: AbortSignal): AsyncIterable<Uint8Array> {
   let consumed = false;
   return {
@@ -151,6 +168,7 @@ export function renderComposition(score: Composition, durationSeconds: number, s
       const frames = Math.round(durationSeconds * SAMPLE_RATE), seed = hash(safe.seed);
       const left = new Float32Array(frames), right = new Float32Array(frames);
       const events = expandComposition(safe, durationSeconds);
+      // event index에서 음표별 seed를 파생해 발음 수·종류가 같은 score는 동일한 연주 변동을 갖게 한다.
       for (const event of events) {
         const voiceSeed = (seed ^ Math.imul(event.index + 1, 0x9E3779B1)) >>> 0;
         if (event.instrument === 'drums') await addDrum(event, left, right, voiceSeed, signal);

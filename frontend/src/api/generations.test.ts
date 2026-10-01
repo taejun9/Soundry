@@ -1,3 +1,7 @@
+/**
+ * 생성 응답에서 소속·상태·variation·metadata 계약을 검사한다.
+ * 진행 중 작업의 음원 노출이나 가짜 진행률은 거부하되 사용자가 음원을 삭제한 완료 이력은 보존한다.
+ */
 import { describe, expect, it } from 'vitest';
 import { parseGeneration } from './generations';
 import { jobFixture, trackFixture } from '../features/generation/test-fixtures';

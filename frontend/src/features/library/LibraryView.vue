@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 모든 프로젝트에서 즐겨찾는 음원을 모아 재생·다운로드·편집하는 화면.
+ * 즐겨찾기 해제로 카드가 사라질 때 재생은 유지하고 키보드 포커스만 남아 있는 목록 제목으로 복구한다.
+ */
 import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import type { DeleteResult, TrackSummary } from '../../../../shared/contracts';
@@ -25,15 +29,21 @@ const { pending, errors: favoriteErrors, toggle, beginConfirmation } = useFavori
   // The activated button is removed with its card; keep keyboard focus in the list.
   if (!track.favorite && focusInRemovedCard) void restoreRemovedControlFocus(focused, () => heading.value ?? null);
 }, player);
+/** 마지막 cursor까지 없는 전체 목록이면 사라진 음원에 대한 불확실한 즐겨찾기 해제도 확인할 수 있다. */
 async function refreshLibrary() { const confirm = beginConfirmation(); const page = await refresh(); if (page) confirm(page, nextCursor.value === null); }
+/** 추가 페이지는 일부 목록이므로 응답에 실제 포함된 항목만 확인 처리한다. */
 async function moreLibrary() { const confirm = beginConfirmation(); const page = await more(); if (page) confirm(page); }
+/** 동일 음원의 즐겨찾기 변경 중에는 편집 요청을 겹치지 않는다. */
 function edit(mode: 'rename' | 'delete', track: TrackSummary) { if (pending.value.has(track.id)) return; notice.value = ''; dialog.value = { mode, track }; }
+/** 확정된 이름을 보관함에 반영하고 편집창을 닫는다. */
 function saved(track: TrackSummary) { dialog.value = null; changeTrack(track); notice.value = '음원 이름을 저장했어요.'; }
+/** 음원 제거 후 남은 즐겨찾기를 유지하고 파일 정리 대기 상태를 구분해 알린다. */
 function deleted(track: TrackSummary, result: DeleteResult) { dialog.value = null; changeTrack(track, true); notice.value = result.cleanupPending ? '음원은 삭제되었습니다. 일부 파일 정리는 다음 서버 시작 때 다시 시도합니다.' : '음원을 삭제했어요. 생성 이력과 프롬프트는 유지됩니다.'; }
 onMounted(() => { void refreshLibrary(); });
 </script>
 
 <template>
+  <!-- 서버가 확인한 metadata만 표시하고 미확인 값은 그대로 안내한다. 다운로드는 원본 local URL을 사용한다. -->
   <section class="page-heading"><div><p class="eyebrow accent-text">KEEP WHAT MOVES YOU</p><h1>나의 보관함</h1><p class="page-description">여러 프로젝트에서 골라둔 음악을 한곳에서 듣고 정리하세요.</p></div><RouterLink to="/" class="button button-secondary">프로젝트 둘러보기<StudioIcon name="arrow" /></RouterLink></section>
   <p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
   <section class="panel library-panel" aria-labelledby="library-title" :aria-busy="loading || loadingMore">

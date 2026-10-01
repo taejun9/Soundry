@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""독립 임시 파일에서 WAV 변환과 실패 경계를 검증한다. 완성 음원을 만들지 않는다."""
+"""독립 임시 파일에서 WAV 변환·저장 경계와 공개 패키지 구성을 검증한다.
+
+90초 PCM24 변환은 실제 구현으로 검사한다. 20곡 metadata 통합의 변환/복사만
+검증된 파일을 재사용하는 대역으로 제한해 macOS APFS의 임시 디스크 사용량을 줄인다.
+원본 유지 패키지의 실제 COW·SHA·독립 inode 검사는 대역 없이 실행한다.
+사용자 파일·외부 작곡은 접근하지 않으며 테스트 sine을 완성 음원으로 집계하지 않는다.
+"""
 import importlib.util
 import copy
 import hashlib
@@ -14,15 +20,18 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
+# 동적 import의 __pycache__도 저장소에 남기지 않도록 설정한다.
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("audio_tools", Path(__file__).with_name("audio_tools.py"))
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 checks = []
+# 모든 쓰기는 이 suite만 소유한 임시 폴더 안에서 수행하고 실패 때도 context manager가 정리한다.
 with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
     root = Path(temporary)
     rate = 44100
+    # 최소 허용 길이 90초·stereo 44.1 kHz를 실제 bytes로 만들어 포맷과 길이 검사를 우회하지 않는다.
     time = np.arange(rate * 90) / rate
     pcm = (np.column_stack((np.sin(time * 2 * np.pi * 220), np.sin(time * 2 * np.pi * 330))) * 0.95 * 32767).astype("<i2")
     source = root / "source.wav"
@@ -36,7 +45,7 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
     assert inspected["durationSeconds"] == 90 and inspected["channels"] == 2 and not inspected["warnings"]
     checks.append("PCM16 stereo 90초 디코딩")
     exported = root / "export.wav"
-    module.export_wav(source, exported, 1)
+    export_modifications = module.export_wav(source, exported, 1)
     with wave.open(str(exported), "rb") as independent_reader:
         assert independent_reader.getsampwidth() == 3
         assert independent_reader.getnframes() == rate * 90
@@ -51,6 +60,7 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
         raise AssertionError("overwrite accepted")
     except ValueError:
         checks.append("기존 출력 덮어쓰기 거부")
+    # 직접 만든 IEEE float header는 PCM과 다른 decode 분기를 지나야 한다.
     floating = pcm.astype("<f4") / 32768 * 0.8
     fmt = struct.pack("<HHIIHH", 3, 2, rate, rate * 8, 8, 32)
     data = floating.tobytes()
@@ -65,6 +75,7 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
         raise AssertionError("truncated accepted")
     except ValueError:
         checks.append("잘린 WAV 거부")
+    broken.unlink()
     linked = root / "linked.wav"
     linked.symlink_to(source)
     try:
@@ -84,6 +95,7 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
 
     # RIFF 길이는 맞지만 마지막 홀수 chunk의 padding이 없는 별도 손상 사례다.
     def with_tail(tail):
+        """전체 RIFF 길이만 맞춰 chunk padding/header 검사가 독립적으로 실패하는지 확인한다."""
         raw = bytearray(original + tail)
         struct.pack_into("<I", raw, 4, len(raw) - 8)
         return raw
@@ -107,11 +119,15 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
     except ValueError:
         checks.append("마지막 chunk 뒤 잘린 header 거부")
 
+    # 손상 boundary를 검사한 대용량 사본은 이후 재사용하지 않으므로 즉시 해제한다.
+    for checked_file in (odd, padded, trailing):
+        checked_file.unlink()
+
     plan = json.loads((ROOT / "harness/music/track-plan.json").read_text())
     # 검사용 가상 주소와 가상 인증값이다. 외부 통신은 하지 않는다.
     private_url = "https" + "://" + "review.invalid/private?token=fixture-only"
     private_value = "fixture-only-secret"
-    # 원본 유지 모드의 통합 검증에 쓸 PCM16. clone fixture는 큰 20개 파일의 실제 복제를 피한다.
+    # 원본 유지 모드용 PCM16은 -0.5 dBFS 아래다. APFS clone으로 각 번호의 첫 sample만 바꿔 고유 SHA를 만든다.
     safe_source = root / "safe-source.wav"
     with wave.open(str(safe_source), "wb") as output:
         output.setnchannels(2)
@@ -143,6 +159,7 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
     plan_file = root / "plan.json"
     plan_file.write_text(json.dumps(plan), encoding="utf-8")
     manifest.write_text(json.dumps({"results": results}), encoding="utf-8")
+    # 허용된 공개 필드 안에 민감한 형태를 넣어도 출력 폴더 생성 전에 거부해야 한다.
     for field in ("notes", "prompt", "requestId"):
         bad_plan, bad_results = copy.deepcopy(plan), copy.deepcopy(results)
         if field == "notes":
@@ -203,9 +220,32 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
             assert not refused.exists()
     checks.append("원본 유지 시 -0.5 dBFS 초과 peak와 float WAV를 출력 폴더 생성 전 거부")
 
-    # 기존 기본 PCM24 전체 경로는 한 번만 검증한 다음 임시 산출물을 해제한다.
+    # 변환 알고리즘은 위 90초 실제 export에서 독립 wave reader로 검증했다.
+    # 여기서는 20곡의 공개 metadata·파일 배치·변환 기록 연결을 검사한다.
+    # 변환 결과와 원본을 clone하는 대역으로 PCM24 20개를 다시 생성하지 않는다.
+    # 따라서 이 단계는 서로 다른 20개 실제 변환의 end-to-end 검증으로 보고하지 않는다.
+    actual_copy = module.copy_wav_exclusive
+    export_calls = []
+
+    def copy_for_metadata(source_file, destination_file, expected_sha256=None, *, clone_on_macos=False):
+        """패키지 경로/해시 검증은 실제 copier에 맡기고 macOS에서만 COW를 강제한다."""
+        return actual_copy(source_file, destination_file, expected_sha256, clone_on_macos=True)
+
+    def export_for_metadata(source_file, destination_file, seed):
+        """실제 생성해 검사한 PCM24를 독립 복제하고 호출 연결을 따로 기록한다."""
+        assert source_file.is_file() and source_file.parent.name == "Provenance"
+        export_calls.append((source_file.name, destination_file.name, seed))
+        actual_copy(exported, destination_file, export_check["sha256"], clone_on_macos=True)
+        return dict(export_modifications)
+
     packaged = root / "synthetic-package"
-    result = module.package(plan_file, manifest, packaged)
+    with patch.object(module, "copy_wav_exclusive", side_effect=copy_for_metadata), patch.object(module, "export_wav", side_effect=export_for_metadata):
+        result = module.package(plan_file, manifest, packaged)
+    assert export_calls == [
+        (f'{track["number"]:02d}_{track["title"].replace(" ", "_")}_original.wav',
+         f'{track["number"]:02d}_{track["title"].replace(" ", "_")}.wav', track["seed"])
+        for track in plan["tracks"]
+    ]
     assert result["trackCount"] == 20 and result["totalSeconds"] == 1800
     records = list((packaged / "Provenance").glob("*.json"))
     assert len(records) == 20
@@ -227,9 +267,10 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
         assert record["export"]["sampleFormat"] == "PCM_24" and record["modifications"]["fadeOutSeconds"] == 1.0
         assert record["original"]["sha256"] != record["export"]["sha256"]
     assert len(list((packaged / "Upload_WAV").glob("*.wav"))) == 20
-    checks.append("합성 WAV 20개 전체 패키징에서 중첩 비공개 필드 제외·공개 기록 보존 확인")
+    checks.append("검증된 PCM24 대역을 쓴 20곡 패키지 구성·seed 연결·비공개 필드 제외·공개 기록 보존")
     shutil.rmtree(packaged)
 
+    # patch context 밖에서 실제 원본 유지 패키지를 만들어 디스크 소유권과 bytes 보존을 통합 검증한다.
     preserved = root / "preserved-package"
     result = module.package(plan_file, manifest, preserved, preserve_original_wav=True)
     assert result["trackCount"] == 20 and result["totalSeconds"] == 1800

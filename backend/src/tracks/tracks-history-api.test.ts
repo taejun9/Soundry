@@ -1,3 +1,7 @@
+/**
+ * 트랙 metadata 수정/삭제와 Generation 기반 프롬프트 이력의 일관성을 실제 HTTP·DB·파일로 검증한다.
+ * 원본 byte와 snapshot 보존, transaction rollback, cleanupPending/restart 및 결과가 없는 이력도 함께 확인한다.
+ */
 import { createHash, randomUUID } from 'node:crypto';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync } from 'node:fs';
 import { request } from 'node:http';
@@ -22,12 +26,14 @@ let root: string;
 let port: number;
 let projectId: string;
 
+// 동일 임시 루트를 재시작해 UI와 무관한 서버 영속성 계약을 검사한다.
 async function start() {
   app = await createApplication({ dataDir: root, uiPort: '5173', musicProvider: 'mock', providerOverride: new MockProvider({ delayMs: 0 }) });
   await app.listen(0, '127.0.0.1');
   port = ((app.getHttpServer() as Server).address() as AddressInfo).port;
   database = app.get(DatabaseService); storage = app.get(StorageConfig);
 }
+// 다운로드는 Buffer로 받고 JSON 요청은 동일 helper를 사용해 원본 SHA와 API 응답을 비교할 수 있게 한다.
 function raw(method: string, endpoint: string, body?: unknown): Promise<Result> {
   return new Promise((resolve, reject) => {
     const content = body === undefined ? undefined : JSON.stringify(body);
@@ -54,6 +60,7 @@ function audioPath(id: string): string {
   return join(root, row.path);
 }
 function generationRow(id: string) { return database.client.prepare('SELECT * FROM generations WHERE id=?').get(id); }
+// 상태/시각/트랙 수를 제어하는 DB fixture로 페이지/삭제 경계를 만든다. 설정값과 실제 metadata를 일부러 다르게 둔다.
 function seed(options: { owner?: string; createdAt?: string; status?: GenerationStatus; count?: number; settings?: GenerationSettings } = {}) {
   const id = randomUUID();
   const createdAt = options.createdAt ?? '2026-01-01T12:00:00.000Z';
@@ -73,6 +80,7 @@ function seed(options: { owner?: string; createdAt?: string; status?: Generation
   }
   return { id, ids, createdAt, settings, status };
 }
+// 이력 간 보존 검증에서는 실제 Mock job 저장 경로를 거쳐 서로 다른 Generation을 만든다.
 async function generate(prompt: string, sourceGenerationId?: string) {
   const response = await api<GenerationSummary>('POST', `/projects/${projectId}/generations`, {
     prompt, settings: { mode: 'instrumental' }, variationCount: 2, requestKey: randomUUID(), ...(sourceGenerationId ? { sourceGenerationId } : {}),
@@ -94,6 +102,7 @@ beforeEach(async () => {
 });
 afterEach(async () => { vi.restoreAllMocks(); await app?.close(); app = undefined; rmSync(root, { recursive: true, force: true }); });
 
+// 표시 metadata만 바뀌고 원본 파일·다른 프로젝트·원래 요청은 유지되어야 한다.
 describe('track detail, metadata and deletion HTTP API', () => {
   it('edits two generated results without changing audio bytes or source snapshots and preserves empty generation history across restart', async () => {
     const first = await generate('첫 번째 자체 데모');
@@ -176,6 +185,7 @@ describe('track detail, metadata and deletion HTTP API', () => {
     expect((await api<TrackDetail>('PATCH', `/tracks/${id}`, { title: 'a'.repeat(120) })).body.title).toHaveLength(120);
   });
 
+  // DB transaction 실패를 주입해 파일 삭제가 commit 이전에 실행되지 않는지 확인한다.
   it('rolls back metadata and deletion on transaction failure before touching the file', async () => {
     const item = seed(); const id = item.ids[0]!; const path = audioPath(id);
     const before = (await api<TrackDetail>('GET', `/tracks/${id}`)).body;
@@ -193,6 +203,7 @@ describe('track detail, metadata and deletion HTTP API', () => {
     expect(remove).not.toHaveBeenCalled();
   });
 
+  // 파일 정리 실패를 정상 삭제 응답의 경고로 노출하고 다음 앱 시작에서 orphan을 정리하는 흐름을 검증한다.
   it('commits deletion before cleanup and reports failed cleanup, then removes its orphan after restart', async () => {
     const item = seed(); const id = item.ids[0]!; const path = audioPath(id);
     vi.spyOn(storage, 'removeAudio').mockImplementationOnce(() => {
@@ -219,6 +230,7 @@ describe('track detail, metadata and deletion HTTP API', () => {
   });
 });
 
+// 별도 prompt 저장본 없이 모든 Generation 상태를 조회한다. trackCount는 삭제 후 실제 잔여 수를 반영해야 한다.
 describe('generation-based prompt history HTTP API', () => {
   it('paginates ties without losing any status, isolates projects and reports live counts without touching timestamps', async () => {
     const statuses: GenerationStatus[] = ['queued', 'processing', 'completed', 'failed', 'cancelled'];

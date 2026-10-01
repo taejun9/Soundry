@@ -1,3 +1,7 @@
+/**
+ * 작성 초안에서 생성 입력으로 넘어가는 순수 검증 경계를 검사한다.
+ * 문자 길이·NUL·숫자 유한성·capability·variation 상한을 확인하고 예문이 출력 metadata로 새지 않게 한다.
+ */
 import { describe, expect, it } from 'vitest';
 import type { ProviderCapabilities } from '../../../../shared/contracts';
 import { emptyDraft, prepareGenerationInput, sanitizeDraft } from './composer-input';

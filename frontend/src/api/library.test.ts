@@ -1,8 +1,14 @@
+/**
+ * 즐겨찾기 API의 필터·cursor와 공개 음원 계약을 검사한다.
+ * 정상 로컬 URL만 허용하고 favorite/project 필터에 맞지 않는 서버 응답은 화면에 넣지 않는다.
+ */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { listFavorites, parseLibraryTrack } from './library';
 import { trackFixture } from '../features/generation/test-fixtures';
 const item = () => ({ ...trackFixture(), favorite: true, projectName: 'Project name' });
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => vi.unstubAllGlobals());
+/** 실제 서버 없이 지정 JSON 응답으로 API 검증 경계를 실행한다. */
 function respond(value: unknown) { vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(value), { headers: { 'Content-Type': 'application/json' } }))); }
 describe('favorite library API boundary', () => {
   it('keeps unknown metadata nullable and requires project metadata and safe local media URLs', () => {

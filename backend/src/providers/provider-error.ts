@@ -1,3 +1,7 @@
+/**
+ * 작곡 실패를 DB/API에 남길 수 있는 고정 오류 코드와 한국어 안내로 제한한다.
+ * CLI stderr, 계정 정보, 입력 프롬프트, 작업 경로를 에러 메시지에 이어 붙이지 않는다.
+ */
 const messages = {
   CLI_NOT_INSTALLED: 'Codex CLI를 찾지 못했어요. 설치한 뒤 서버를 다시 시작해 주세요.',
   CLI_LOGIN_REQUIRED: 'Codex CLI에서 ChatGPT 계정으로 로그인한 뒤 공급자 상태를 다시 확인해 주세요.',

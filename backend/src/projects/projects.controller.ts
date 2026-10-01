@@ -1,3 +1,7 @@
+/**
+ * 프로젝트 REST 경계다. route/query/body를 검증한 뒤 서비스에 전달하며 DB·파일 처리는 서비스가 소유한다.
+ * 이름 변경과 삭제는 별도 동작으로 노출하고 파일 경로를 클라이언트 입력으로 받지 않는다.
+ */
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
 import type { DeleteResult, Page, ProjectSummary } from '../../../shared/contracts.js';
 import { projectId, projectListQuery, projectName } from './project-input.js';

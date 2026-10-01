@@ -36,16 +36,18 @@ PRIVATE_SUFFIXES = {
     ".pfx", ".wav", ".mp3", ".flac", ".ogg", ".m4a", ".aiff", ".aac",
 }
 PRIVATE_DIRS = {"data", "uploads", "outputs", "backups", ".soundry"}
-# Explicit plan-006 exception for original, reproducible workflow fixtures only.
+# plan-006에서 승인한 자체 제작·재현 가능한 두 fixture만 예외다. 사용자 음원은 계속 차단한다.
 AUDIO_FIXTURES = {"backend/fixtures/audio/demo-01.wav", "backend/fixtures/audio/demo-02.wav"}
 AUDIO_FIXTURE_MAX_BYTES = 2 * 1024 * 1024
 
 
 def relative(path: Path) -> str:
+    """저장소 내부 오류 위치를 사용자 홈 절대 경로 없이 일관되게 표시한다."""
     return path.relative_to(ROOT).as_posix()
 
 
 def markdown_files() -> list[Path]:
+    """의존성과 별도 checkout을 제외한 Markdown을 고정 순서로 반환한다."""
     return sorted(
         path for path in ROOT.rglob("*")
         if path.is_file() and path.suffix.lower() == ".md"
@@ -100,6 +102,7 @@ def link_targets(line: str):
 
 
 def check_links(path: Path, text: str, errors: list[str]) -> None:
+    """문서의 로컬 상대 대상 존재만 검사한다. 외부 URL·앵커·템플릿 치환값은 검사하지 않는다."""
     if "harness/templates" in relative(path):
         return
     for number, line in prose_lines(text):
@@ -117,6 +120,7 @@ def check_links(path: Path, text: str, errors: list[str]) -> None:
 
 
 def check_structure(errors: list[str]) -> None:
+    """기본 문서와 계획 lifecycle의 경로·이름·review mirror 규칙을 누적 검사한다."""
     for directory in REQUIRED_DIRS:
         if not (ROOT / directory).is_dir():
             errors.append(f"필수 디렉터리 없음: {directory}/")
@@ -141,7 +145,9 @@ def check_structure(errors: list[str]) -> None:
 
 
 def check_private_files(errors: list[str]) -> None:
+    """Git 추적 파일과 ignore되지 않은 파일명을 검사한다. 비밀 파일의 내용을 읽지 않는다."""
     try:
+        # 이미 추적한 비공개 파일은 .gitignore에 추가해도 이 목록에서 계속 잡힌다.
         result = subprocess.run(
             ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
             cwd=ROOT, capture_output=True, check=True,
@@ -168,6 +174,7 @@ def check_private_files(errors: list[str]) -> None:
 
 
 def check_readme_commands(errors: list[str]) -> None:
+    """README가 안내하는 npm 명령을 실제 root scripts와 대조해 실행 불가능한 안내를 막는다."""
     readme = ROOT / "README.md"
     if not readme.is_file():
         return
@@ -192,6 +199,7 @@ def check_readme_commands(errors: list[str]) -> None:
 
 
 def main() -> int:
+    """독립 검사들의 오류를 모아 모두 출력하며 하나라도 있으면 종료 코드 1을 반환한다."""
     argparse.ArgumentParser(description=__doc__).parse_args()
     errors: list[str] = []
     check_structure(errors)

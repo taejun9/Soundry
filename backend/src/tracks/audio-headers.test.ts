@@ -1,6 +1,11 @@
+/**
+ * Range와 Content-Disposition의 순수 규칙을 다양한 경계값으로 검증한다.
+ * 매우 큰 정수, suffix/열린 범위, malformed/double range와 한글/emoji/위험한 filename을 구분한다.
+ */
 import { describe, expect, it } from 'vitest';
 import { audioDisposition, parseAudioRange } from './audio-headers.js';
 
+// 유효하지만 파일 밖인 범위는 unsatisfiable, 문법이 틀리거나 미지원 범위는 full로 처리하는 정책을 고정한다.
 describe('single byte ranges', () => {
   it.each([
     ['bytes=0-0', 0, 0], ['bytes=10-19', 10, 19], ['bytes=90-', 90, 99],
@@ -18,6 +23,7 @@ describe('single byte ranges', () => {
   });
 });
 
+// 실제 포맷 확장자를 유지하면서 헤더 삽입/경로 탈출/Unicode 손상/Windows 예약명을 막아야 한다.
 describe('safe original download names', () => {
   it('uses the real extension and RFC extended UTF-8 filename for Korean/emoji', () => {
     const disposition = audioDisposition('새벽의 정원 🎵.mp3', true, 'wav');

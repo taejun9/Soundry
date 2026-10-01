@@ -1,3 +1,7 @@
+/**
+ * 실제 HTTP streaming으로 원본 bytes·Range/HEAD·다운로드 헤더와 파일 descriptor 소유권을 검증한다.
+ * 자체 fixture만 임시 루트에 복사하고 링크/경로 교체/삭제/연결 종료/읽기 실패를 통해 자원과 정보 경계를 확인한다.
+ */
 import { randomUUID } from 'node:crypto';
 import { copyFileSync, fstatSync, linkSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import type { ReadStream } from 'node:fs';
@@ -26,6 +30,7 @@ let path: string;
 let bytes: Buffer;
 let projectId: string;
 
+// 응답을 Buffer로 수집해 문자열 변환 없이 원본 byte 위치와 길이를 비교한다.
 function call(method = 'GET', endpoint = 'audio', headers: Record<string, string> = {}, trackId = id): Promise<Result> {
   return new Promise((resolve, reject) => {
     const req = request({ hostname: '127.0.0.1', port, method, path: `/api/tracks/${trackId}/${endpoint}`, headers: { host: 'localhost:3000', ...headers } }, (response) => {
@@ -40,10 +45,12 @@ function call(method = 'GET', endpoint = 'audio', headers: Record<string, string
     req.end();
   });
 }
+// stream close는 비동기일 수 있으므로 제한된 polling으로 실제 FD 반납 완료를 확인한다.
 async function untilClosed(source: ReadStream): Promise<void> {
   for (let count = 0; count < 100 && !source.closed; count++) await delay(5);
   expect(source.closed).toBe(true);
 }
+// 실제 openAudio를 유지하면서 stream/close만 관측한다. 경로 검증을 대역으로 건너뛰지 않는다.
 function captureAudio(transform?: (audio: OpenedAudio) => OpenedAudio) {
   const original = service.openAudio.bind(service);
   const opened: { close: ReturnType<typeof vi.fn<OpenedAudio['close']>>; streams: ReadStream[] }[] = [];
@@ -57,6 +64,7 @@ function captureAudio(transform?: (audio: OpenedAudio) => OpenedAudio) {
   return opened;
 }
 
+// 각 사례마다 실제 DB row와 작은 WAV 파일을 준비해 metadata와 파일 간 불일치를 독립적으로 조작할 수 있게 한다.
 beforeEach(async () => {
   root = mkdtempSync('/private/tmp/soundry-track-api-');
   app = await createApplication({ dataDir: root, uiPort: '5173', musicProvider: 'mock' });
@@ -77,6 +85,7 @@ beforeEach(async () => {
 });
 afterEach(async () => { vi.restoreAllMocks(); await app?.close(); rmSync(root, { recursive: true, force: true }); });
 
+// 재생과 다운로드가 같은 원본을 제공하고 read 요청은 프로젝트 수정 시각을 바꾸지 않는지 확인한다.
 describe('original track HTTP streaming', () => {
   it('streams exact original bytes for inline audio and an attachment without touching project timestamps', async () => {
     const timestamp = app.get(ProjectsService).get(projectId).updatedAt;
@@ -166,6 +175,7 @@ describe('original track HTTP streaming', () => {
   });
 });
 
+// 검증한 파일만 읽고 한 번 소유한 FD를 반드시 닫아야 한다. 안전성 실패 메시지에는 실제 경로를 노출하지 않는다.
 describe('audio path and FD ownership boundaries', () => {
   it('refuses stored traversal, absolute paths and a different media type/size', async () => {
     for (const unsafe of ['../outside.wav', '/private/outside.wav', `audio/../${id}.wav`, `audio/%2e%2e%2f${id}.wav`]) {
@@ -207,6 +217,7 @@ describe('audio path and FD ownership boundaries', () => {
     expect((await call()).status).toBe(409);
   });
 
+  // open 뒤 pathname을 바꾸어도 검증된 기존 FD의 원본을 읽어야 한다. stream 생성 시 경로를 다시 여는 회귀를 잡는다.
   it('streams the checked inode if the pathname is replaced after open', async () => {
     const replacement = Buffer.from(bytes); replacement.fill(0x11, 44);
     const opened = captureAudio((audio) => {
@@ -229,6 +240,7 @@ describe('audio path and FD ownership boundaries', () => {
     await untilClosed(opened[0]!.streams[0]!);
   });
 
+  // client가 끝까지 읽지 않아도 pipeline이 source를 파기해 FD를 남기지 않아야 한다.
   it('closes the streamed FD when the client disconnects before the whole response', async () => {
     const opened = captureAudio();
     await new Promise<void>((resolve, reject) => {
@@ -245,6 +257,7 @@ describe('audio path and FD ownership boundaries', () => {
     if (typeof fd === 'number') expect(() => fstatSync(fd)).toThrow();
   });
 
+  // headers 전송 뒤 I/O 실패를 JSON으로 이어 붙이면 오디오 손상/정보 노출이 생기므로 연결 종료를 확인한다.
   it('closes the FD on a stream I/O error and keeps raw diagnostics off the response', async () => {
     const opened = captureAudio((audio) => ({ ...audio, stream(start, end) {
       const source = audio.stream(start, end);

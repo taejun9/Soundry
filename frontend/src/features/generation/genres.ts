@@ -1,3 +1,7 @@
+/**
+ * 장르별 작성 시작점을 제공하는 정적 예문 목록. 콘셉트와 프롬프트는 사용자가 자유롭게 바꿀 수 있다.
+ * 이 값은 작곡 요청을 돕는 입력이며 생성 음원의 실측 장르나 품질 보장으로 사용하지 않는다.
+ */
 /** User-selectable writing prompts, not measured output metadata. */
 export const GENRE_PRESETS = [
   { id: 'hip-hop', label: 'Hip-hop', concept: '비가 씻어낸 도시', prompt: 'Instrumental hip-hop for a rain-washed city street. Warm jazz piano, deep bass, swung drums, and a memorable original hook.' },

@@ -1,8 +1,13 @@
+/**
+ * 트랙 route ID와 PATCH의 좁은 수정 계약을 검증한다.
+ * 제목/favorite만 허용하고 기존 객체를 바꾸지 않으며 요청한 false와 필드 생략을 구분해야 한다.
+ */
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../api-errors.js';
 import { trackId, validateTrackUpdate } from './track-input.js';
 
 const id = 'ABCDEF12-3456-4789-ABCD-ABCDEF123456';
+// 모든 실패가 공개 입력 오류로 정제되는지 상태/코드를 함께 검사한다.
 function rejects(action: () => unknown) {
   try { action(); throw new Error('Expected invalid input'); }
   catch (error) {
@@ -12,6 +17,7 @@ function rejects(action: () => unknown) {
   }
 }
 
+// UUID case 정규화는 허용하지만 공백/경로/encoded traversal을 ID처럼 받지 않는다.
 describe('track route identifier', () => {
   it('normalizes UUID case without changing the identifier', () => {
     expect(trackId(id)).toBe(id.toLowerCase());
@@ -25,6 +31,7 @@ describe('track route identifier', () => {
   });
 });
 
+// trim 후 글자 수, boolean 타입, 알 수 없는 필드와 snapshot 독립성을 함께 확인한다.
 describe('track update validation', () => {
   it('accepts a title-only update and validates length after trimming', () => {
     expect(validateTrackUpdate({ title: '  서울의 밤  ' })).toEqual({ title: '서울의 밤' });
@@ -37,6 +44,7 @@ describe('track update validation', () => {
     expect(validateTrackUpdate({ favorite: false })).toEqual({ favorite: false });
   });
 
+  // mutable/frozen 입력을 모두 써서 validator가 원본을 수정하거나 결과와 참조를 공유하지 않음을 입증한다.
   it('returns a fresh snapshot and leaves mutable or frozen inputs unchanged', () => {
     const input = { title: '  원본 제목  ', favorite: false };
     const result = validateTrackUpdate(input);

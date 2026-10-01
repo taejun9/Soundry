@@ -1,3 +1,7 @@
+/**
+ * 음원 상세와 과거 입력의 JSON 경계를 검증한다.
+ * 요청 설정과 출력 metadata를 분리하고 삭제 후 빈 이력은 허용하되 잘못된 ID·URL·개수는 거부한다.
+ */
 import { describe, expect, it } from 'vitest';
 import { parseTrackDetail } from './tracks';
 import { parsePrompt } from './prompts';

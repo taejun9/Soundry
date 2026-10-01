@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 프롬프트와 공급자별 선택 설정을 입력하고 명시적 제출 이벤트를 내보내는 작성 화면.
+ * 예문/과거 입력의 덮어쓰기는 확인을 거치며 재사용만으로 새 음악을 자동 요청하지 않는다.
+ */
 import { computed, nextTick, onMounted, ref, useId, watch } from 'vue';
 import type { GenerationInput, SettingKey } from '../../../../shared/contracts';
 import StudioIcon from '../../components/StudioIcon.vue';
@@ -24,6 +28,7 @@ const { provider, loading, error, reload } = useProvider();
 const { draft, restored, capabilityNotice, touched, errors, touch, validate, hasDraft, reuse, sourceGenerationId } = useComposer(props.projectId, provider);
 const available = computed(() => Boolean(provider.value?.configured && provider.value.generationEnabled));
 watch(available, value => emit('availability', value), { immediate: true });
+/** 제출 시 전체 필드를 검사한다. 오류가 접힌 세부 설정 안에 있으면 펼친 뒤 첫 오류로 포커스를 옮긴다. */
 async function requestGeneration() {
   if (!available.value || props.submitting || props.blocked) return;
   const input = validate();
@@ -51,7 +56,9 @@ const modeHelp = computed(() => {
   if (caps.value.modes.length === 1) return caps.value.modes[0] === 'instrumental' ? '현재 공급자는 연주곡만 지원합니다.' : '현재 공급자는 보컬 음악만 지원합니다.';
   return '보컬 포함 여부를 선택할 수 있어요. 비워 두면 공급자 기본값을 사용합니다.';
 });
+/** 현재 capability로 선택 설정의 활성 여부를 결정한다. */
 function supported(key: SettingKey) { return supportsSetting(caps.value, key); }
+/** 실제 지원 범위와 CLI 전송/합성 의미에 맞는 도움말을 제공한다. */
 function supportHelp(key: SettingKey) {
   if (!provider.value) return '공급자 정보를 확인한 뒤 선택할 수 있어요.';
   if (!supported(key)) return `현재 ${providerName.value}에서는 이 설정을 지원하지 않아요.`;
@@ -60,10 +67,13 @@ function supportHelp(key: SettingKey) {
   const range = key === 'bpm' ? caps.value?.bpmRange : key === 'durationSeconds' ? caps.value?.durationRangeSeconds : undefined;
   return range ? `선택 범위 ${range.min}–${range.max}${key === 'durationSeconds' ? '초' : ' BPM'}. 비워 두면 자동으로 결정합니다.` : '선택 사항 · 비워 두면 자동으로 결정합니다.';
 }
+/** 첫 방문부터 오류를 쏟지 않고 사용자가 만지거나 제출한 필드의 오류만 표시한다. */
 function visibleError(field: keyof ComposerDraft) { return touched.has(field) ? errors.value[field] : ''; }
+/** 입력 중 빈 값과 소수를 유지하기 위해 숫자 변환을 제출 검증 단계까지 미룬다. */
 function setNumber(field: 'bpm' | 'durationSeconds', event: Event) {
   if (event.target instanceof HTMLInputElement) draft[field] = event.target.value;
 }
+/** 예문은 prompt만 교체하고 이전 작업 계보를 해제한다. 대화상자가 닫힐 때는 공통 포커스 복원에 맡긴다. */
 async function insertPreset(item: (typeof GENRE_PRESETS)[number]) {
   const closesDialog = pendingPreset.value !== null;
   replacementConfirmed.value = closesDialog;
@@ -76,12 +86,14 @@ async function insertPreset(item: (typeof GENRE_PRESETS)[number]) {
     promptField.value?.focus();
   }
 }
+/** 기존 프롬프트를 잃는 경우에만 확인창을 열고 비어 있거나 같은 예문이면 바로 반영한다. */
 function choosePreset() {
   if (!preset.value) return;
   replacementConfirmed.value = false;
   if (draft.prompt.trim() && draft.prompt !== preset.value.prompt) pendingPreset.value = preset.value;
   else void insertPreset(preset.value);
 }
+/** 원본 입력을 현재 공급자 범위로 복원하고 자동 제출 없이 사용자 검토 상태로 남긴다. */
 async function applyReuse(item: ReusableGeneration) {
   if (!reuse(item)) { presetNotice.value = '공급자 정보를 불러온 뒤 다시 시도해 주세요.'; return; }
   const closesDialog = pendingReuse.value !== null;
@@ -90,6 +102,7 @@ async function applyReuse(item: ReusableGeneration) {
   presetNotice.value = '프롬프트와 설정을 가져왔어요. 내용을 확인한 뒤 생성 버튼을 눌러 새 작업을 시작하세요.';
   if (!closesDialog) { await nextTick(); promptField.value?.focus(); promptField.value?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 }
+/** 전달된 설정을 복사해 확인 대기 중 원본 변경의 영향을 피하고 기존 초안이 있으면 덮어쓰기를 묻는다. */
 function requestReuse(item: ReusableGeneration) {
   if (props.submitting || props.blocked) return;
   const snapshot = { ...item, settings: { ...item.settings } };
@@ -102,6 +115,7 @@ onMounted(() => { void reload(); });
 </script>
 
 <template>
+  <!-- 폼은 브라우저 기본 검증 대신 공급자 계약 검증을 사용한다. 비활성 필드에도 지원 불가 이유를 설명한다. -->
   <section class="panel prompt-panel composer-panel" aria-labelledby="composer-title">
     <div class="section-heading"><h2 id="composer-title">어떤 음악을 만들까요?</h2><StudioIcon name="sound" /></div>
     <p class="muted-copy">분위기와 악기, 머릿속에 떠오르는 장면을 적어보세요.</p>

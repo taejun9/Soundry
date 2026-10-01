@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 음원 이름 변경과 확정 삭제를 위한 UI. 최신 상세 조회가 끝나기 전에는 제출할 수 없다.
+ * 삭제 성공 시에만 지정된 목록 포커스를 우선하고 취소 시에는 열었던 버튼으로 돌아간다.
+ */
 import { nextTick, onMounted, ref, useId, watch } from 'vue';
 import type { DeleteResult, TrackSummary } from '../../../../shared/contracts';
 import ModalDialog from '../../components/ModalDialog.vue';
@@ -10,6 +14,7 @@ const { detail, title, loading, busy, error, fieldError, load, save, remove } = 
 let deletionConfirmed = false;
 const preferredReturnFocus = () => deletionConfirmed ? props.afterDeleteFocus?.() ?? null : null;
 const id = useId(); const input = ref<HTMLInputElement>();
+/** 삭제 확인과 이름 저장을 분기한다. 이름 오류는 입력으로 돌아가고 삭제 포커스는 성공한 경우에만 적용한다. */
 async function submit() {
   if (props.mode === 'delete') { const result = await remove(); if (result) { deletionConfirmed = true; emit('deleted', props.track, result); } }
   else { const result = await save(); if (result) emit('saved', result); else if (fieldError.value) { await nextTick(); input.value?.focus(); } }
@@ -18,6 +23,7 @@ watch(detail, async value => { if (value && props.mode === 'rename') { await nex
 onMounted(() => { void load(); });
 </script>
 <template>
+  <!-- 서버 상세 확인 전에는 제출을 막고 삭제 범위를 명시한다. 이름 변경은 원본 오디오 경로를 바꾸지 않는다. -->
   <ModalDialog :title="mode === 'rename' ? '음원 이름 변경' : '음원 삭제'" :busy="busy" :preferred-return-focus="preferredReturnFocus" @close="emit('close')">
     <p v-if="loading" class="modal-copy" role="status">현재 음원 정보를 확인하고 있어요.</p>
     <div v-if="error" class="error-banner" role="alert"><p>{{ error }}</p><button v-if="!detail" type="button" class="button button-secondary" :disabled="loading" @click="load">다시 확인</button></div>

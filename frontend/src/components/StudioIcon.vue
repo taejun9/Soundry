@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * 앱에서 사용하는 선형 SVG 아이콘의 로컬 정의. 외부 이미지나 아이콘 서비스를 요청하지 않는다.
+ * 아이콘 자체는 장식으로 숨기며 접근 가능한 버튼 이름은 호출한 화면이 제공한다.
+ */
+// 24×24 viewBox 기준 path만 보관한다. name은 이 테이블의 키로 제한해 임의 markup을 주입하지 않는다.
 const paths = {
   copy: 'M8 8h13v13H8zM16 8V3H3v13h5',
   play: 'm8 4 13 8-13 8V4Z',
@@ -26,6 +31,7 @@ defineProps<{ name: keyof typeof paths }>();
 </script>
 
 <template>
+  <!-- 장식 SVG이므로 스크린 리더에서 숨긴다. 의미는 부모 버튼/링크의 텍스트나 aria-label이 담당한다. -->
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="studio-icon">
     <path :d="paths[name]" />
   </svg>

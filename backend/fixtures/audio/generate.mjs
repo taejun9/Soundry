@@ -1,3 +1,7 @@
+/**
+ * Mock workflow에 쓰는 원본 수학 합성 fixture 두 개를 재현하는 도구다. 네트워크나 사용자 데이터는 사용하지 않는다.
+ * 8초 fixture는 기능 검증 전용이며 사용자가 요청한 90–180초 완성곡/실제 AI 작곡을 대신하지 않는다.
+ */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,10 +20,12 @@ if (process.argv.length > 2 && !checkOnly) {
   throw new Error('Usage: node backend/fixtures/audio/generate.mjs [--check]');
 }
 
+// MIDI 69=A4=440 Hz 기준의 평균율 변환이다.
 function frequency(midi) {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
+// 악기 종류에 따른 attack/release와 배음을 합산하고 일정 전력 pan으로 stereo 위치를 만든다.
 function addTone(channels, midi, start, duration, gain, pan, voice) {
   const first = Math.round(start * SAMPLE_RATE);
   const last = Math.min(FRAMES, Math.round((start + duration) * SAMPLE_RATE));
@@ -41,6 +47,7 @@ function addTone(channels, midi, start, duration, gain, pan, voice) {
   }
 }
 
+// 두 개의 고정 자작 화성/분산화음으로 서로 다른 fixture를 만든다. prompt/seed에 따라 달라지는 생성 로직이 아니다.
 function sketch(number) {
   const channels = [new Float64Array(FRAMES), new Float64Array(FRAMES)];
   if (number === 1) {
@@ -64,6 +71,7 @@ function sketch(number) {
     });
   }
 
+  // 시작/끝 fade로 click을 줄이고 전체 peak를 재서 PCM16 범위를 넘지 않는 일정 크기로 정규화한다.
   let peak = 0;
   for (let frame = 0; frame < FRAMES; frame += 1) {
     const fade = Math.min(1, frame / (SAMPLE_RATE * 0.03), (FRAMES - 1 - frame) / (SAMPLE_RATE * 0.25));
@@ -74,6 +82,7 @@ function sketch(number) {
   }
   if (!(peak > 0) || !Number.isFinite(peak)) throw new Error('Invalid synthesized signal');
 
+  // 표준 44byte PCM WAV 헤더와 interleaved 좌우 sample을 기록한다. manifest와 실제 frame/byte 수가 일치해야 한다.
   const dataBytes = FRAMES * CHANNELS * SAMPLE_WIDTH_BYTES;
   const wav = Buffer.alloc(44 + dataBytes);
   wav.write('RIFF', 0);
@@ -99,6 +108,7 @@ function sketch(number) {
   return wav;
 }
 
+// --check는 파일을 바꾸지 않고 재합성 bytes와 기존 산출물을 비교한다. 기본 실행만 fixture/manifest를 다시 쓴다.
 function saveOrCheck(file, bytes) {
   const path = new URL(file, directory);
   if (checkOnly) {
@@ -108,6 +118,7 @@ function saveOrCheck(file, bytes) {
   }
 }
 
+// 음원 byte의 SHA256과 측정 가능한 포맷 값을 함께 기록해 독립 검사기가 손상·우발적 변경을 검출하게 한다.
 const files = [1, 2].map((number) => {
   const file = `demo-0${number}.wav`;
   const bytes = sketch(number);

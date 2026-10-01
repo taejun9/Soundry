@@ -1,10 +1,10 @@
-# Dependencies/build output
+# 재설치·재빌드 가능한 의존성과 산출물은 저장소에 포함하지 않는다.
 node_modules/
 dist/
 coverage/
 *.tsbuildinfo
 
-# Local configuration and generated audio/database
+# 개인 설정·DB·생성 음원은 로컬에 보존한다. 비밀 값이 없는 .env.example만 버전 관리한다.
 .env
 .env.*
 !.env.example
@@ -16,7 +16,7 @@ data/
 *.sqlite-*
 *.sqlite3-*
 
-# Local tools
+# 격리 checkout·OS metadata·Python bytecode는 작업 도구가 관리하는 로컬 상태다.
 .worktree/
 .DS_Store
 __pycache__/

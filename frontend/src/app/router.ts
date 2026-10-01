@@ -1,3 +1,7 @@
+/**
+ * 프로젝트 목록, 작업 공간, 보관함과 404 화면의 SPA 경로를 정의한다.
+ * 문서 제목과 이동 후 스크롤은 라우터가 갱신하고 실제 음악 재생은 App의 단일 controller가 유지한다.
+ */
 import { createRouter, createWebHistory } from 'vue-router';
 import ProjectsView from '../features/projects/ProjectsView.vue';
 import WorkspaceView from '../features/generation/WorkspaceView.vue';

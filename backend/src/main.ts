@@ -1,6 +1,11 @@
+/**
+ * 개발/배포 실행 파일의 진입점이다. API는 고정 loopback 주소에서만 열고 프로세스 신호로 정상 종료한다.
+ * 시작 실패는 정제한 진단과 비정상 종료 코드로 알리며, 원시 예외나 환경변수 전체를 출력하지 않는다.
+ */
 import { createApplication } from './app.js';
 import { API_HOST, API_PORT } from './config/local-boundary.js';
 
+// 임의 host/port 환경설정으로 로컬 접근 경계가 넓어지는 것을 방지한다.
 async function bootstrap(): Promise<void> {
   if (process.env.API_PORT !== undefined && process.env.API_PORT !== String(API_PORT)) {
     throw new Error('INVALID_LOCAL_CONFIG');
@@ -15,11 +20,13 @@ async function bootstrap(): Promise<void> {
     await app.listen(API_PORT, API_HOST);
     console.info(`Soundry API: http://${API_HOST}:${API_PORT}/api/health`);
   } catch (error) {
+    // 포트 충돌 등 listen 실패에서도 초기화된 DB 잠금과 background probe를 반드시 반납한다.
     await app.close();
     throw error;
   }
 }
 
+// 오류별 사용자 조치만 안내한다. 예외의 stack/cause에는 로컬 경로나 입력이 있을 수 있어 출력하지 않는다.
 bootstrap().catch((error: unknown) => {
   const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
   if (code === 'EADDRINUSE') {

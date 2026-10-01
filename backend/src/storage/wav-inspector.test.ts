@@ -1,3 +1,7 @@
+/**
+ * 작은 자체 WAV를 변형해 RIFF/PCM parser의 독립적인 경계를 검증한다.
+ * 지원 float/extensible 형식, metadata chunk 건너뛰기, padding/frame 정렬과 링크 거부를 다룬다.
+ */
 import { linkSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -7,6 +11,7 @@ let directory: string;
 beforeEach(() => { directory = mkdtempSync('/private/tmp/soundry-wav-'); });
 afterEach(() => { rmSync(directory, { recursive: true, force: true }); });
 const fixture = () => readFileSync(join(REPOSITORY_ROOT, 'backend/fixtures/audio/demo-01.wav'));
+// 변형 bytes를 임시 파일에 기록해 메모리 parser가 아니라 실제 안전한 파일 열기 경로를 통과시킨다.
 async function inspect(bytes: Buffer) { const path = join(directory, 'audio.wav'); writeFileSync(path, bytes); return inspectWav(path, bytes.length); }
 
 describe('independent WAV header boundary', () => {
@@ -33,6 +38,7 @@ describe('independent WAV header boundary', () => {
     await expect(inspect(extended)).rejects.toMatchObject({ code: 'INVALID_AUDIO' });
   });
 
+  // 확장자가 WAV여도 RIFF 길이/정렬/codec이 어긋나면 저장 성공으로 취급하지 않아야 한다.
   it('rejects truncated data, forged RIFF sizes, invalid alignment and unsupported codecs', async () => {
     const original = fixture();
     const forged = Buffer.from(original); forged.writeUInt32LE(original.length, 4);
@@ -41,6 +47,7 @@ describe('independent WAV header boundary', () => {
     for (const invalid of [original.subarray(0, 80), forged, alignment, codec]) await expect(inspect(invalid)).rejects.toMatchObject({ code: 'INVALID_AUDIO' });
   });
 
+  // 홀수 크기 chunk의 마지막 padding 누락도 손상이다. data가 비어 있으면 계산 가능한 길이여도 음원으로 받지 않는다.
   it('requires the last odd chunk padding and rejects empty audio', async () => {
     const pcm = fixture();
     const odd = Buffer.concat([pcm, Buffer.from('4a554e4b0100000000', 'hex')]); odd.writeUInt32LE(odd.length - 8, 4);

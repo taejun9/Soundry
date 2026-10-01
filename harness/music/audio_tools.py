@@ -18,13 +18,16 @@ import wave
 
 import numpy as np
 
+# 파일 하나의 상한을 읽기 전에 확인한다. 아래 디코딩은 float64 배열을 사용하므로 입력 크기를 제한한다.
 MAX_BYTES = 100 * 1024 * 1024
 
+# 공개 산출물은 allowlist로 재구성한다. 외부 응답이나 로컬 파일 경로를 그대로 직렬화하지 않는다.
 INPUT_FIELDS = {"prompt": (str,), "variationCount": (int,)}
 SETTING_FIELDS = {
     "mode": (str,), "genre": (str,), "mood": (str,),
     "bpm": (int, float), "durationSeconds": (int, float), "seed": (str,),
 }
+# 공개 provenance의 중첩 키/텍스트를 재검사해 선택된 필드 안의 인증 정보 형태도 막는다.
 PRIVATE_KEY = re.compile(r"(?:api.?key|authorization|credential|password|secret|token|url|uri)", re.I)
 PRIVATE_TEXT = re.compile(
     r"[a-z][a-z0-9+.-]*://|\bwww\.|\bBearer\s+\S+|"
@@ -154,6 +157,7 @@ def read_wav(path: Path):
         raise ValueError("지원하는 RIFF/WAVE 파일이 아닙니다.")
     if struct.unpack_from("<I", raw, 4)[0] + 8 != len(raw):
         raise ValueError("RIFF 파일 길이와 실제 bytes가 다릅니다.")
+    # RIFF chunk는 홀수 payload 뒤 padding을 포함한다. header·payload·padding 경계를 각각 검사한다.
     chunks, offset = {}, 12
     while offset < len(raw):
         if offset + 8 > len(raw):
@@ -173,6 +177,7 @@ def read_wav(path: Path):
     if len(fmt) < 16 or not data:
         raise ValueError("fmt/data가 없거나 오디오가 비어 있습니다.")
     code, channels, rate, byte_rate, alignment, bits = struct.unpack_from("<HHIIHH", fmt)
+    # extensible WAV는 표준 PCM/IEEE subtype GUID와 일치하고 유효 bit 수가 container와 같아야 한다.
     if code == 0xFFFE:
         if len(fmt) < 40 or fmt[26:40] != bytes.fromhex("000000001000800000aa00389b71"):
             raise ValueError("지원하지 않는 extensible WAV입니다.")
@@ -187,6 +192,7 @@ def read_wav(path: Path):
     if alignment != channels * bits // 8 or byte_rate != rate * alignment or len(data) % alignment:
         raise ValueError("WAV block alignment가 잘못됐습니다.")
     if code == 1 and bits in (16, 24, 32):
+        # NumPy에 기본 int24가 없어 3 bytes를 합친 뒤 24-bit 부호 확장을 직접 수행한다.
         if bits == 24:
             values = np.frombuffer(data, dtype=np.uint8).reshape(-1, 3).astype(np.int32)
             values = values[:, 0] | values[:, 1] << 8 | values[:, 2] << 16
@@ -207,20 +213,24 @@ def read_wav(path: Path):
 
 
 def longest_run(mask):
+    """boolean mask 양끝에 False를 붙여 맨 앞/끝 구간도 포함한 최장 True 연속 길이를 구한다."""
     edges = np.diff(np.r_[False, mask, False].astype(np.int8))
     starts, ends = np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)
     return int(np.max(ends - starts)) if len(starts) else 0
 
 
 def inspect(path: Path):
+    """원본은 읽기만 하며 포맷·길이·sample peak/RMS·무음·clipping 후보와 SHA를 반환한다."""
     audio, rate, bits, sample_format, digest = read_wav(path)
     frames, channels = audio.shape
     peak = float(np.abs(audio).max())
     rms = float(np.sqrt(np.mean(audio * audio)))
+    # 저레벨은 0.1초 블록 RMS로 판정한다. 마지막 불완전 블록의 zero padding도 계산에 포함한다.
     block = max(1, rate // 10)
     padded = np.pad(audio, ((0, (-frames) % block), (0, 0)))
     block_rms = np.sqrt(np.mean(padded.reshape(-1, block, channels) ** 2, axis=(1, 2)))
     silent = block_rms < 0.001
+    # 정수 PCM의 양의 최대값은 1보다 작다. float WAV는 ±1을 full scale 경계로 쓴다.
     threshold = 1.0 - 1 / (2 ** (bits - 1)) if sample_format.startswith("PCM") else 1.0
     full_scale = np.max(np.abs(audio), axis=1) >= threshold
     warnings = []
@@ -257,11 +267,13 @@ def export_wav(source: Path, destination: Path, seed: int):
     if audio.shape[1] != 2 or rate < 44100:
         raise ValueError("업샘플링/가상 stereo는 하지 않습니다.")
     peak = float(np.abs(audio).max())
+    # 필요한 경우에만 감쇠한다. 작은 입력을 증폭하거나 원본 clipping을 복원한다고 주장하지 않는다.
     gain = min(1.0, (10 ** (-1.0 / 20)) / peak) if peak else 1.0
     audio *= gain
     fade_in, fade_out = min(len(audio), round(rate * 0.01)), min(len(audio), round(rate * 1.0))
     audio[:fade_in] *= np.linspace(0, 1, fade_in)[:, None]
     audio[-fade_out:] *= np.linspace(1, 0, fade_out)[:, None]
+    # 같은 seed에서 재현 가능한 TPDF dither를 더한 뒤 signed PCM24로 양자화한다.
     rng = np.random.default_rng(seed)
     scaled = audio * (2 ** 23)
     scaled += rng.random(audio.shape) - rng.random(audio.shape)
@@ -299,6 +311,7 @@ def copy_wav_exclusive(source: Path, destination: Path, expected_sha256: str | N
                 copied.flush()
                 os.fsync(copied.fileno())
             method = "exclusive independent byte copy"
+        # hardlink는 원본과 수정 내용을 공유하므로 nlink=1·별도 inode를 필수로 확인한다.
         copied_stat = destination.lstat()
         if destination.is_symlink() or not destination.is_file() or copied_stat.st_nlink != 1 or (copied_stat.st_dev, copied_stat.st_ino) == (before.st_dev, before.st_ino):
             raise ValueError("독립 복사본의 파일 소유 경계를 확인하지 못했습니다.")
@@ -327,6 +340,7 @@ def require_preservable_wav(qa):
 
 
 def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_original_wav=False):
+    """완료한 서로 다른 20곡을 검사한 뒤 새 폴더에 WAV·공개 metadata·provenance를 만든다."""
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     tracks = plan["tracks"]
@@ -338,6 +352,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
     if destination.exists() or destination.is_symlink():
         raise ValueError("기존 폴더를 덮어쓰지 않습니다. 새 전용 폴더를 지정하세요.")
     by_number = {entry["trackNumber"]: entry for entry in results}
+    # 이 preflight가 끝나기 전에는 출력 폴더를 만들지 않는다. 공개 정보와 신호 경고를 먼저 차단한다.
     checked = []
     reference_directions = {}
     for track in tracks:
@@ -362,6 +377,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
         checked.append((record, source, qa, stem))
     if len({qa["sha256"] for _, _, qa, _ in checked}) != 20:
         raise ValueError("원본 bytes가 같은 중복 곡이 있습니다.")
+    # 이후 실패하면 미완료 표식을 남긴다. 이미 쓴 파일을 성공 패키지처럼 보이게 만들지 않는다.
     destination.mkdir(parents=True, exist_ok=False)
     upload, metadata, provenance = (destination / name for name in ("Upload_WAV", "Metadata", "Provenance"))
     for folder in (upload, metadata, provenance):
@@ -372,6 +388,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
             original = provenance / (stem + "_original.wav")
             original_copy_method = copy_wav_exclusive(source, original, original_qa["sha256"], clone_on_macos=preserve_original_wav)
             out = upload / (stem + ".wav")
+            # 원본 유지와 PCM24 변환 경로를 구분해 bytes 변경 여부를 기록과 실제 산출물에 맞춘다.
             if preserve_original_wav:
                 upload_copy_method = copy_wav_exclusive(original, out, original_qa["sha256"], clone_on_macos=True)
                 modifications = {"preservedOriginalWav": True, "bytesChanged": False,
@@ -442,6 +459,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
 
 
 def main():
+    """inspect/export/package를 명시적으로 선택해 실행하고 검사 실패를 종료 코드 1로 전달한다."""
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     read = sub.add_parser("inspect")

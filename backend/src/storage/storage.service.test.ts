@@ -1,3 +1,7 @@
+/**
+ * 실제 파일 저장으로 batch 원자성·크기 상한·취소 및 소유 파일 보호를 검증한다.
+ * 대역 stream이 중간에 경로를 바꾸거나 멈추는 상황을 만들어도 외부 sentinel을 지우거나 부분 결과를 공개하면 안 된다.
+ */
 import { randomUUID } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,6 +14,7 @@ let root: string;
 let config: StorageConfig;
 let storage: StorageService;
 const fixture = join(REPOSITORY_ROOT, 'backend/fixtures/audio/demo-01.wav');
+// duration=999라는 잘못된 provider 주장을 넣어 실제 WAV 측정 길이 8초가 우선하는지 확인한다.
 function source(audio: AsyncIterable<Uint8Array> = createReadStream(fixture)): ProviderTrack {
   return { audio, mediaType: 'audio/wav', extension: 'wav', model: 'demo-fixture', metadata: { durationSeconds: 999 } };
 }
@@ -18,6 +23,7 @@ const signal = () => new AbortController().signal;
 beforeEach(() => { root = mkdtempSync('/private/tmp/soundry-save-'); config = new StorageConfig(root); storage = new StorageService(config); });
 afterEach(() => { rmSync(root, { recursive: true, force: true }); });
 
+// 실패/취소는 최종 audio뿐 아니라 temp 찌꺼기도 남기지 않아야 하므로 양쪽 디렉터리를 확인한다.
 function expectEmpty() {
   expect(readdirSync(config.audioDirectory)).toEqual([]);
   expect(readdirSync(config.tempDirectory)).toEqual([]);
@@ -39,6 +45,7 @@ describe('bounded atomic batch storage', () => {
     expectEmpty();
   });
 
+  // 첫 variation이 정상이더라도 뒤 결과가 손상되면 이번 batch 전체를 취소하고 기존 음원은 보존해야 한다.
   it('publishes no partial batch if a later variation is invalid and preserves other audio', async () => {
     const sentinel = join(config.audioDirectory, `${randomUUID()}.wav`);
     writeFileSync(sentinel, 'existing audio');
@@ -60,6 +67,7 @@ describe('bounded atomic batch storage', () => {
     expectEmpty();
   });
 
+  // iterator.next를 미완료 상태로 고정한 뒤 취소한다. 늦게 반환한 byte가 파일로 공개되면 안 된다.
   it('aborts an unresponsive iterator and discards its late result', async () => {
     const controller = new AbortController();
     let started!: () => void;
@@ -101,6 +109,7 @@ describe('bounded atomic batch storage', () => {
     expect(readdirSync(config.tempDirectory)).toEqual([]);
   });
 
+  // 같은 경로 교체를 source 오류/취소/정상 종료 세 경로에 적용해 finally 정리도 링크를 따라가지 않는지 확인한다.
   it.each(['throw', 'abort', 'finish'] as const)('preserves outside files when an owned temp folder becomes a symlink: %s', async (ending) => {
     const id = randomUUID();
     const directory = join(config.tempDirectory, id);
@@ -126,6 +135,7 @@ describe('bounded atomic batch storage', () => {
     expect(readdirSync(config.audioDirectory)).toEqual([]);
   });
 
+  // 같은 경로의 일반 파일 교체도 위험하므로 symlink 검사만으로 부족하다. inode 소유권 검사를 직접 검증한다.
   it('does not delete or publish a replacement regular part at the same path', async () => {
     const id = randomUUID(); const directory = join(config.tempDirectory, id);
     let replacement = '';
@@ -140,6 +150,7 @@ describe('bounded atomic batch storage', () => {
     expect(readdirSync(config.audioDirectory)).toEqual([]);
   });
 
+  // mkdir 실패 때도 이미 있던 디렉터리는 이번 호출의 소유물이 아니므로 삭제해서는 안 된다.
   it('does not remove a pre-existing generation folder it did not create', async () => {
     const id = randomUUID(); const directory = join(config.tempDirectory, id); mkdirSync(directory);
     writeFileSync(join(directory, 'sentinel'), 'preserve');

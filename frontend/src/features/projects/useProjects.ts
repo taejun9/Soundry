@@ -1,3 +1,7 @@
+/**
+ * 프로젝트 목록과 cursor 페이지의 조회 상태를 관리한다.
+ * 갱신일로 정렬되는 목록이므로 새로고침에서는 예전 cursor를 버리고 같은 ID는 중복으로 붙이지 않는다.
+ */
 import { onScopeDispose, ref } from 'vue';
 import type { ProjectSummary } from '../../../../shared/contracts';
 import { listProjects } from '../../api/projects';
@@ -12,6 +16,7 @@ export function useProjects() {
   let controller: AbortController | undefined;
   let sequence = 0;
 
+  /** 첫 페이지 갱신과 더 보기를 구분한다. 새로고침으로 순서가 바뀔 수 있어 기존 cursor는 즉시 무효화한다. */
   async function load(append: boolean) {
     if (append && (loading.value || loadingMore.value || !nextCursor.value)) return;
     const cursor = append ? nextCursor.value : null;

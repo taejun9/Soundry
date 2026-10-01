@@ -1,3 +1,7 @@
+/**
+ * 프로젝트 HTTP CRUD와 실제 SQLite/파일 lifecycle을 함께 검증한다.
+ * 재시작 보존, stable pagination, FK/UNIQUE, 진행 중 삭제 차단, cascade 범위와 안전한 파일 정리가 핵심이다.
+ */
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
@@ -17,6 +21,7 @@ let database: DatabaseService;
 let dataDir: string;
 let port: number;
 
+// 동일 임시 data 루트로 앱을 다시 시작할 수 있게 분리해 영속성을 검증한다.
 async function start(): Promise<void> {
   app = await createApplication({ dataDir, uiPort: '5173' });
   await app.listen(0, '127.0.0.1');
@@ -24,6 +29,7 @@ async function start(): Promise<void> {
   port = ((app.getHttpServer() as Server).address() as AddressInfo).port;
 }
 
+// 실제 HTTP 직렬화·로컬 헤더를 사용하므로 controller 입력 검증도 함께 통과해야 한다.
 function api<T>(method: string, path: string, body?: unknown): Promise<Result<T>> {
   return new Promise((resolve, reject) => {
     const content = body === undefined ? undefined : JSON.stringify(body);
@@ -48,6 +54,7 @@ async function create(name = '테스트 프로젝트'): Promise<ProjectSummary> 
   return result.body;
 }
 
+// 프로젝트 조회/삭제의 경계를 준비하는 직접 DB fixture다. 작곡 과정은 이 테스트의 검증 범위가 아니다.
 function generation(projectId: string, status = 'completed', requestKey = randomUUID(), source: string | null = null): string {
   const id = randomUUID();
   database.client.prepare('INSERT INTO generations (id, project_id, prompt, settings_json, provider, status, variation_count, request_key, source_generation_id, created_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
@@ -55,6 +62,7 @@ function generation(projectId: string, status = 'completed', requestKey = random
   return id;
 }
 
+// 트랙 수와 삭제 경로를 독립적으로 조절해 다른 프로젝트 파일이 보호되는지 확인한다.
 function track(generationId: string, variationIndex = 0, storedPath?: string): string {
   const id = randomUUID();
   const path = storedPath ?? `audio/${id}.wav`;
@@ -74,6 +82,7 @@ afterEach(async () => {
   rmSync(dataDir, { recursive: true, force: true });
 });
 
+// 정상 CRUD뿐 아니라 DB와 파일시스템을 모두 검사해 응답만 성공하고 데이터가 어긋나는 경우를 잡는다.
 describe('Projects API and SQLite lifecycle', () => {
   it('creates, trims, reads, renames, restarts, and deletes without losing persisted state', async () => {
     const project = await create('  서울의 밤  ');
@@ -101,6 +110,7 @@ describe('Projects API and SQLite lifecycle', () => {
     expect((await api('GET', `/projects/${project.id}`)).body).toEqual(project);
   });
 
+  // 이름의 SQL 문법은 바인딩된 데이터로 처리되어야 하며 중복 이름도 별도 UUID로 유지해야 한다.
   it('allows duplicate names and treats SQL text as plain data', async () => {
     const name = "'); DROP TABLE projects; --";
     const first = await create(name);
@@ -121,6 +131,7 @@ describe('Projects API and SQLite lifecycle', () => {
     expect((await api('DELETE', `/projects/${randomUUID()}`)).status).toBe(404);
   });
 
+  // 같은 timestamp를 의도적으로 만들어 ID tie-breaker 누락으로 생기는 중복/누락을 검출한다.
   it('paginates timestamp ties by ID without duplicates or missing rows', async () => {
     const expected: string[] = [];
     const timestamp = '2026-10-01T00:00:00.000Z';
@@ -184,6 +195,7 @@ describe('Projects API and SQLite lifecycle', () => {
     expect(database.client.prepare('SELECT count(*) AS total FROM tracks').get()).toEqual({ total: 1 });
   });
 
+  // DB 삭제는 commit하되 위험한 링크 삭제는 하지 않는 분리된 결과를 확인한다.
   it('reports cleanupPending while preserving a symlink target outside audio', async () => {
     const project = await create();
     const path = `audio/${randomUUID()}.wav`;
@@ -207,6 +219,7 @@ describe('Projects API and SQLite lifecycle', () => {
     expect(readFileSync(sentinel, 'utf8')).toBe('preserve me');
   });
 
+  // 재시작 청소는 앱이 인식하는 미참조 파일에만 적용되고 사용자가 둔 임의 파일은 보존해야 한다.
   it('retries orphan cleanup on restart but preserves unrecognized files', async () => {
     const orphan = `audio/${randomUUID()}.wav`;
     writeFileSync(join(dataDir, orphan), 'temporary audio');

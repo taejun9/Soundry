@@ -1,3 +1,7 @@
+/**
+ * 생성 이력·단건 트랙·보관함이 공유하는 공개 DTO 변환이다.
+ * DB 파일 경로는 숨기고 ID 기반의 로컬 재생/다운로드 URL만 만든다. 미확인 실제 metadata는 null을 유지한다.
+ */
 import type { TrackSummary } from '../../../shared/contracts.js';
 import type { generations, tracks } from '../database/schema.js';
 

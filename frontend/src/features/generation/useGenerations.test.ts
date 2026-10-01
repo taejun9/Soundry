@@ -1,3 +1,7 @@
+/**
+ * 접수 불확실성, 취소/완료 경쟁, polling 지연과 화면 이탈을 재현하는 상태 회귀 테스트.
+ * 가짜 타이머와 지연 Promise로 순서를 제어하며 자동 작곡 재요청 없이 서버의 최종 상태가 유지되는지 확인한다.
+ */
 import { effectScope, type EffectScope } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../api/client';
@@ -7,12 +11,14 @@ import { forgetGenerationRequest, useGenerations } from './useGenerations';
 import { jobFixture, trackFixture } from './test-fixtures';
 
 const scopes: EffectScope[] = [];
+/** 응답 완료 순서를 테스트가 제어하여 늦은 응답과 화면 이탈 경쟁을 재현한다. */
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: unknown) => void;
   const promise = new Promise<T>((done, fail) => { resolve = done; reject = fail; });
   return { promise, resolve, reject };
 }
+/** 각 사례에 독립된 API 대역과 상태 수명을 만들어 다른 테스트의 요청/상태가 섞이지 않게 한다. */
 function setup() {
   const api = {
     ...generationApi,
@@ -27,6 +33,7 @@ function setup() {
   return { api, state, scope, changed };
 }
 beforeEach(() => { vi.useFakeTimers(); forgetGenerationRequest('project-one'); });
+// 전역 대역·scope·미디어 자원은 해당 테스트의 정리 훅에서 복구해 다음 사례를 오염시키지 않는다.
 afterEach(() => { scopes.splice(0).forEach(scope => scope.stop()); forgetGenerationRequest('project-one'); vi.useRealTimers(); });
 
 describe('generation request lifecycle', () => {

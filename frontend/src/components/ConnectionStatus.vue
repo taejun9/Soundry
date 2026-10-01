@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 로컬 서버 연결 여부만 표시하는 셸 위젯. 최초 진입과 명시적 다시 확인에서 health를 조회한다.
+ * 연속 요청의 이전 결과는 무시하고 5초 안에 응답하지 않으면 연결 끊김으로 표시한다.
+ */
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { fetchHealth } from '../api/health';
 import StudioIcon from './StudioIcon.vue';
@@ -8,6 +12,7 @@ const statusText = computed(() => ({ checking: '연결 확인 중', connected: '
 let controller: AbortController | undefined;
 let requestId = 0;
 
+/** 이전 요청을 취소하고 요청 번호를 비교한다. timeout도 해당 요청의 controller만 중단한다. */
 async function checkConnection() {
   controller?.abort();
   const currentId = ++requestId;
@@ -30,6 +35,7 @@ onUnmounted(() => { requestId++; controller?.abort(); });
 </script>
 
 <template>
+  <!-- 색상 점과 텍스트를 함께 표시하며 재확인 중 중복 요청은 버튼 비활성화로 막는다. -->
   <div class="connection-card" :data-state="state">
     <div class="connection-heading">
       <span class="connection-dot" aria-hidden="true"></span>

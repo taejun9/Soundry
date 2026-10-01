@@ -1,4 +1,8 @@
 <script setup lang="ts">
+/**
+ * 프로젝트 생성·이름 변경·삭제를 하나의 확인창으로 제공한다.
+ * 처리 중 중복 제출과 닫기를 막고 성공 응답을 받은 경우에만 부모 목록에 변경을 알린다.
+ */
 import { computed, onBeforeUnmount, ref, useId } from 'vue';
 import type { DeleteResult, ProjectSummary } from '../../../../shared/contracts';
 import { createProject, renameProject } from '../../api/projects';
@@ -21,6 +25,7 @@ const action = computed(() => ({ create: '프로젝트 만들기', rename: '이�
 const controller = new AbortController();
 let active = true;
 
+/** 이름을 검증하고 모드에 해당하는 요청 하나만 보낸다. 창이 사라진 뒤에는 부모에 성공 이벤트를 내보내지 않는다. */
 async function submit() {
   if (busy.value) return;
   error.value = '';
@@ -53,6 +58,7 @@ onBeforeUnmount(() => { active = false; controller.abort(); });
 </script>
 
 <template>
+  <!-- 삭제 대상과 음원 범위를 명시하고 취소를 초기 선택으로 둔다. 저장 중에는 중복 제출과 닫기를 막는다. -->
   <ModalDialog :title="title" :busy="busy" @close="emit('close')">
     <form novalidate @submit.prevent="submit">
       <template v-if="mode === 'delete'">
