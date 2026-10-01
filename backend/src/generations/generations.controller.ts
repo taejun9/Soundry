@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import type { GenerationSummary, Page } from '../../../shared/contracts.js';
+import type { GenerationSummary, Page, PromptSummary } from '../../../shared/contracts.js';
 import { AppError } from '../api-errors.js';
 import { projectId } from '../projects/project-input.js';
 import { generationId, generationListQuery } from './generation-request.js';
@@ -14,6 +14,12 @@ export class GenerationsController {
   list(@Param('projectId') id: string, @Query() query: Record<string, unknown>): Page<GenerationSummary> {
     const { limit, cursor } = generationListQuery(query);
     return this.generations.list(projectId(id), limit, cursor);
+  }
+
+  @Get('projects/:projectId/prompts')
+  prompts(@Param('projectId') id: string, @Query() query: Record<string, unknown>): Page<PromptSummary> {
+    const { limit, cursor } = generationListQuery(query);
+    return this.generations.prompts(projectId(id), limit, cursor);
   }
 
   @Post('projects/:projectId/generations')

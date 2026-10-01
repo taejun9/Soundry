@@ -1,5 +1,5 @@
 import { computed, onScopeDispose, ref } from 'vue';
-import type { CreateGenerationRequest, GenerationInput, GenerationSummary } from '../../../../shared/contracts';
+import type { CreateGenerationRequest, GenerationInput, GenerationSummary, TrackSummary } from '../../../../shared/contracts';
 import * as generationApi from '../../api/generations';
 import { ApiError, errorMessage } from '../../api/client';
 
@@ -29,6 +29,8 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
   let polling = false;
   let failures = 0;
   let revision = 0;
+  let trackRevision = 0;
+  const trackChanges = new Map<string, number>();
   let needsList = false;
 
   function controller() { const current = new AbortController(); controllers.add(current); return current; }
@@ -39,15 +41,16 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
       submitError.value = '';
     }
   }
-  function merge(incoming: GenerationSummary[], replace = false) {
+  function merge(incoming: GenerationSummary[], replace = false, observedTracks = trackRevision) {
     const previous = new Map(jobs.value.map(job => [job.id, job]));
     const kept = replace ? jobs.value.filter(isPending) : jobs.value;
     const combined = new Map(kept.map(job => [job.id, job]));
     let changed = false;
-    for (const job of incoming) {
+    for (let job of incoming) {
       const old = previous.get(job.id);
       // A delayed GET must not undo a cancellation/completion already acknowledged by the server.
       if (old && !isPending(old) && isPending(job)) { combined.set(old.id, old); continue; }
+      if (old && (trackChanges.get(job.id) ?? 0) > observedTracks) job = { ...job, tracks: old.tracks };
       combined.set(job.id, job);
       clearUncertain(job.requestKey);
       if (!isPending(job)) delete actionErrors.value[job.id];
@@ -73,13 +76,14 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
     const current = controller(); listController = current;
     const request = ++listSequence;
     const observedRevision = revision;
+    const observedTracks = trackRevision;
     const cursor = append ? nextCursor.value : null;
     loading.value = !append;
     loadingMore.value = append;
     try {
       const page = await api.listGenerations(projectId, cursor, current.signal);
       if (disposed || request !== listSequence) return;
-      merge(page.items, !append && revision === observedRevision);
+      merge(page.items, !append && revision === observedRevision, observedTracks);
       nextCursor.value = page.nextCursor;
       syncError.value = ''; failures = 0; needsList = false;
     } catch (reason) {
@@ -95,6 +99,7 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
     const active = jobs.value.filter(isPending);
     if (!active.length) return;
     polling = true;
+    const observedTracks = trackRevision;
     const current = controller();
     try {
       const results = await Promise.allSettled(active.map(job => api.getGeneration(projectId, job.id, current.signal)));
@@ -105,7 +110,7 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
         if (result.status === 'fulfilled') updated.push(result.value);
         else failure = result.reason;
       }
-      merge(updated);
+      merge(updated, false, observedTracks);
       if (failure) syncFailed(failure);
       else { syncError.value = ''; failures = 0; }
     } finally {
@@ -115,12 +120,13 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
   async function send(body: CreateGenerationRequest) {
     if (disposed || submitting.value) return;
     const current = controller();
+    const observedTracks = trackRevision;
     submitting.value = true; submitError.value = ''; notice.value = '';
     uncertain.value = body; uncertainRequests.set(projectId, body);
     try {
       const job = await api.createGeneration(projectId, body, current.signal);
       if (disposed) return;
-      merge([job]);
+      merge([job], false, observedTracks);
       clearUncertain(body.requestKey);
       notice.value = '작업을 접수했어요. 이 페이지를 이동해도 서버에서 계속 처리합니다.';
       projectChanged();
@@ -150,11 +156,12 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
     const job = jobs.value.find(item => item.id === id);
     if (!job || !isPending(job) || cancelling.value.has(id) || disposed) return;
     const current = controller();
+    const observedTracks = trackRevision;
     cancelling.value.add(id); delete actionErrors.value[id];
     try {
       const result = await api.cancelGeneration(projectId, id, current.signal);
       if (disposed) return;
-      merge([result]);
+      merge([result], false, observedTracks);
       notice.value = result.status === 'cancelled' ? '작업을 취소했어요.' : '이미 종료된 작업입니다. 서버의 최종 결과를 표시합니다.';
     } catch (reason) {
       const latest = jobs.value.find(item => item.id === id);
@@ -170,11 +177,24 @@ export function useGenerations(projectId: string, projectChanged: () => void, ap
     if (job.status !== 'failed' && job.status !== 'cancelled') return;
     await submit({ prompt: job.prompt, settings: job.settings, variationCount: job.variationCount }, job.id);
   }
+  function changeTrack(track: TrackSummary, deleted = false) {
+    listSequence++; listController?.abort(); loading.value = false; loadingMore.value = false;
+    jobs.value = jobs.value.map(job => job.id === track.generationId ? { ...job, tracks: deleted ? job.tracks.filter(item => item.id !== track.id) : job.tracks.map(item => item.id === track.id ? track : item) } : job);
+    revision++; trackChanges.set(track.generationId, ++trackRevision);
+    // The invalidated list request cannot schedule its own retry in finally.
+    schedule();
+  }
+  async function revealGeneration(id: string) {
+    const observedTracks = trackRevision;
+    const current = controller();
+    try { const job = await api.getGeneration(projectId, id, current.signal); if (disposed) return false; merge([job], false, observedTracks); schedule(); return true; }
+    finally { controllers.delete(current); }
+  }
   onScopeDispose(() => {
     disposed = true; listSequence++;
     if (timer) clearTimeout(timer);
     controllers.forEach(current => current.abort());
     controllers.clear();
   });
-  return { jobs, nextCursor, loading, loadingMore, syncError, retrySeconds, pendingCount, submitting, submitError, uncertain, notice, cancelling, actionErrors, refresh: () => loadPage(), loadMore: () => loadPage(true), submit, confirmSubmission, cancel, retry };
+  return { jobs, nextCursor, loading, loadingMore, syncError, retrySeconds, pendingCount, submitting, submitError, uncertain, notice, cancelling, actionErrors, refresh: () => loadPage(), loadMore: () => loadPage(true), submit, confirmSubmission, cancel, retry, changeTrack, revealGeneration };
 }

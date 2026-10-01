@@ -5,7 +5,10 @@ import type { ReadStream } from 'node:fs';
 import { AppError } from '../api-errors.js';
 import { StorageConfig } from '../config/storage-config.js';
 import { DatabaseService } from '../database/database.service.js';
-import { tracks } from '../database/schema.js';
+import { generations, tracks } from '../database/schema.js';
+import type { DeleteResult, GenerationSettings, TrackDetail, UpdateTrackRequest } from '../../../shared/contracts.js';
+import { trackId } from './track-input.js';
+import { trackSummary } from './track-summary.js';
 import { MAX_AUDIO_BYTES } from '../storage/storage.service.js';
 
 export interface OpenedAudio {
@@ -25,9 +28,41 @@ function changed(): AppError { return new AppError(409, 'AUDIO_CHANGED', '원본
 export class TracksService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService, @Inject(StorageConfig) private readonly storage: StorageConfig) {}
 
+  private find(id: string) {
+    const row = this.database.db.select({ track: tracks, generation: generations }).from(tracks)
+      .innerJoin(generations, eq(tracks.generationId, generations.id)).where(eq(tracks.id, id)).get();
+    if (!row) throw new AppError(404, 'NOT_FOUND', '음원을 찾을 수 없습니다.');
+    return row;
+  }
+
+  get(id: string): TrackDetail {
+    const { track, generation } = this.find(id);
+    return { ...trackSummary(track, generation), requestedSettings: JSON.parse(generation.settingsJson) as GenerationSettings, requestedVariationCount: generation.variationCount };
+  }
+
+  update(id: string, input: UpdateTrackRequest): TrackDetail {
+    return this.database.db.transaction(() => {
+      const { generation } = this.find(id);
+      this.database.db.update(tracks).set(input).where(eq(tracks.id, id)).run();
+      this.database.touchProject(generation.projectId);
+      return this.get(id);
+    }, { behavior: 'immediate' });
+  }
+
+  delete(id: string): DeleteResult {
+    const path = this.database.db.transaction(() => {
+      const { track, generation } = this.find(id);
+      this.database.db.delete(tracks).where(eq(tracks.id, id)).run();
+      this.database.touchProject(generation.projectId);
+      return track.audioPath;
+    }, { behavior: 'immediate' });
+    // Generation snapshots and other tracks survive; file cleanup starts only after commit.
+    return { deleted: true, cleanupPending: !this.storage.removeAudio(path) };
+  }
+
   openAudio(value: string): OpenedAudio {
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) throw new AppError(400, 'INVALID_INPUT', '올바른 음원 ID가 필요합니다.');
-    const row = this.database.db.select({ audioPath: tracks.audioPath, title: tracks.title, mimeType: tracks.mimeType, byteSize: tracks.byteSize }).from(tracks).where(eq(tracks.id, value.toLowerCase())).get();
+    const id = trackId(value);
+    const row = this.database.db.select({ audioPath: tracks.audioPath, title: tracks.title, mimeType: tracks.mimeType, byteSize: tracks.byteSize }).from(tracks).where(eq(tracks.id, id)).get();
     if (!row) throw new AppError(404, 'NOT_FOUND', '음원을 찾을 수 없습니다.');
     let fd: number | undefined;
     try {

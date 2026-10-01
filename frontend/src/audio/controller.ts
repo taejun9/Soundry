@@ -114,9 +114,12 @@ export function createAudioController(audio: AudioPort, baseUrl: string) {
     state.volume = Math.max(0, Math.min(1, value)); audio.volume = state.volume;
   }
   function clear() { if (!disposed) { resetSource(); state.track = null; } }
+  function updateTrack(track: TrackSummary) {
+    if (!disposed && state.track?.id === track.id && state.track.projectId === track.projectId && hasLocalTrackUrls(track)) state.track = { ...track };
+  }
   function clearProject(id: string) { if (state.track?.projectId === id) clear(); }
   function clearTrack(id: string) { if (state.track?.id === id) clear(); }
   function dispose() { if (!disposed) { clear(); disposed = true; } }
-  return { state: readonly(state), toggle, pause, seek, setVolume, clear, clearProject, clearTrack, dispose };
+  return { state: readonly(state), toggle, pause, seek, setVolume, clear, clearProject, clearTrack, updateTrack, dispose };
 }
 export type AudioController = ReturnType<typeof createAudioController>;

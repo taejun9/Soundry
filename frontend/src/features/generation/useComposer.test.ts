@@ -48,4 +48,28 @@ describe('tab-memory composer lifecycle', () => {
     scope.stop();
     forgetProjectDraft('draft-capabilities');
   });
+  it('restores requested settings and source ancestry without mutating the original, then caches them together', () => {
+    const provider = ref<ProviderSummary | null>({ ...mock, capabilities: { ...mock.capabilities, settings: ['genre', 'bpm', 'durationSeconds'], bpmRange: { min: 60, max: 180 }, durationRangeSeconds: { min: 30, max: 180 }, maxVariations: 3 } });
+    const scope = effectScope(); const composer = scope.run(() => useComposer('reused-draft', provider))!;
+    const original = { generationId: 'original-job', prompt: 'Original idea', settings: { mode: 'vocal' as const, genre: 'Jazz', bpm: 95.5, durationSeconds: 120, seed: 'unsupported' }, variationCount: 4 };
+    expect(composer.hasDraft.value).toBe(false);
+    expect(composer.reuse(original)).toBe(true);
+    expect(composer.sourceGenerationId.value).toBe('original-job');
+    expect(composer.validate()).toEqual({ prompt: 'Original idea', settings: { genre: 'Jazz', bpm: 95.5, durationSeconds: 120 }, variationCount: 2 });
+    expect(composer.capabilityNotice.value).toContain('지원하지 않는');
+    expect(original.settings.seed).toBe('unsupported'); expect(original.variationCount).toBe(4);
+    expect(composer.hasDraft.value).toBe(true); scope.stop();
+    const nextScope = effectScope(); const restored = nextScope.run(() => useComposer('reused-draft', provider))!;
+    expect(restored.sourceGenerationId.value).toBe('original-job'); expect(restored.draft.bpm).toBe('95.5');
+    nextScope.stop(); forgetProjectDraft('reused-draft');
+  });
+
+  it('does not replace existing input before provider capabilities can be checked', () => {
+    const scope = effectScope(); const composer = scope.run(() => useComposer('reuse-no-provider', ref(null)))!;
+    composer.draft.prompt = 'Current work';
+    expect(composer.reuse({ generationId: 'old', prompt: 'Old idea', settings: {}, variationCount: 1 })).toBe(false);
+    expect(composer.draft.prompt).toBe('Current work'); expect(composer.sourceGenerationId.value).toBeNull();
+    scope.stop(); forgetProjectDraft('reuse-no-provider');
+  });
+
 });

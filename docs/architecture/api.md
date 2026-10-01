@@ -1,6 +1,6 @@
 # Local REST API 설계
 
-base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 원본 재생/다운로드도 구현했다. 트랙 조회/편집·보관함 endpoint는 후속 Phase의 계약이다.
+base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사용한다. `/health`, `/projects` CRUD, `/providers/current`, 생성 작업 접수·목록·상세·취소를 구현했다. 트랙 원본 재생/다운로드, 상세 조회·이름/즐겨찾기 수정·삭제와 프롬프트 이력을 구현했다. 전역 보관함 목록 endpoint는 Phase 9의 계약이다.
 
 ## 공통 계약
 
@@ -51,6 +51,14 @@ Retry/Regenerate 전용 provider API를 만들지 않는다. 기존 Generation�
 prompt 외 값은 UI가 기본값을 제공한다. settings는 빈 객체, variationCount 기본 2(공급자 상한이 1이면 1)다. requestKey는 클라이언트가 제출마다 생성하고 동일 제출의 network retry 동안 유지한다. 최초 접수는 202, 중복 key/동일 내용은 기존 Generation과 현재 상태를 200으로 반환한다.
 
 Track DTO는 id, projectId, generationId, variationIndex, title, prompt, audioUrl, downloadUrl, durationSeconds, bpm, genre, mood, seed, provider, model, favorite, createdAt이다. 내부 audioPath는 DTO에 포함하지 않는다.
+
+## 음원 관리와 프롬프트 재사용
+
+TrackDetail은 TrackSummary에 원본 `requestedSettings`와 `requestedVariationCount`를 추가한다. 이름 변경은 trim 후 1–120자이며 NUL을 거부한다. favorite은 boolean만 허용한다. 빈 PATCH와 알 수 없는 필드는 거부한다. 수정과 삭제는 소속 project.updatedAt도 같은 DB transaction에서 갱신한다.
+
+음원 삭제는 Track만 제거하고 Generation의 입력과 상태를 보존한다. DB commit 후 해당 UUID 음원 파일을 정리하며 실패 시 cleanupPending을 반환한다. 모든 음원을 삭제한 completed Generation도 정상 이력이다. 제목 변경은 원본 경로와 bytes를 변경하지 않는다.
+
+프롬프트 목록은 별도 저장본 없이 Generation에서 prompt/settings/variationCount/status/trackCount/createdAt/generationId를 조회한다. 완료·실패·취소와 결과 없는 이력도 포함하며 createdAt/id cursor를 사용한다. 작성칸 재사용은 원본을 수정하거나 자동 생성하지 않는다. 초안 덮어쓰기를 확인한 후 현재 공급자의 설정 범위로 가져오고, 사용자가 생성 버튼을 눌러야 새로운 requestKey/sourceGenerationId로 접수한다.
 
 ## 재생/다운로드
 

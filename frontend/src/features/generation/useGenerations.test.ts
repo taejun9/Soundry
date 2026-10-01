@@ -178,4 +178,60 @@ describe('generation request lifecycle', () => {
     expect(state.jobs.value).toHaveLength(1);
     expect(state.jobs.value[0]?.status).toBe('completed');
   });
+  it.each(['rename', 'delete'] as const)('does not restore outdated tracks from an in-flight completion poll after %s', async action => {
+    const { api, state } = setup();
+    const pending = deferred<GenerationSummary>();
+    api.listGenerations.mockResolvedValueOnce({ items: [jobFixture({ status: 'processing' })], nextCursor: null }).mockResolvedValueOnce({ items: [jobFixture({ status: 'completed', tracks: [trackFixture()] })], nextCursor: null });
+    api.getGeneration.mockReturnValueOnce(pending.promise);
+    await state.refresh(); await vi.advanceTimersByTimeAsync(2000); await state.refresh();
+    state.changeTrack({ ...trackFixture(), title: 'Saved title' }, action === 'delete');
+    pending.resolve(jobFixture({ status: 'completed', tracks: [trackFixture()] })); await vi.advanceTimersByTimeAsync(0);
+    expect(state.jobs.value[0]?.tracks.map(track => track.title)).toEqual(action === 'delete' ? [] : ['Saved title']);
+    api.listGenerations.mockResolvedValueOnce({ items: [jobFixture({ status: 'completed', tracks: action === 'delete' ? [] : [{ ...trackFixture(), title: 'Newest server title' }] })], nextCursor: null });
+    await state.refresh();
+    expect(state.jobs.value[0]?.tracks.map(track => track.title)).toEqual(action === 'delete' ? [] : ['Newest server title']);
+  });
+
+  it('submits a reused completed job as a new immutable request while preserving its original result', async () => {
+    const { api, state } = setup();
+    const original = jobFixture({ status: 'completed', tracks: [trackFixture()] });
+    api.listGenerations.mockResolvedValueOnce({ items: [original], nextCursor: null });
+    api.createGeneration.mockImplementationOnce(async (_id: string, body: CreateGenerationRequest) => jobFixture({ ...body, id: 'new-job' }));
+    await state.refresh(); await state.submit({ prompt: original.prompt, settings: { ...original.settings }, variationCount: original.variationCount }, original.id);
+    expect(api.createGeneration.mock.calls[0]?.[1].sourceGenerationId).toBe(original.id);
+    expect(api.createGeneration.mock.calls[0]?.[1].requestKey).not.toBe(original.requestKey);
+    expect(state.jobs.value.find(job => job.id === original.id)).toEqual(original);
+  });
+
+  it.each(['rename', 'delete'] as const)('restores polling after %s invalidates a pending list retry from a connection failure', async action => {
+    const { api, state } = setup();
+    const complete = jobFixture({ status: 'completed', tracks: [trackFixture()] });
+    const pendingJob = jobFixture({ id: 'job-two', requestKey: 'key-two', status: 'processing' });
+    const retryPage = deferred<Page<GenerationSummary>>();
+    api.listGenerations
+      .mockResolvedValueOnce({ items: [complete, pendingJob], nextCursor: null })
+      .mockRejectedValueOnce(new ApiError('offline', 0, 'NETWORK_ERROR'))
+      .mockReturnValueOnce(retryPage.promise);
+    await state.refresh(); await state.refresh();
+    expect(state.syncError.value).not.toBe('');
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(api.listGenerations).toHaveBeenCalledTimes(3);
+    state.changeTrack({ ...trackFixture(), title: 'Saved title' }, action === 'delete');
+    expect(api.listGenerations.mock.calls[2]?.[2].aborted).toBe(true);
+    retryPage.resolve({ items: [complete, pendingJob], nextCursor: null });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(state.pendingCount.value).toBe(1);
+    expect(vi.getTimerCount()).toBe(1);
+    const updated = { ...complete, tracks: action === 'delete' ? [] : [{ ...trackFixture(), title: 'Saved title' }] };
+    api.listGenerations.mockResolvedValueOnce({ items: [updated, pendingJob], nextCursor: null });
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(api.listGenerations).toHaveBeenCalledTimes(4);
+    expect(state.syncError.value).toBe('');
+    api.getGeneration.mockResolvedValueOnce({ ...pendingJob, status: 'completed' });
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(state.jobs.value.find(job => job.id === 'job-two')?.status).toBe('completed');
+    expect(state.pendingCount.value).toBe(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
 });

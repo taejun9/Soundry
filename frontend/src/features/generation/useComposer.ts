@@ -1,16 +1,18 @@
 import { computed, onScopeDispose, reactive, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import type { ProviderSummary } from '../../../../shared/contracts';
-import { emptyDraft, prepareGenerationInput, sanitizeDraft } from './composer-input';
-import type { ComposerDraft } from './composer-input';
+import { draftFromGeneration, emptyDraft, prepareGenerationInput, sanitizeDraft } from './composer-input';
+import type { ComposerDraft, ReusableGeneration } from './composer-input';
 
 // This cache lives only in the current tab's JavaScript memory. It is never persisted.
-const drafts = new Map<string, ComposerDraft>();
+const drafts = new Map<string, { draft: ComposerDraft; sourceGenerationId: string | null }>();
 export function forgetProjectDraft(projectId: string) { drafts.delete(projectId); }
 
 export function useComposer(projectId: string, provider: Ref<ProviderSummary | null>) {
-  const draft = reactive<ComposerDraft>({ ...(drafts.get(projectId) ?? emptyDraft()) });
+  const draft = reactive<ComposerDraft>({ ...(drafts.get(projectId)?.draft ?? emptyDraft()) });
   const restored = drafts.has(projectId);
+  const sourceGenerationId = ref(drafts.get(projectId)?.sourceGenerationId ?? null);
+  const hasDraft = computed(() => { const blank = emptyDraft(); return (Object.keys(blank) as (keyof ComposerDraft)[]).some(key => draft[key] !== blank[key]); });
   const capabilityNotice = ref('');
   const touched = reactive(new Set<keyof ComposerDraft>());
   watch(() => provider.value?.capabilities, caps => {
@@ -30,6 +32,14 @@ export function useComposer(projectId: string, provider: Ref<ProviderSummary | n
     (Object.keys(draft) as (keyof ComposerDraft)[]).forEach(touch);
     return input.value;
   }
-  onScopeDispose(() => { drafts.set(projectId, { ...draft }); });
-  return { draft, restored, capabilityNotice, touched, errors, input, readyToGenerate, touch, validate };
+  function reuse(input: ReusableGeneration): boolean {
+    if (!provider.value) return false;
+    const sanitized = sanitizeDraft(draftFromGeneration(input), provider.value.capabilities);
+    Object.assign(draft, sanitized.draft);
+    sourceGenerationId.value = input.generationId; touched.clear();
+    capabilityNotice.value = sanitized.changed.length ? '현재 공급자가 지원하지 않는 설정이나 범위를 벗어난 값은 초기화했어요. 프롬프트와 지원하는 설정은 복원했습니다.' : '';
+    return true;
+  }
+  onScopeDispose(() => { drafts.set(projectId, { draft: { ...draft }, sourceGenerationId: sourceGenerationId.value }); });
+  return { draft, restored, capabilityNotice, touched, errors, input, readyToGenerate, touch, validate, hasDraft, reuse, sourceGenerationId };
 }

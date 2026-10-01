@@ -10,6 +10,10 @@ export interface ComposerDraft {
   seed: string;
   variationCount: number;
 }
+export type ReusableGeneration = GenerationInput & { generationId: string };
+export function draftFromGeneration(input: GenerationInput): ComposerDraft {
+  return { prompt: input.prompt, mode: input.settings.mode ?? '', genre: input.settings.genre ?? '', mood: input.settings.mood ?? '', bpm: input.settings.bpm?.toString() ?? '', durationSeconds: input.settings.durationSeconds?.toString() ?? '', seed: input.settings.seed ?? '', variationCount: input.variationCount };
+}
 export type DraftErrors = Partial<Record<keyof ComposerDraft, string>>;
 export function emptyDraft(): ComposerDraft {
   return { prompt: '', mode: '', genre: '', mood: '', bpm: '', durationSeconds: '', seed: '', variationCount: 2 };

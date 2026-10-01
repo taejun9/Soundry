@@ -5,27 +5,28 @@ import StudioIcon from '../../components/StudioIcon.vue';
 import ModalDialog from '../../components/ModalDialog.vue';
 import { GENRE_PRESETS } from './genres';
 import { maxVariations, supportsSetting } from './composer-input';
-import type { ComposerDraft } from './composer-input';
+import type { ComposerDraft, ReusableGeneration } from './composer-input';
 import { useComposer } from './useComposer';
 import { useProvider } from './useProvider';
 
 const props = defineProps<{ projectId: string; submitting?: boolean; blocked?: boolean }>();
-const emit = defineEmits<{ submit: [input: GenerationInput]; availability: [available: boolean] }>();
+const emit = defineEmits<{ submit: [input: GenerationInput, sourceGenerationId?: string]; availability: [available: boolean] }>();
 const id = useId();
 const promptField = ref<HTMLTextAreaElement>();
 const selectedPreset = ref('');
+const pendingReuse = ref<ReusableGeneration | null>(null);
 const pendingPreset = ref<(typeof GENRE_PRESETS)[number] | null>(null);
 const presetNotice = ref('');
 const replacementConfirmed = ref(false);
 const preferredPresetFocus = () => replacementConfirmed.value ? promptField.value ?? null : null;
 const { provider, loading, error, reload } = useProvider();
-const { draft, restored, capabilityNotice, touched, errors, touch, validate } = useComposer(props.projectId, provider);
+const { draft, restored, capabilityNotice, touched, errors, touch, validate, hasDraft, reuse, sourceGenerationId } = useComposer(props.projectId, provider);
 const available = computed(() => Boolean(provider.value?.configured && provider.value.generationEnabled));
 watch(available, value => emit('availability', value), { immediate: true });
 async function requestGeneration() {
   if (!available.value || props.submitting || props.blocked) return;
   const input = validate();
-  if (input) emit('submit', input);
+  if (input) emit('submit', input, sourceGenerationId.value ?? undefined);
   else { await nextTick(); promptField.value?.focus(); }
 }
 const caps = computed(() => provider.value?.capabilities ?? null);
@@ -52,6 +53,7 @@ async function insertPreset(item: (typeof GENRE_PRESETS)[number]) {
   const closesDialog = pendingPreset.value !== null;
   replacementConfirmed.value = closesDialog;
   draft.prompt = item.prompt;
+  sourceGenerationId.value = null;
   pendingPreset.value = null;
   presetNotice.value = `${item.label} 예문을 넣었어요. 원하는 느낌으로 자유롭게 고쳐 보세요.`;
   if (!closesDialog) {
@@ -65,6 +67,22 @@ function choosePreset() {
   if (draft.prompt.trim() && draft.prompt !== preset.value.prompt) pendingPreset.value = preset.value;
   else void insertPreset(preset.value);
 }
+async function applyReuse(item: ReusableGeneration) {
+  if (!reuse(item)) { presetNotice.value = '공급자 정보를 불러온 뒤 다시 시도해 주세요.'; return; }
+  const closesDialog = pendingReuse.value !== null;
+  replacementConfirmed.value = closesDialog;
+  pendingReuse.value = null; selectedPreset.value = '';
+  presetNotice.value = '프롬프트와 설정을 가져왔어요. 내용을 확인한 뒤 생성 버튼을 눌러 새 작업을 시작하세요.';
+  if (!closesDialog) { await nextTick(); promptField.value?.focus(); promptField.value?.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+function requestReuse(item: ReusableGeneration) {
+  if (props.submitting || props.blocked) return;
+  const snapshot = { ...item, settings: { ...item.settings } };
+  replacementConfirmed.value = false;
+  if (hasDraft.value) pendingReuse.value = snapshot;
+  else void applyReuse(snapshot);
+}
+defineExpose({ reuse: requestReuse });
 onMounted(() => { void reload(); });
 </script>
 
@@ -95,6 +113,7 @@ onMounted(() => { void reload(); });
       <p :id="`${id}-prompt-help`" class="field-help prompt-help">장면 + 분위기 + 주요 악기 + 곡의 흐름을 적으면 아이디어가 더 선명해져요.</p>
       <p v-if="visibleError('prompt')" :id="`${id}-prompt-error`" class="field-error" role="alert">{{ visibleError('prompt') }}</p>
       <p v-if="presetNotice" class="preset-notice" role="status">{{ presetNotice }}</p>
+      <p v-if="sourceGenerationId" class="source-note composer-source">이전 작업에서 가져온 입력입니다. 생성하면 새 작업으로 저장되고 원본은 유지됩니다.</p>
 
       <div class="variation-row"><div><label :for="`${id}-variations`" class="field-label">한 번에 만들 곡 수</label><p :id="`${id}-variations-help`" class="field-help">{{ provider ? `현재 공급자는 최대 ${variationLimit}곡을 지원해요.` : '공급자 정보를 확인하고 있어요.' }}</p></div><select :id="`${id}-variations`" v-model.number="draft.variationCount" class="text-input variation-select" :disabled="!provider" :aria-describedby="`${id}-variations-help`" @blur="touch('variationCount')"><option v-for="count in 4" :key="count" :value="count" :disabled="count > variationLimit">{{ count }}곡</option></select></div>
       <p v-if="visibleError('variationCount')" class="field-error" role="alert">{{ visibleError('variationCount') }}</p>
@@ -114,4 +133,5 @@ onMounted(() => { void reload(); });
     <p class="draft-privacy"><StudioIcon name="lock" /><span>{{ restored ? '이 탭에서 작성하던 내용을 복원했어요. ' : '' }}작성 내용은 이 탭에서만 임시 보관되며, 새로고침하면 사라집니다.</span></p>
   </section>
   <ModalDialog v-if="pendingPreset" title="작성한 내용을 바꿀까요?" :preferred-return-focus="preferredPresetFocus" @close="pendingPreset = null"><p class="modal-copy">현재 음악 아이디어를 <strong>{{ pendingPreset.label }}</strong> 예문으로 바꿉니다. 작성한 프롬프트는 지워지고, 선택 설정은 유지됩니다.</p><div class="modal-actions"><button type="button" class="button button-secondary" data-initial-focus @click="pendingPreset = null">취소</button><button type="button" class="button button-primary" @click="insertPreset(pendingPreset)">예문으로 바꾸기</button></div></ModalDialog>
+  <ModalDialog v-if="pendingReuse" title="작성 내용을 가져온 입력으로 바꿀까요?" :preferred-return-focus="preferredPresetFocus" @close="pendingReuse = null"><p class="modal-copy">현재 프롬프트와 세부 설정, 곡 수를 선택한 과거 작업의 입력으로 바꿉니다. 현재 공급자가 지원하지 않는 설정은 초기화됩니다. 아직 새 음악을 생성하지는 않습니다.</p><div class="modal-actions"><button type="button" class="button button-secondary" data-initial-focus @click="pendingReuse = null">취소</button><button type="button" class="button button-primary" @click="applyReuse(pendingReuse)">입력 가져오기</button></div></ModalDialog>
 </template>

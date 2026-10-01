@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const paths = {
+  copy: 'M8 8h13v13H8zM16 8V3H3v13h5',
   play: 'm8 4 13 8-13 8V4Z',
   pause: 'M7 4v16M17 4v16',
   download: 'M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4',

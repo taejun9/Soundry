@@ -8,13 +8,13 @@ const date = (value: unknown) => typeof value === 'string' && Number.isFinite(Da
 const nullableDate = (value: unknown) => value === null || date(value);
 const positive = (value: unknown) => typeof value === 'number' && Number.isFinite(value) && value > 0;
 const nullablePositive = (value: unknown) => value === null || positive(value);
-function settings(value: unknown): value is GenerationSettings {
+export function isGenerationSettings(value: unknown): value is GenerationSettings {
   if (!record(value) || Object.keys(value).some(key => !['mode', 'genre', 'mood', 'bpm', 'durationSeconds', 'seed'].includes(key))) return false;
   return (value.mode === undefined || value.mode === 'instrumental' || value.mode === 'vocal') &&
     ['genre', 'mood', 'seed'].every(key => value[key] === undefined || typeof value[key] === 'string') &&
     ['bpm', 'durationSeconds'].every(key => value[key] === undefined || positive(value[key]));
 }
-function isTrack(value: unknown): value is TrackSummary {
+export function isTrackSummary(value: unknown): value is TrackSummary {
   return record(value) && ['id', 'projectId', 'generationId', 'title', 'prompt', 'audioUrl', 'downloadUrl', 'mimeType', 'provider'].every(key => typeof value[key] === 'string') &&
     hasLocalTrackUrls(value as unknown as TrackSummary) && typeof value.variationIndex === 'number' && Number.isInteger(value.variationIndex) && value.variationIndex >= 0 && value.variationIndex < 4 &&
     positive(value.byteSize) && Number.isInteger(value.byteSize) && nullablePositive(value.durationSeconds) && nullablePositive(value.bpm) &&
@@ -22,13 +22,13 @@ function isTrack(value: unknown): value is TrackSummary {
 }
 export function parseGeneration(value: unknown, projectId?: string): GenerationSummary {
   if (!record(value) || !['id', 'projectId', 'prompt', 'requestKey', 'provider'].every(key => typeof value[key] === 'string') ||
-    (projectId !== undefined && value.projectId !== projectId) || !settings(value.settings) ||
+    (projectId !== undefined && value.projectId !== projectId) || !isGenerationSettings(value.settings) ||
     typeof value.variationCount !== 'number' || !Number.isInteger(value.variationCount) || value.variationCount < 1 || value.variationCount > 4 ||
     !nullableString(value.sourceGenerationId) || !nullableString(value.model) ||
     typeof value.status !== 'string' || !['queued', 'processing', 'completed', 'failed', 'cancelled'].includes(value.status) ||
     !(value.stage === null || (typeof value.stage === 'string' && ['preparing', 'generating', 'saving'].includes(value.stage))) || value.progress !== null ||
     !nullableString(value.errorCode) || !nullableString(value.errorMessage) || !date(value.createdAt) || !nullableDate(value.startedAt) || !nullableDate(value.finishedAt) ||
-    !Array.isArray(value.tracks) || !value.tracks.every(isTrack) ||
+    !Array.isArray(value.tracks) || !value.tracks.every(isTrackSummary) ||
     value.tracks.some(track => track.projectId !== value.projectId || track.generationId !== value.id || track.variationIndex >= Number(value.variationCount)) ||
     new Set(value.tracks.map(track => track.id)).size !== value.tracks.length ||
     new Set(value.tracks.map(track => track.variationIndex)).size !== value.tracks.length ||

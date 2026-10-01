@@ -107,3 +107,21 @@ export interface GenerationSummary {
   finishedAt: string | null;
   tracks: TrackSummary[];
 }
+
+export interface TrackDetail extends TrackSummary {
+  requestedSettings: GenerationSettings;
+  requestedVariationCount: number;
+}
+export interface UpdateTrackRequest {
+  title?: string;
+  favorite?: boolean;
+}
+export interface PromptSummary {
+  generationId: string;
+  prompt: string;
+  settings: GenerationSettings;
+  variationCount: number;
+  status: GenerationStatus;
+  trackCount: number;
+  createdAt: string;
+}

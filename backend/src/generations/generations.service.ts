@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { GenerationSettings, GenerationSummary, Page, TrackSummary } from '../../../shared/contracts.js';
+import type { GenerationSettings, GenerationSummary, Page, PromptSummary } from '../../../shared/contracts.js';
 import { AppError } from '../api-errors.js';
 import { DatabaseService } from '../database/database.service.js';
 import { generations, projects, tracks } from '../database/schema.js';
+import { trackSummary } from '../tracks/track-summary.js';
 import { ProviderService } from '../providers/provider.service.js';
 import { canonicalSettings, encodeGenerationCursor, validateCreateGeneration } from './generation-request.js';
 import type { GenerationCursor } from './generation-request.js';
@@ -29,13 +30,7 @@ export class GenerationsService {
     if (rows.length === 0) return [];
     const audio = this.database.db.select().from(tracks).where(inArray(tracks.generationId, rows.map((row) => row.id))).orderBy(tracks.variationIndex).all();
     return rows.map((row) => {
-      const trackSummaries: TrackSummary[] = audio.filter((track) => track.generationId === row.id).map((track) => ({
-        id: track.id, projectId: row.projectId, generationId: row.id, variationIndex: track.variationIndex,
-        title: track.title, prompt: row.prompt, audioUrl: `/api/tracks/${track.id}/audio`, downloadUrl: `/api/tracks/${track.id}/download`,
-        mimeType: track.mimeType, byteSize: track.byteSize, durationSeconds: track.durationSeconds,
-        bpm: track.bpm, genre: track.genre, mood: track.mood, seed: track.seed, provider: track.provider,
-        model: track.model, favorite: track.favorite, createdAt: track.createdAt,
-      }));
+      const trackSummaries = audio.filter((track) => track.generationId === row.id).map((track) => trackSummary(track, row));
       return {
         id: row.id, projectId: row.projectId, prompt: row.prompt, settings: JSON.parse(row.settingsJson) as GenerationSettings,
         variationCount: row.variationCount, requestKey: row.requestKey, sourceGenerationId: row.sourceGenerationId,
@@ -58,6 +53,24 @@ export class GenerationsService {
     const rows = this.database.db.select().from(generations).where(and(eq(generations.projectId, projectId), position)).orderBy(desc(generations.createdAt), desc(generations.id)).limit(limit + 1).all();
     const selected = rows.slice(0, limit);
     return { items: this.summaries(selected), nextCursor: rows.length > limit ? encodeGenerationCursor(selected[selected.length - 1]!) : null };
+  }
+
+  prompts(projectId: string, limit: number, cursor?: GenerationCursor): Page<PromptSummary> {
+    this.projectExists(projectId);
+    const position = cursor ? or(lt(generations.createdAt, cursor.createdAt), and(eq(generations.createdAt, cursor.createdAt), lt(generations.id, cursor.id))) : undefined;
+    const rows = this.database.db.select({
+      generation: generations,
+      trackCount: sql<number>`(SELECT count(*) FROM tracks WHERE tracks.generation_id = generations.id)`.mapWith(Number),
+    }).from(generations).where(and(eq(generations.projectId, projectId), position))
+      .orderBy(desc(generations.createdAt), desc(generations.id)).limit(limit + 1).all();
+    const selected = rows.slice(0, limit);
+    return {
+      items: selected.map(({ generation, trackCount }) => ({
+        generationId: generation.id, prompt: generation.prompt, settings: JSON.parse(generation.settingsJson) as GenerationSettings,
+        variationCount: generation.variationCount, status: generation.status, trackCount, createdAt: generation.createdAt,
+      })),
+      nextCursor: rows.length > limit ? encodeGenerationCursor(selected[selected.length - 1]!.generation) : null,
+    };
   }
 
   create(projectId: string, body: unknown): CreateGenerationResult {
