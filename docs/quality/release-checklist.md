@@ -83,3 +83,10 @@ git diff --check
 ## 2026-10-06 회원·비트 편집 확장
 
 plan-017의 로컬 회원/등급/usage ledger·랜딩/상품·다중 행 클립 편집을 추가했다. 앱 43 files / 456 tests, 기존 음악 Node16·Python21, lint/type/build/base/Mock WAV/smoke PASS. 실제 임시 DB/IAB 편집·행 추가·저장/복원·미리듣기·반응형 및 관리자 보호를 확인했다. WAV 링크 준비까지 검증했으며 IAB에서 실제 파일 다운로드와 음색 청취는 미검증이다. [리뷰와 검증 범위](../reviews/plan-017-studio-membership.md)를 따른다.
+
+
+## 2026-10-06 전체 실제 화면·10곡 제작 재검증
+
+[plan-018 검증](plan-018-verification.md): fresh npm ci·앱456·Node18·Python23·lint/type/build/base/audio/smoke PASS. 실제 IAB 랜딩/상품/회원/소유권/등급/사용량10곡 차단·취소 복원/프로젝트/생성/플레이어/이력/보관함/다중 행 편집/오류/재시작/320·390·1280px PASS. Chrome에서 실제 믹스 WAV 디스크 저장과 파일 포맷을 검증했고 Safari는 실제 CLI 곡 재생/탐색/일시 정지의 한정 smoke를 수행했다. 음원·프로젝트 영구 삭제는 실제 확인창과 취소, 자동 API·파일 삭제 회귀로 확인했다.
+
+새 힙합 10곡은 모두 120초, 고유 SHA10·신호 경고0·원본/업로드 bytes 일치다. Downloads/Soundry_East_West_10_2026-10-06에 제목·설명·태그·원본/검사 기록과 함께 정리했다. 실제 음색 청취·LUFS·true peak와 SoundCloud 계정 업로드는 미수행이다. 기존 20곡 패키지는 유지된다.

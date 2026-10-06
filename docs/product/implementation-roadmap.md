@@ -42,3 +42,6 @@ plan-013은 실제150초 CLI 곡 생성·로컬저장·IAB재생/탐색/일시�
 ## Phase 11 — 사용자 확장 요청 (2026-10-06)
 
 plan-017-studio-membership: 다중 행 클립 비트 편집·행 추가·저장·미리듣기/WAV, 랜딩, 로컬 회원·등급·상품 안내·월 사용량·관리자 무제한. 이전 로그인·멀티트랙 제외 범위는 명시 사용자 요청으로 변경했다. 결제 연동과 원격 hosting은 포함하지 않는다. 기존 Phase QA 후 회원/소유권/usage ledger/편집 regression 및 실제 화면 QA를 수행한다.
+
+
+plan-018-screen-music-qa: 전체 앱456·음악 Node18/Python23 및 lint/type/build/base/audio/smoke, 실제 IAB 회원/사용량/편집/원본과 Chrome 믹스 디스크 다운로드·Safari 한정 재생 smoke를 완료했다. 제작 도구를 연속 번호 1–20곡으로 일반화했고 추가 동부/서부 힙합 10곡은 모두 실제 120초 WAV로 Downloads에 패키징했다. [실행 근거와 청취 제한](../quality/plan-018-verification.md)을 따른다.

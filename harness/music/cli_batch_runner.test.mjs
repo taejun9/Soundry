@@ -234,3 +234,28 @@ test('a prepared key saved before its first POST cannot create a Mock job after 
   const saved = JSON.parse(await readFile(join(fixture.stateDir, 'checkpoint.json')));
   assert.equal(saved.entries['1'].requestKey, 'prepared-not-submitted'); assert.equal(saved.entries['1'].generationId, null);
 });
+
+// 10곡 요청도 20곡과 같은 checkpoint/원본 검증을 거치며 계획 밖 번호는 접수 전에 막는다.
+test('a ten-track plan completes and resumes exactly ten jobs without extra submissions', async () => {
+  const fixture = await setup(); fixture.plan.tracks = fixture.plan.tracks.slice(0, 10);
+  await writeFile(fixture.planPath, JSON.stringify(fixture.plan));
+  delete fixture.options.numbers;
+  const result = await runBatch(fixture.options, fixture.dependencies);
+  assert.equal(result.completed, 10); assert.equal(fixture.postCount, 10);
+  const before = fixture.calls.length;
+  assert.equal((await runBatch(fixture.options, fixture.dependencies)).skipped, 10);
+  assert.equal(fixture.calls.length, before);
+  await assert.rejects(runBatch({ ...fixture.options, numbers: [11] }, fixture.dependencies), /제작 계획/);
+  assert.equal(fixture.calls.length, before);
+});
+
+test('empty, oversized, duplicate and gapped plans fail before HTTP or state writes', async () => {
+  for (const numbers of [[], Array.from({ length: 21 }, (_, i) => i + 1), [1, 1], [1, 3]]) {
+    const fixture = await setup();
+    fixture.plan.tracks = numbers.map(number => ({ ...fixture.plan.tracks[0], number }));
+    await writeFile(fixture.planPath, JSON.stringify(fixture.plan));
+    await assert.rejects(runBatch(fixture.options, fixture.dependencies), /1–20곡/);
+    assert.equal(fixture.calls.length, 0);
+    await assert.rejects(readFile(join(fixture.stateDir, 'checkpoint.json')), { code: 'ENOENT' });
+  }
+});

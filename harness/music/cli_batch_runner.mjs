@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 사용자가 명시적으로 실행하는 20곡 제작 도구. 작곡 공급자는 직접 호출하지 않고 로컬 앱 API를 쓴다.
+ * 사용자가 명시적으로 실행하는 1–20곡 제작 도구. 작곡 공급자는 직접 호출하지 않고 로컬 앱 API를 쓴다.
  * 제출 전 영속화한 요청 키로 재개하며 응답 유실·timeout·실패를 자동 새 생성으로 바꾸지 않는다.
  * 외부 URL·symlink·기존 원본 덮어쓰기를 거부하고 검증된 WAV만 완료 manifest에 공개한다.
  */
@@ -127,13 +127,13 @@ export async function runBatch(options, dependencies = {}) {
   const now = dependencies.now ?? Date.now;
   const log = dependencies.log ?? (message => process.stdout.write(message + '\n'));
   const plan = await readJson(planPath, null);
-  if (!object(plan) || plan.provider !== 'cli' || plan.model !== MODEL || !Array.isArray(plan.tracks) || plan.tracks.length !== 20 || plan.tracks.some(track => !object(track) || !Number.isInteger(track.number)) || plan.tracks.map(track => track.number).sort((a, b) => a - b).join() !== Array.from({ length: 20 }, (_, index) => index + 1).join()) fail('CLI 20곡 제작 계획이 필요합니다.');
+  if (!object(plan) || plan.provider !== 'cli' || plan.model !== MODEL || !Array.isArray(plan.tracks) || (plan.tracks.length < 1 || plan.tracks.length > 20) || plan.tracks.some(track => !object(track) || !Number.isInteger(track.number)) || plan.tracks.map(track => track.number).sort((a, b) => a - b).join() !== Array.from({ length: plan.tracks.length }, (_, index) => index + 1).join()) fail('연속 번호의 CLI 1–20곡 제작 계획이 필요합니다.');
   const tracks = plan.tracks.map(track => {
     if (typeof track.title !== 'string' || !track.title.trim() || track.title.trim().length > 120 || [...track.title].some(character => character.charCodeAt(0) < 32 || character === '/' || character === '\\')) fail('제작 제목이 올바르지 않습니다.');
     return { ...track, title: track.title.trim(), input: inputSnapshot(track.input) };
   });
   const selected = options.numbers ?? tracks.map(track => track.number);
-  if (!Array.isArray(selected) || !selected.length || new Set(selected).size !== selected.length || selected.some(number => !Number.isInteger(number) || number < 1 || number > 20)) fail('곡 번호는 중복 없는 1–20이어야 합니다.');
+  if (!Array.isArray(selected) || !selected.length || new Set(selected).size !== selected.length || selected.some(number => !Number.isInteger(number) || number < 1 || number > tracks.length)) fail('곡 번호는 제작 계획 안의 중복 없는 번호여야 합니다.');
   if (options.projectId !== undefined && !safeId(options.projectId)) fail('project ID 형식이 올바르지 않습니다.');
   await directory(stateDir); await directory(join(stateDir, 'originals'));
   // 한 state 폴더는 한 runner만 소유한다. 이전 실행 lock을 임의로 지워 중복 생성하지 않는다.
@@ -156,7 +156,7 @@ export async function runBatch(options, dependencies = {}) {
     // 완료 표시만 믿지 않고 실제 저장 원본과 checkpoint 연결을 먼저 전수 재검증한다.
     const complete = new Set();
     for (const result of manifest.results) {
-      if (!object(result) || !Number.isInteger(result.trackNumber) || result.trackNumber < 1 || result.trackNumber > 20 || complete.has(result.trackNumber) || result.state !== 'completed' || result.provider !== 'cli' || result.model !== MODEL || !safeId(result.requestId) || !/^[a-f0-9]{64}$/.test(result.sha256)) fail('완료 manifest에 잘못된 결과가 있습니다.');
+      if (!object(result) || !Number.isInteger(result.trackNumber) || result.trackNumber < 1 || result.trackNumber > tracks.length || complete.has(result.trackNumber) || result.state !== 'completed' || result.provider !== 'cli' || result.model !== MODEL || !safeId(result.requestId) || !/^[a-f0-9]{64}$/.test(result.sha256)) fail('완료 manifest에 잘못된 결과가 있습니다.');
       const expected = join(stateDir, 'originals', `${String(result.trackNumber).padStart(2, '0')}-original.wav`);
       if (result.localFile !== expected || digest(await originalBytes(expected)) !== result.sha256) fail('완료 원본 SHA256 또는 로컬 경로가 manifest와 다릅니다.');
       const entry = state.entries[result.trackNumber];
@@ -180,7 +180,7 @@ export async function runBatch(options, dependencies = {}) {
       if (state.projectCreationAttempted) fail('프로젝트 생성 응답이 불확실합니다. 앱에서 프로젝트를 확인하고 --project-id로 연결하세요.');
       // 프로젝트 생성 응답이 유실되면 사용자 연결이 필요하므로 POST 이전에 시도 사실을 저장한다.
       state.projectCreationAttempted = true; await writeJson(checkpointPath, state);
-      const project = await request('/projects', 'POST', { name: 'Soundry · 장르별 콘셉트 20곡' });
+      const project = await request('/projects', 'POST', { name: `Soundry · 콘셉트 ${tracks.length}곡` });
       if (!object(project) || !safeId(project.id)) fail('생성 프로젝트 ID를 확인하지 못했습니다. --project-id로 연결하세요.');
       state.projectId = project.id; await writeJson(checkpointPath, state);
     } else {

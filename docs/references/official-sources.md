@@ -39,3 +39,7 @@
 - [Node Crypto](https://nodejs.org/api/crypto.html): scrypt, randomBytes, timingSafeEqual. salt·token/비밀번호 처리에 적용한다.
 - [MDN AudioBufferSourceNode.start](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode/start): scheduling의 when/offset/duration. 구간 겹침과 미리듣기 구현에 적용한다.
 - 등급별 10/100/500곡, 한국 시간 월 단위, 관리자 무제한과 첫 가입자 데이터 인계는 Soundry 제품 결정이다.
+
+## plan-018 업로드 포맷 재확인 — 2026-10-06
+
+[SoundCloud Upload Requirements](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)를 다시 확인했다. WAV lossless, stereo, 16-bit/44.1kHz 이상과 -0.5~-1dBFS headroom 권장값을 이번 10곡 파일 검사 기준으로 사용한다. 앱의 월 등급 정책과 SoundCloud 계정의 업로드 잔여량은 별개이며 이번 작업은 파일 준비 범위다.

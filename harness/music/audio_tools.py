@@ -340,15 +340,16 @@ def require_preservable_wav(qa):
 
 
 def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_original_wav=False):
-    """완료한 서로 다른 20곡을 검사한 뒤 새 폴더에 WAV·공개 metadata·provenance를 만든다."""
+    """완료한 서로 다른 1–20곡을 검사한 뒤 새 폴더에 WAV·공개 metadata·provenance를 만든다."""
     plan = json.loads(plan_path.read_text(encoding="utf-8"))
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     tracks = plan["tracks"]
     results = manifest["results"]
     numbers = [entry["trackNumber"] for entry in results]
-    if (len(tracks) != 20 or len(results) != 20 or sorted(numbers) != list(range(1, 21))
-            or sorted(track["number"] for track in tracks) != list(range(1, 21))):
-        raise ValueError("완료 결과 20곡이 모두 있어야 업로드 패키지를 만듭니다.")
+    count = len(tracks)
+    if (not 1 <= count <= 20 or len(results) != count or sorted(numbers) != list(range(1, count + 1))
+            or sorted(track["number"] for track in tracks) != list(range(1, count + 1))):
+        raise ValueError("제작 계획의 1–20곡 완료 결과가 모두 있어야 업로드 패키지를 만듭니다.")
     if destination.exists() or destination.is_symlink():
         raise ValueError("기존 폴더를 덮어쓰지 않습니다. 새 전용 폴더를 지정하세요.")
     by_number = {entry["trackNumber"]: entry for entry in results}
@@ -375,7 +376,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
         # 로컬 원본 이름도 공개하지 않고 패키지 안의 원본 파일명으로 기록한다.
         qa["fileName"] = stem + "_original.wav"
         checked.append((record, source, qa, stem))
-    if len({qa["sha256"] for _, _, qa, _ in checked}) != 20:
+    if len({qa["sha256"] for _, _, qa, _ in checked}) != count:
         raise ValueError("원본 bytes가 같은 중복 곡이 있습니다.")
     # 이후 실패하면 미완료 표식을 남긴다. 이미 쓴 파일을 성공 패키지처럼 보이게 만들지 않는다.
     destination.mkdir(parents=True, exist_ok=False)
@@ -438,7 +439,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
                 unlistened.append(f'{record["number"]:02d}')
         listening_note = (f"실제 청취를 수행하지 않은 곡: {', '.join(unlistened)}번.\n" if unlistened else "")
         (destination / "읽어 주세요.txt").write_text(
-            "Soundry 테스트 음원 20곡\n\n"
+            f"Soundry 테스트 음원 {count}곡\n\n"
             "Codex CLI가 AI로 악보를 작곡하고 Soundry의 로컬 악기로 합성한 연주곡입니다.\n\n"
             "사용 방법\n"
             "1. 아래 목록에서 원하는 번호·제목·장르·콘셉트·참고 방향을 확인하세요.\n"

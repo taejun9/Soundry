@@ -1,0 +1,306 @@
+{
+  "provider": "cli",
+  "model": "codex-composer-local-synth-v1",
+  "tracks": [
+    {
+      "number": 1,
+      "slug": "brownstone-after-rain",
+      "genre": "East Coast Boom Bap",
+      "title": "Brownstone After Rain",
+      "concept": "비 갠 브루클린 골목",
+      "description": "비 갠 브루클린 골목을 그린 새로운 East Coast Boom Bap 연주곡. 비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브.",
+      "bpmRequested": 88,
+      "tags": [
+        "East Coast Boom Bap",
+        "90s-hip-hop",
+        "instrumental",
+        "boom-bap"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100601,
+      "referenceDirection": "비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental East Coast Boom Bap composition at 88 BPM. Use minor jazz piano seventh chords, syncopated upright-style bass, heavy swung kick and snare, brief muted trumpet answer phrases. Mood: 비 갠 브루클린 골목. Structure: piano-and-bass intro; rugged sparse verse; brighter brass hook; drums-out bridge; developed hook and resolved piano outro. Evoke the 1990s Brooklyn jazz-soul hip-hop production palette and relaxed, weighty storytelling pocket associated with Biggie. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "East Coast Boom Bap",
+          "mood": "비 갠 브루클린 골목",
+          "bpm": 88,
+          "durationSeconds": 120,
+          "seed": "2026100601"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 2,
+      "slug": "velvet-ledger",
+      "genre": "East Coast Boom Bap",
+      "title": "Velvet Ledger",
+      "concept": "도시의 여유와 자신감",
+      "description": "도시의 여유와 자신감을 그린 새로운 East Coast Boom Bap 연주곡. 비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브.",
+      "bpmRequested": 92,
+      "tags": [
+        "East Coast Boom Bap",
+        "90s-hip-hop",
+        "instrumental",
+        "boom-bap"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100602,
+      "referenceDirection": "비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental East Coast Boom Bap composition at 92 BPM. Use warm Rhodes ninth chords, elastic electric bass, crisp boom-bap snare, clipped clean guitar and short brass stabs. Mood: 도시의 여유와 자신감. Structure: Rhodes pickup; tight rhythm verse; rising brass refrain; half-density bridge; full return with changed bass line and a tight cadence. Evoke the 1990s Brooklyn jazz-soul hip-hop production palette and relaxed, weighty storytelling pocket associated with Biggie. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "East Coast Boom Bap",
+          "mood": "도시의 여유와 자신감",
+          "bpm": 92,
+          "durationSeconds": 120,
+          "seed": "2026100602"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 3,
+      "slug": "midnight-borough",
+      "genre": "East Coast Boom Bap",
+      "title": "Midnight Borough",
+      "concept": "밤거리의 묵직한 긴장",
+      "description": "밤거리의 묵직한 긴장을 그린 새로운 East Coast Boom Bap 연주곡. 비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브.",
+      "bpmRequested": 84,
+      "tags": [
+        "East Coast Boom Bap",
+        "90s-hip-hop",
+        "instrumental",
+        "boom-bap"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100603,
+      "referenceDirection": "비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental East Coast Boom Bap composition at 84 BPM. Use dark low piano octaves, cinematic strings, deep round bass, spacious crunchy drums and a high bell counterline. Mood: 밤거리의 묵직한 긴장. Structure: low piano intro; threatening main groove; high strings hook; bass-and-kick breakdown; varied return with final minor cadence. Evoke the 1990s Brooklyn jazz-soul hip-hop production palette and relaxed, weighty storytelling pocket associated with Biggie. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "East Coast Boom Bap",
+          "mood": "밤거리의 묵직한 긴장",
+          "bpm": 84,
+          "durationSeconds": 120,
+          "seed": "2026100603"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 4,
+      "slug": "corner-office-groove",
+      "genre": "East Coast Boom Bap",
+      "title": "Corner Office Groove",
+      "concept": "재즈 클럽 같은 화려한 야경",
+      "description": "재즈 클럽 같은 화려한 야경을 그린 새로운 East Coast Boom Bap 연주곡. 비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브.",
+      "bpmRequested": 96,
+      "tags": [
+        "East Coast Boom Bap",
+        "90s-hip-hop",
+        "instrumental",
+        "boom-bap"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100604,
+      "referenceDirection": "비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental East Coast Boom Bap composition at 96 BPM. Use playful chromatic piano, walking funk bass, shuffled hi-hats, warm sax-like synth melody and confident snares. Mood: 재즈 클럽 같은 화려한 야경. Structure: short drum pickup; conversational piano verse; memorable reed lead chorus; piano solo bridge; final brass-accented hook and stop ending. Evoke the 1990s Brooklyn jazz-soul hip-hop production palette and relaxed, weighty storytelling pocket associated with Biggie. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "East Coast Boom Bap",
+          "mood": "재즈 클럽 같은 화려한 야경",
+          "bpm": 96,
+          "durationSeconds": 120,
+          "seed": "2026100604"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 5,
+      "slug": "last-train-home",
+      "genre": "East Coast Boom Bap",
+      "title": "Last Train Home",
+      "concept": "새벽 귀갓길의 회상",
+      "description": "새벽 귀갓길의 회상을 그린 새로운 East Coast Boom Bap 연주곡. 비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브.",
+      "bpmRequested": 86,
+      "tags": [
+        "East Coast Boom Bap",
+        "90s-hip-hop",
+        "instrumental",
+        "boom-bap"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100605,
+      "referenceDirection": "비기 참고 방향: 1990년대 동부 붐뱁의 묵직한 드럼·재즈/소울 화성·여유로운 그루브",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental East Coast Boom Bap composition at 86 BPM. Use soulful electric piano, soft original guitar melody, warm sustained bass, laid-back boom-bap rim and snare, delicate strings. Mood: 새벽 귀갓길의 회상. Structure: intimate keys intro; reflective verse; expansive string chorus; guitar bridge; gentle developed chorus and resolved instrumental ending. Evoke the 1990s Brooklyn jazz-soul hip-hop production palette and relaxed, weighty storytelling pocket associated with Biggie. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "East Coast Boom Bap",
+          "mood": "새벽 귀갓길의 회상",
+          "bpm": 86,
+          "durationSeconds": 120,
+          "seed": "2026100605"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 6,
+      "slug": "pacific-sunset-drive",
+      "genre": "West Coast G-funk",
+      "title": "Pacific Sunset Drive",
+      "concept": "석양의 해안도로",
+      "description": "석양의 해안도로을 그린 새로운 West Coast G-funk 연주곡. 투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성.",
+      "bpmRequested": 94,
+      "tags": [
+        "West Coast G-funk",
+        "90s-hip-hop",
+        "instrumental",
+        "g-funk"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100606,
+      "referenceDirection": "투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental West Coast G-funk composition at 94 BPM. Use West Coast G-funk high sine synth lead, bouncing electric funk bass, clean guitar offbeats, warm Rhodes and relaxed clap-snare. Mood: 석양의 해안도로. Structure: Rhodes intro; cruising bass-led verse; sunny synth hook; sparse guitar bridge; richer final hook and confident cadence. Evoke the 1990s California West Coast hip-hop production palette, soulful emotional harmonies and G-funk groove associated with Tupac. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "West Coast G-funk",
+          "mood": "석양의 해안도로",
+          "bpm": 94,
+          "durationSeconds": 120,
+          "seed": "2026100606"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 7,
+      "slug": "concrete-sunrise",
+      "genre": "West Coast G-funk",
+      "title": "Concrete Sunrise",
+      "concept": "도시의 새벽과 새로운 시작",
+      "description": "도시의 새벽과 새로운 시작을 그린 새로운 West Coast G-funk 연주곡. 투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성.",
+      "bpmRequested": 90,
+      "tags": [
+        "West Coast G-funk",
+        "90s-hip-hop",
+        "instrumental",
+        "g-funk"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100607,
+      "referenceDirection": "투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental West Coast G-funk composition at 90 BPM. Use emotional minor piano, soulful string pads, sturdy West Coast funk bass, steady snare-clap and delicate bell arpeggio. Mood: 도시의 새벽과 새로운 시작. Structure: piano introduction; determined verse; hopeful soaring original synth refrain; strings-only bridge; full final refrain and reflective coda. Evoke the 1990s California West Coast hip-hop production palette, soulful emotional harmonies and G-funk groove associated with Tupac. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "West Coast G-funk",
+          "mood": "도시의 새벽과 새로운 시작",
+          "bpm": 90,
+          "durationSeconds": 120,
+          "seed": "2026100607"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 8,
+      "slug": "palm-avenue-bounce",
+      "genre": "West Coast G-funk",
+      "title": "Palm Avenue Bounce",
+      "concept": "야자수 거리의 가벼운 축제",
+      "description": "야자수 거리의 가벼운 축제을 그린 새로운 West Coast G-funk 연주곡. 투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성.",
+      "bpmRequested": 100,
+      "tags": [
+        "West Coast G-funk",
+        "90s-hip-hop",
+        "instrumental",
+        "g-funk"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100608,
+      "referenceDirection": "투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental West Coast G-funk composition at 100 BPM. Use bright clavinet, rubbery syncopated bass, high whistling sine lead, palm-muted guitar and springy funk drums. Mood: 야자수 거리의 가벼운 축제. Structure: clav pickup; playful bass groove; catchy whistling hook; call-and-response guitar bridge; energetic final hook with fresh fills and stop cadence. Evoke the 1990s California West Coast hip-hop production palette, soulful emotional harmonies and G-funk groove associated with Tupac. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "West Coast G-funk",
+          "mood": "야자수 거리의 가벼운 축제",
+          "bpm": 100,
+          "durationSeconds": 120,
+          "seed": "2026100608"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 9,
+      "slug": "letters-to-the-coast",
+      "genre": "West Coast G-funk",
+      "title": "Letters To The Coast",
+      "concept": "고향과 가족을 떠올리는 저녁",
+      "description": "고향과 가족을 떠올리는 저녁을 그린 새로운 West Coast G-funk 연주곡. 투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성.",
+      "bpmRequested": 82,
+      "tags": [
+        "West Coast G-funk",
+        "90s-hip-hop",
+        "instrumental",
+        "g-funk"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100609,
+      "referenceDirection": "투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental West Coast G-funk composition at 82 BPM. Use gentle Rhodes and piano, yearning violin-like melody, low sustained bass, soulful half-density drums, restrained clean guitar fills. Mood: 고향과 가족을 떠올리는 저녁. Structure: soft keys intro; intimate verse; lyrical string chorus; bass-free reflective bridge; hopeful final chorus and warm resolved piano ending. Evoke the 1990s California West Coast hip-hop production palette, soulful emotional harmonies and G-funk groove associated with Tupac. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "West Coast G-funk",
+          "mood": "고향과 가족을 떠올리는 저녁",
+          "bpm": 82,
+          "durationSeconds": 120,
+          "seed": "2026100609"
+        },
+        "variationCount": 1
+      }
+    },
+    {
+      "number": 10,
+      "slug": "westside-night-lights",
+      "genre": "West Coast G-funk",
+      "title": "Westside Night Lights",
+      "concept": "도심의 불빛과 당당한 에너지",
+      "description": "도심의 불빛과 당당한 에너지을 그린 새로운 West Coast G-funk 연주곡. 투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성.",
+      "bpmRequested": 104,
+      "tags": [
+        "West Coast G-funk",
+        "90s-hip-hop",
+        "instrumental",
+        "g-funk"
+      ],
+      "durationRequested": 120,
+      "seed": 2026100610,
+      "referenceDirection": "투팍 참고 방향: 1990년대 서부 G-funk의 탄력 있는 베이스·높은 신스·감정적인 소울 화성",
+      "input": {
+        "prompt": "Create a completely original 120-second instrumental West Coast G-funk composition at 104 BPM. Use punchy G-funk synth bass, funky staccato guitar, brass-like chord stabs, high sine lead, crisp straight snare and rolling hi-hat fills. Mood: 도심의 불빛과 당당한 에너지. Structure: bass-and-drums intro; assertive groove; vivid lead hook; syncopated percussion bridge; expanded final hook and clear unison ending. Evoke the 1990s California West Coast hip-hop production palette, soulful emotional harmonies and G-funk groove associated with Tupac. Write fresh melodies and chord movement, with distinct verse, chorus and bridge sections, musical variation and intentional ending. No vocals or existing song melody, no recorded samples. Keep clear drum/bass separation and space for an MC. Use only the available local instruments to suggest these textures.",
+        "settings": {
+          "mode": "instrumental",
+          "genre": "West Coast G-funk",
+          "mood": "도심의 불빛과 당당한 에너지",
+          "bpm": 104,
+          "durationSeconds": 120,
+          "seed": "2026100610"
+        },
+        "variationCount": 1
+      }
+    }
+  ]
+}

@@ -19,6 +19,12 @@ CLI 전환은 실제 150초 곡의 생성·저장·화면 재생·탐색·원본
 
 전곡 파일·신호 검사와 악보 구조 검토를 완료했습니다. 실제 음색 청취 평가는 수행하지 않았으며, SoundCloud에 직접 업로드하지는 않았습니다. 앱의 `SoundCloud · 20 Concepts` 프로젝트에서도 20곡을 사용할 수 있습니다.
 
+## 2026-10-06 추가 테스트 음원
+
+`Downloads/Soundry_East_West_10_2026-10-06`에 동부 붐뱁 5곡(비기 참고 방향)과 서부 G-funk 5곡(투팍 참고 방향)을 정리했습니다. 전곡 2분, 총 20분의 새로운 연주곡이며 보컬은 없습니다. `Upload_WAV`의 stereo 44.1kHz PCM16 WAV 10개와 `Metadata`의 곡별 제목·설명·태그를 사용하세요. 보존 원본·SHA·신호 검사를 포함하며 전곡 실제 화면 재생과 원본 일치를 확인했습니다. 실제 음색 청취 평가는 미수행입니다.
+
+이번 전체 QA는 앱 456 tests·음악 도구 Node18/Python23과 lint/type/build/base/audio/smoke가 통과했습니다. 회원·등급·사용량·다중 행 편집·Chrome 믹스 실제 다운로드·Safari 한정 재생을 포함한 [실제 화면 검증 기록](docs/quality/plan-018-verification.md)을 확인하세요.
+
 ## 설치와 실행
 
 앱 실행에는 Node.js 24 LTS(24.12 이상, 25 미만)와 npm 11이 필요합니다. 전체 QA에는 Python 3.10 이상, NumPy와 Git도 필요합니다. 문서·Mock WAV 검사는 Python 표준 라이브러리만 사용하고, 음악 변환·패키징 QA는 NumPy를 사용합니다. 저장소 루트에서 고정된 lockfile로 설치합니다.
@@ -122,7 +128,7 @@ SOUNDRY_PYTHON=/path/to/python3 npm run qa
 - [QA 규칙](docs/quality/rules.md) · [출시 체크리스트](docs/quality/release-checklist.md) · [개발 절차](docs/architecture/harness.md)
 - [공식 출처](docs/references/official-sources.md) · [팀 규칙](AGENTS.md) · [GrooveForge 참고 조사](docs/references/grooveforge.md)
 
-GrooveForge의 코드·DB·런타임을 공유하지 않습니다. 로그인·결제·클라우드 저장·추적을 추가하지 않습니다.
+GrooveForge의 코드·DB·런타임을 공유하지 않습니다. 회원은 이 컴퓨터의 로컬 계정이며 결제·클라우드 저장·추적은 제공하지 않습니다.
 
 ## 비트 편집과 회원 등급
 

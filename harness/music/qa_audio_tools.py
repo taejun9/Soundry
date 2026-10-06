@@ -295,6 +295,30 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
     assert "변환 없이" in (preserved / "읽어 주세요.txt").read_text()
     checks.append("원본 유지 20곡 PCM16 bytes·SHA 동일, 세 독립 inode/nlink1, 무변환 metadata 확인")
 
+    # 새 10곡 계약은 변환/복사 대역 없이 실제 원본 유지 경로와 누락·번호 경계를 확인한다.
+    ten_plan = {**plan, "tracks": plan["tracks"][:10]}
+    ten_plan_file = root / "ten-plan.json"
+    ten_plan_file.write_text(json.dumps(ten_plan), encoding="utf-8")
+    ten_manifest = root / "ten-manifest.json"
+    ten_manifest.write_text(json.dumps({"results": results[:10]}), encoding="utf-8")
+    ten_destination = root / "ten-package"
+    ten_result = module.package(ten_plan_file, ten_manifest, ten_destination, preserve_original_wav=True)
+    assert ten_result["trackCount"] == 10 and ten_result["totalSeconds"] == 900
+    assert len(list((ten_destination / "Upload_WAV").glob("*.wav"))) == 10
+    assert "Soundry 테스트 음원 10곡" in (ten_destination / "읽어 주세요.txt").read_text()
+    for record in json.loads((ten_destination / "Metadata" / "manifest.json").read_text()):
+        assert record["sha256"] == hashlib.sha256(Path(results[record["number"] - 1]["localFile"]).read_bytes()).hexdigest()
+    checks.append("원본 유지 10곡 실제 패키징·안내·전수 SHA 확인")
+    for index, bad_tracks in enumerate(([], plan["tracks"] + [plan["tracks"][0]], [plan["tracks"][0]] * 10, plan["tracks"][:9])):
+        ten_plan_file.write_text(json.dumps({**plan, "tracks": bad_tracks}), encoding="utf-8")
+        refused = root / f"bad-count-{index}"
+        try:
+            module.package(ten_plan_file, ten_manifest, refused, preserve_original_wav=True)
+            raise AssertionError("invalid count or duplicate numbering accepted")
+        except ValueError:
+            assert not refused.exists()
+    checks.append("빈 계획·21곡·중복 번호·완료 수 불일치 preflight 거부")
+
     # 업로드 파일을 수정해도 원본과 Provenance 복사본은 변하지 않는 실제 COW 경계다.
     unchanged_hash = hashlib.sha256(original_copy.read_bytes()).hexdigest()
     with upload_copy.open("r+b") as output:
