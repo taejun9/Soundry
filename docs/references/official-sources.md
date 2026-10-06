@@ -33,3 +33,9 @@
 ## 업로드 파일 검증 — 2026-10-01
 
 [SoundCloud Upload Requirements](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements): 지원 WAV, stereo, 16-bit/44.1kHz 이상과 −0.5~−1dBFS 권장 headroom을 확인했다. plan-016의 기존20곡 파일 검사에 적용했으며 실제 업로드·계정 잔여량·권리 승인을 의미하지 않는다.
+
+## 회원·로컬 오디오 편집 — 2026-10-06
+
+- [Node Crypto](https://nodejs.org/api/crypto.html): scrypt, randomBytes, timingSafeEqual. salt·token/비밀번호 처리에 적용한다.
+- [MDN AudioBufferSourceNode.start](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode/start): scheduling의 when/offset/duration. 구간 겹침과 미리듣기 구현에 적용한다.
+- 등급별 10/100/500곡, 한국 시간 월 단위, 관리자 무제한과 첫 가입자 데이터 인계는 Soundry 제품 결정이다.

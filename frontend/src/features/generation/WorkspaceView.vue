@@ -71,11 +71,11 @@ onBeforeUnmount(() => { sequence++; controller?.abort(); metadataController?.abo
 
 <template>
   <!-- 미선택·로딩·오류·정상 화면을 배타적으로 표시한다. 프로젝트 ID key가 바뀔 때 이전 composable scope도 정리된다. -->
-  <section v-if="!projectId" class="workspace-select panel empty-state"><span class="empty-icon"><StudioIcon name="folder" /></span><p class="eyebrow accent-text">CHOOSE YOUR PROJECT</p><h1>먼저 프로젝트를 선택해 주세요</h1><p>프로젝트마다 아이디어와 음악을 모아 작업할 수 있어요.<br />목록에서 프로젝트를 열거나 새 프로젝트를 만들어 보세요.</p><RouterLink to="/" class="button button-primary">프로젝트 선택하기<StudioIcon name="arrow" /></RouterLink></section>
+  <section v-if="!projectId" class="workspace-select panel empty-state"><span class="empty-icon"><StudioIcon name="folder" /></span><p class="eyebrow accent-text">CHOOSE YOUR PROJECT</p><h1>먼저 프로젝트를 선택해 주세요</h1><p>프로젝트마다 아이디어와 음악을 모아 작업할 수 있어요.<br />목록에서 프로젝트를 열거나 새 프로젝트를 만들어 보세요.</p><RouterLink to="/projects" class="button button-primary">프로젝트 선택하기<StudioIcon name="arrow" /></RouterLink></section>
   <section v-else-if="loading" class="empty-state workspace-select" role="status" aria-busy="true"><span class="loading-spinner" aria-hidden="true"></span><h1>프로젝트 불러오는 중</h1><p>저장한 프로젝트를 확인하고 있어요.</p></section>
-  <section v-else-if="error" class="empty-state workspace-select"><span class="empty-icon"><StudioIcon name="folder" /></span><h1>{{ notFound ? '프로젝트를 찾을 수 없어요' : '프로젝트를 불러오지 못했어요' }}</h1><p role="alert">{{ notFound ? '주소를 확인하거나 다른 프로젝트를 선택해 주세요.' : error }}</p><div class="inline-actions"><button type="button" class="button button-secondary" @click="loadProject">다시 시도</button><RouterLink to="/" class="button button-primary">프로젝트 목록</RouterLink></div></section>
+  <section v-else-if="error" class="empty-state workspace-select"><span class="empty-icon"><StudioIcon name="folder" /></span><h1>{{ notFound ? '프로젝트를 찾을 수 없어요' : '프로젝트를 불러오지 못했어요' }}</h1><p role="alert">{{ notFound ? '주소를 확인하거나 다른 프로젝트를 선택해 주세요.' : error }}</p><div class="inline-actions"><button type="button" class="button button-secondary" @click="loadProject">다시 시도</button><RouterLink to="/projects" class="button button-primary">프로젝트 목록</RouterLink></div></section>
   <template v-else-if="project">
-    <RouterLink to="/" class="text-link workspace-back">모든 프로젝트<StudioIcon name="arrow" /></RouterLink>
+    <RouterLink to="/projects" class="text-link workspace-back">모든 프로젝트<StudioIcon name="arrow" /></RouterLink>
     <section class="page-heading"><div class="workspace-title"><p class="eyebrow accent-text">CREATE YOUR NEXT SOUND</p><h1 class="break-name">{{ project.name }}</h1><p class="page-description">{{ project.trackCount }}곡 · 최근 수정 <time :datetime="project.updatedAt">{{ projectDate(project.updatedAt) }}</time></p></div><span class="outline-tag">이 컴퓨터에 저장됨</span></section>
     <p v-if="metadataError" class="error-banner" role="alert">{{ metadataError }}</p>
     <ProjectStudio :key="project.id" :project-id="project.id" @project-changed="refreshMetadata" />

@@ -55,3 +55,9 @@ DB transaction 동안 provider 네트워크 요청이나 음원 streaming을 기
 ## Migration / 백업 검증
 
 Phase 2에서 fresh DB migration, 기존 데이터 유지, FK/UNIQUE, requestKey 충돌, 재시작 전후 조회를 검사한다. 변경 전 서버를 끄고 data 전체를 백업한다. SQLite를 직접 수정하는 별도 UI, cloud sync, 실시간 백업 service는 MVP에 추가하지 않는다.
+
+## Schema v2 — 회원·사용량·편집
+
+`0001_members_arrangements.sql`은 기존 데이터를 보존해 user_version=2로 이동한다. `members`(email UNIQUE, password_hash, tier CHECK), `sessions`(token_hash, member FK, expires_at), `usage_entries`(generation_id UNIQUE, member FK, amount/status/created_at), `arrangements`(project FK CASCADE, JSON, updated_at)를 추가한다. projects/generations에는 nullable member_id FK를 추가하며 기존 프로젝트는 첫 관리자 가입 시 귀속한다. 과거 생성은 소급 차감하지 않는다.
+
+usage_entries는 generation 삭제와 독립적으로 남아 completed 사용량을 보존한다. insert/update status trigger로 queued/processing/completed는 차감, failed/cancelled는 비차감이다. 월 시작·다음 월 시작을 Asia/Seoul 날짜 기준 UTC 시각으로 계산한다. arrangement는 원본 파일 대신 Track ID·start/offset/duration/volume/loop와 행 이름·mute를 저장한다. 삭제된 Track를 참조하는 편집본은 원본 없음으로 표시하며 해당 클립을 제거하거나 다른 클립으로 다시 구성해야 저장·재생할 수 있다.

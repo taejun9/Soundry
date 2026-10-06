@@ -44,14 +44,14 @@ onMounted(() => { void refreshLibrary(); });
 
 <template>
   <!-- 서버가 확인한 metadata만 표시하고 미확인 값은 그대로 안내한다. 다운로드는 원본 local URL을 사용한다. -->
-  <section class="page-heading"><div><p class="eyebrow accent-text">KEEP WHAT MOVES YOU</p><h1>나의 보관함</h1><p class="page-description">여러 프로젝트에서 골라둔 음악을 한곳에서 듣고 정리하세요.</p></div><RouterLink to="/" class="button button-secondary">프로젝트 둘러보기<StudioIcon name="arrow" /></RouterLink></section>
+  <section class="page-heading"><div><p class="eyebrow accent-text">KEEP WHAT MOVES YOU</p><h1>나의 보관함</h1><p class="page-description">여러 프로젝트에서 골라둔 음악을 한곳에서 듣고 정리하세요.</p></div><RouterLink to="/projects" class="button button-secondary">프로젝트 둘러보기<StudioIcon name="arrow" /></RouterLink></section>
   <p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
   <section class="panel library-panel" aria-labelledby="library-title" :aria-busy="loading || loadingMore">
     <div class="section-heading"><h2 id="library-title" ref="heading" class="library-title" tabindex="-1">즐겨찾는 음악 <span v-if="tracks.length" class="project-count">{{ tracks.length }}곡{{ nextCursor ? ' 불러옴' : '' }}</span></h2><button type="button" class="text-link" :disabled="loading || loadingMore" @click="refreshLibrary"><StudioIcon name="refresh" />새로고침</button></div>
     <p class="library-description">하트로 보관한 음원만 표시합니다. 즐겨찾기를 해제해도 원본 음원은 프로젝트에 남습니다.</p>
     <div v-if="error" class="error-banner" role="alert"><p>{{ error }}</p><button type="button" class="button button-secondary" :disabled="loading || loadingMore" @click="refreshLibrary">다시 불러오기</button></div>
     <div v-if="loading && !tracks.length" class="empty-state" role="status"><span class="loading-spinner" aria-hidden="true"></span><p>보관한 음악을 불러오고 있어요.</p></div>
-    <div v-else-if="!tracks.length && !error && !nextCursor" class="empty-state"><span class="empty-icon"><StudioIcon name="heart" /></span><h3>다시 듣고 싶은 사운드를 모아보세요</h3><p>프로젝트의 음원 카드에서 하트를 누르면<br />이곳에서 한 번에 찾아 들을 수 있어요.</p><RouterLink to="/" class="button button-secondary">프로젝트에서 음악 고르기<StudioIcon name="arrow" /></RouterLink></div>
+    <div v-else-if="!tracks.length && !error && !nextCursor" class="empty-state"><span class="empty-icon"><StudioIcon name="heart" /></span><h3>다시 듣고 싶은 사운드를 모아보세요</h3><p>프로젝트의 음원 카드에서 하트를 누르면<br />이곳에서 한 번에 찾아 들을 수 있어요.</p><RouterLink to="/projects" class="button button-secondary">프로젝트에서 음악 고르기<StudioIcon name="arrow" /></RouterLink></div>
     <ul v-if="tracks.length" class="library-track-list" aria-label="즐겨찾는 음원">
       <li v-for="track in tracks" :key="track.id" :data-library-track-id="track.id" class="library-track" :class="{ 'is-current': player.state.track?.id === track.id }">
         <RouterLink :to="`/projects/${track.projectId}`" class="library-project"><StudioIcon name="folder" /><span>{{ track.projectName }}</span><StudioIcon name="arrow" /></RouterLink>

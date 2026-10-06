@@ -3,6 +3,7 @@
  * 앱의 공통 셸과 단일 오디오 controller를 소유한다. RouterView만 교체하므로 화면 이동 중에도 재생이 유지된다.
  * 사이드 메뉴의 열림 상태와 이동 후 본문 포커스는 이 수준에서 일관되게 관리한다.
  */
+import { session } from '../features/members/session';
 import { nextTick, onBeforeUnmount, provide, ref, watch } from 'vue';
 import { RouterLink, RouterView, useRoute } from 'vue-router';
 import StudioIcon from '../components/StudioIcon.vue';
@@ -20,34 +21,82 @@ const route = useRoute();
 const menuOpen = ref(false);
 const main = ref<HTMLElement>();
 // 라우트 화면이 갱신된 다음 본문으로 포커스를 옮겨 키보드 사용자가 새 화면에 진입했음을 알린다.
-watch(() => route.fullPath, async () => {
-  menuOpen.value = false;
-  await nextTick();
-  main.value?.focus();
-});
+watch(
+  () => route.fullPath,
+  async () => {
+    menuOpen.value = false;
+    await nextTick();
+    main.value?.focus();
+  },
+);
 </script>
 
 <template>
   <!-- 라우트 화면은 main 안에서 교체하고 AudioPlayer는 밖에 두어 내비게이션으로 재생 UI를 해제하지 않는다. -->
   <a href="#main-content" class="skip-link">본문으로 이동</a>
-  <div class="studio-shell">
+  <div v-if="route.meta.public" class="public-shell">
+    <header class="public-header">
+      <RouterLink to="/" class="brand"
+        ><span class="brand-symbol"><StudioIcon name="sound" /></span>soundry<span class="brand-period"
+          >.</span
+        ></RouterLink
+      >
+      <nav aria-label="사이트 메뉴">
+        <RouterLink to="/pricing">상품 및 등급</RouterLink
+        ><RouterLink to="/account">{{ session.member ? '내 계정' : '로그인 / 가입' }}</RouterLink
+        ><RouterLink to="/projects" class="button button-primary">스튜디오 열기</RouterLink>
+      </nav>
+    </header>
+    <main id="main-content" ref="main" tabindex="-1" class="public-content"><RouterView /></main>
+    <AudioPlayer v-if="player.state.track" />
+    <footer class="public-footer">
+      <RouterLink to="/">soundry.</RouterLink><span>아이디어부터, 한 곡씩.</span
+      ><RouterLink to="/projects">스튜디오로 이동 →</RouterLink>
+    </footer>
+  </div>
+  <div v-else class="studio-shell">
     <aside class="sidebar">
       <div class="brand-row">
-        <RouterLink to="/" class="brand" aria-label="Soundry 프로젝트 홈">
+        <RouterLink to="/projects" class="brand" aria-label="Soundry 프로젝트 홈">
           <span class="brand-symbol"><StudioIcon name="sound" /></span>
           <span>soundry<span class="brand-period">.</span></span>
         </RouterLink>
-        <button class="icon-button menu-toggle" type="button" :aria-expanded="menuOpen" aria-controls="studio-navigation" :aria-label="menuOpen ? '메뉴 닫기' : '메뉴 열기'" @click="menuOpen = !menuOpen">
+        <button
+          class="icon-button menu-toggle"
+          type="button"
+          :aria-expanded="menuOpen"
+          aria-controls="studio-navigation"
+          :aria-label="menuOpen ? '메뉴 닫기' : '메뉴 열기'"
+          @click="menuOpen = !menuOpen"
+        >
           <StudioIcon :name="menuOpen ? 'close' : 'menu'" />
         </button>
       </div>
       <div id="studio-navigation" class="sidebar-body" :class="{ 'is-open': menuOpen }">
         <p class="eyebrow nav-caption">YOUR STUDIO</p>
         <nav aria-label="스튜디오 메뉴">
-          <RouterLink to="/" class="nav-item" exact-active-class="is-active"><StudioIcon name="grid" />프로젝트</RouterLink>
-          <RouterLink to="/workspace" class="nav-item" :class="{ 'is-active': route.path.startsWith('/projects/') }" active-class="is-active"><StudioIcon name="sliders" /><span>작업 공간<span class="nav-hint">프로젝트 선택</span></span></RouterLink>
-          <RouterLink to="/library" class="nav-item" active-class="is-active"><StudioIcon name="heart" />보관함</RouterLink>
+          <RouterLink to="/projects" class="nav-item" exact-active-class="is-active"
+            ><StudioIcon name="grid" />프로젝트</RouterLink
+          >
+          <RouterLink
+            to="/workspace"
+            class="nav-item"
+            :class="{ 'is-active': route.path.startsWith('/projects/') }"
+            active-class="is-active"
+            ><StudioIcon name="sliders" /><span
+              >작업 공간<span class="nav-hint">프로젝트 선택</span></span
+            ></RouterLink
+          >
+          <RouterLink to="/library" class="nav-item" active-class="is-active"
+            ><StudioIcon name="heart" />보관함</RouterLink
+          >
         </nav>
+        <RouterLink to="/pricing" class="nav-item">상품 및 등급</RouterLink
+        ><RouterLink to="/account" class="nav-item">{{
+          session.member
+            ? `${session.member.name} · ${session.member.tier.toUpperCase()}`
+            : '회원가입 / 로그인'
+        }}</RouterLink>
         <div class="sidebar-bottom">
           <div class="private-note"><StudioIcon name="lock" /><span>당신만의 창작 공간</span></div>
           <ConnectionStatus />
@@ -57,13 +106,17 @@ watch(() => route.fullPath, async () => {
     </aside>
     <div class="studio-body">
       <header class="topbar">
-        <div class="breadcrumb">내 스튜디오<span>/</span><span class="breadcrumb-current">{{ route.meta.title }}</span></div>
+        <div class="breadcrumb">
+          내 스튜디오<span>/</span><span class="breadcrumb-current">{{ route.meta.title }}</span>
+        </div>
         <span class="local-badge"><StudioIcon name="monitor" />LOCAL STUDIO</span>
       </header>
       <main id="main-content" ref="main" tabindex="-1" class="main-content">
         <RouterView />
       </main>
-      <footer class="studio-footer"><span>아이디어부터, 한 곡씩.</span><span>Made for your sound.</span></footer>
+      <footer class="studio-footer">
+        <span>아이디어부터, 한 곡씩.</span><span>Made for your sound.</span>
+      </footer>
       <AudioPlayer />
     </div>
   </div>

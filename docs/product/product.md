@@ -29,7 +29,7 @@ Mock만 있는 단계는 workflow MVP다. 실제 AI 작곡 완료라고 부르�
 
 ## 화면과 상태
 
-- `/`: 프로젝트 dashboard. 처음 사용, 빈 결과, 로딩, 오류 상태를 각각 제공한다.
+- `/`: 랜딩페이지. `/projects`: 프로젝트 dashboard. 처음 사용, 빈 결과, 로딩, 오류 상태를 각각 제공한다.
 - `/projects/:id`: prompt를 시각적으로 우선한 workspace, advanced settings, generation별 track 카드와 비교 목록.
 - `/library`: favorite track 목록과 프로젝트 이동.
 - 앱 하단 고정 player: 재생 곡과 진행·볼륨. 좁은 화면에서는 겹치지 않도록 콘텐츠 하단 여백 확보.
@@ -45,6 +45,14 @@ Dark, minimal, modern music studio. 검정·짙은 회색 배경, 읽기 쉬운 
 
 ## 제외 범위
 
-회원가입, 로그인, 권한/사용자/tenant 관리, 결제·구독, cloud deploy/storage/CDN, analytics/telemetry, admin, Docker 강제, Kubernetes, Redis/RabbitMQ, microservice. DAW 시퀀서·피아노롤·실시간 합성·멀티트랙 편집도 제외한다.
+결제 연동·구독 청구, cloud deploy/storage/CDN, analytics/telemetry, 원격 tenant 서비스, Docker 강제, Kubernetes, Redis/RabbitMQ, microservice, 피아노롤·실시간 합성은 제외한다. 2026-10-06 요청에 따라 로컬 회원·등급·관리자와 음원 클립의 다중 행 편집은 포함한다.
 
 가사 생성, stem 분리, extend/remix/inpainting, reference audio, style/audio-to-audio/cover, BPM/key 분석, prompt enhancement, Tauri 패키징은 미래 후보이며 선구현하지 않는다. 보컬 모드는 선택한 provider가 지원할 때만 사용한다.
+
+## 2026-10-06 확장 범위
+
+랜딩(`/`) → 회원(`/account`) → 프로젝트(`/projects`) 흐름. 상품(`/pricing`)은 Free 10곡/월, Plus 100곡/월, Pro 500곡/월 안내이며 가격·결제 연동은 없다. 첫 회원은 관리자이며 기존 프로젝트를 인계받는다. 이후 회원은 Free이고 관리자가 등급을 지정한다. 모든 회원의 프로젝트·이력·오디오는 소유자만 접근하며 관리자도 다른 회원의 프로젝트를 자동 열람하지 않는다.
+
+비트 편집은 프로젝트 음원을 클립으로 배치한다. 긴 기본 A 위에 B/C/D/E를 서로 다른 행·시점에 겹친다. 하단 행 추가, 클립 드래그 이동·길이 조절, 숫자 구간 편집, 원본 반복, 볼륨·행 음소거, 복제·행 이동·삭제, 저장·미리듣기·stereo WAV 내보내기를 지원한다. 최대 32행·128클립·600초이고 미리듣기/내보내기는 서로 다른 원본 8개·원본 합계 600초까지다. 실제 생성 원본은 변경하지 않는다.
+
+사용량은 한국 시간의 달력 월 기준으로 접수 variation 수를 예약한다. completed는 유지하고 failed/cancelled는 복원한다. 같은 requestKey 재전송은 추가 차감하지 않는다. 프로젝트·음원 삭제로 생성량이 복원되지 않는다. 관리자 앱 생성량은 무제한이며 CLI 계정의 한도와 기존 작업 큐·안전 제한은 별도로 유지한다.

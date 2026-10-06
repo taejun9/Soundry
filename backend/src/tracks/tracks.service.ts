@@ -44,7 +44,7 @@ export class TracksService {
   }
 
   // favorite/project 필터를 cursor와 limit보다 먼저 적용한다. 한 개 더 조회해 다음 페이지 존재를 확인한다.
-  list(query: TrackListQuery): Page<LibraryTrackSummary> {
+  list(query: TrackListQuery, memberId?: string): Page<LibraryTrackSummary> {
     const position = query.cursor
       ? or(lt(tracks.createdAt, query.cursor.createdAt), and(eq(tracks.createdAt, query.cursor.createdAt), lt(tracks.id, query.cursor.id)))
       : undefined;
@@ -54,6 +54,7 @@ export class TracksService {
       .where(and(
         query.favorite === undefined ? undefined : eq(tracks.favorite, query.favorite),
         query.projectId === undefined ? undefined : eq(generations.projectId, query.projectId),
+        memberId ? eq(projects.memberId, memberId) : undefined,
         position,
       ))
       .orderBy(desc(tracks.createdAt), desc(tracks.id)).limit(query.limit + 1).all();

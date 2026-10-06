@@ -49,7 +49,7 @@ export function createLocalBoundary(uiPort: number): RequestHandler {
         response.status(403).json({ error: { code: 'FORBIDDEN_ORIGIN', message: 'Soundry 화면에서 요청해 주세요.' } });
         return;
       }
-      response.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, PATCH, DELETE, OPTIONS');
+      response.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS');
       response.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Soundry-Request');
       response.status(204).end();
       return;

@@ -10,6 +10,7 @@ import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core';
 export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  memberId: text('member_id'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 }, (table) => [
@@ -22,6 +23,7 @@ export const generations = sqliteTable('generations', {
   id: text('id').primaryKey(),
   projectId: text('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   prompt: text('prompt').notNull(),
+  memberId: text('member_id'),
   settingsJson: text('settings_json').notNull(),
   provider: text('provider').notNull(),
   model: text('model'),

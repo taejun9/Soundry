@@ -6,6 +6,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { GenerationSettings, GenerationSummary, Page, PromptSummary } from '../../../shared/contracts.js';
+import { MembersService } from '../members/members.service.js';
 import { AppError } from '../api-errors.js';
 import { DatabaseService } from '../database/database.service.js';
 import { generations, projects, tracks } from '../database/schema.js';
@@ -24,6 +25,7 @@ export class GenerationsService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(ProviderService) private readonly providers: ProviderService,
     @Inject(JobManager) private readonly jobs: JobManager,
+    @Inject(MembersService) private readonly members: MembersService,
   ) {}
 
   private projectExists(projectId: string): void {
@@ -83,7 +85,7 @@ export class GenerationsService {
 
   // 기존 키 조회를 준비 상태/queue cap보다 먼저 수행해 네트워크 재전송이 새로운 유료 작업을 만들지 않게 한다.
   // 같은 키에 입력이 달라지면 409로 거부하고, 새 작업만 현재 공급자의 입력 제한을 검사한다.
-  create(projectId: string, body: unknown): CreateGenerationResult {
+  create(projectId: string, body: unknown, memberId?: string): CreateGenerationResult {
     const input = validateCreateGeneration(body, storedInputCapabilities);
     const settingsJson = canonicalSettings(input.settings);
     const result = this.database.db.transaction(() => {
@@ -106,9 +108,10 @@ export class GenerationsService {
       }
       const active = this.database.db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(generations).where(inArray(generations.status, ['queued', 'processing'])).get()!.count;
       if (active >= MAX_ACTIVE_GENERATIONS) throw new AppError(429, 'QUEUE_FULL', '대기 중인 작업이 많습니다. 작업이 끝난 뒤 다시 제출해 주세요.');
+      if (memberId) this.members.assertQuota(memberId, input.variationCount);
       const id = randomUUID();
       this.database.db.insert(generations).values({
-        id, projectId, prompt: input.prompt, settingsJson, provider: this.providers.current.id,
+        id, projectId, memberId: memberId ?? null, prompt: input.prompt, settingsJson, provider: this.providers.current.id,
         model: this.providers.summary().model, status: 'queued', variationCount: input.variationCount,
         requestKey: input.requestKey, sourceGenerationId: input.sourceGenerationId ?? null, createdAt: new Date().toISOString(),
       }).run();

@@ -40,7 +40,7 @@ function responseError(payload: unknown, status: number): ApiError {
 }
 
 /** 상위 취소 신호를 내부 시간 제한과 합친다. 요청이 끝나면 timer/listener를 해제해 다음 요청에 영향을 주지 않는다. */
-export async function requestJson(path: string, options: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown; signal?: AbortSignal } = {}): Promise<unknown> {
+export async function requestJson(path: string, options: { method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown; signal?: AbortSignal } = {}): Promise<unknown> {
   const controller = new AbortController();
   const relayAbort = () => controller.abort();
   options.signal?.addEventListener('abort', relayAbort, { once: true });

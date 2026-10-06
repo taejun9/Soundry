@@ -38,3 +38,7 @@ Phase 1은 plan-002-bootstrap(10f2789 main push 완료), Phase 2는 plan-003-pro
 2026-10-01 사용자 요청으로 유료 Fal 방식을 제외했다. plan-013-cli-generation은 설치된 Codex CLI의 기존 ChatGPT 로그인으로 작곡하고 로컬에서 WAV를 렌더링한다. 이전 Fal key/잔액은 더 이상 진행 조건이 아니다. 실제 곡 생성·화면 QA를 새로운 완료 근거로 사용하며, 20곡의 원래 길이와 콘셉트 요구를 유지한다.
 
 plan-013은 실제150초 CLI 곡 생성·로컬저장·IAB재생/탐색/일시정지·원본SHA/Range검사를 완료했다. 자동433 tests 및 adapter/renderer 독립리뷰PASS. 후속 plan014에서 끝마디 처리 보완과 전체 443개 테스트를 통과했다. plan004에서는 20곡 모두 150초로 완성하고 Downloads에 업로드용 WAV·설명·태그·원본 기록을 정리했다. 신호 검사·악보 구조 검토와 실제 화면 재생 검증을 수행했으며 음색 청취 평가는 수행하지 않았다.
+
+## Phase 11 — 사용자 확장 요청 (2026-10-06)
+
+plan-017-studio-membership: 다중 행 클립 비트 편집·행 추가·저장·미리듣기/WAV, 랜딩, 로컬 회원·등급·상품 안내·월 사용량·관리자 무제한. 이전 로그인·멀티트랙 제외 범위는 명시 사용자 요청으로 변경했다. 결제 연동과 원격 hosting은 포함하지 않는다. 기존 Phase QA 후 회원/소유권/usage ledger/편집 regression 및 실제 화면 QA를 수행한다.

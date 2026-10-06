@@ -32,13 +32,20 @@ export class DatabaseService implements OnApplicationShutdown {
       // 다른 앱의 DB나 미래 schema를 자동 변환/초기화하지 않는다. migration 이력과 버전이 맞는 DB만 연다.
       const version = this.client.pragma('user_version', { simple: true });
       const tables = this.client.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
-      if (typeof version !== 'number' || version > 1 || (tables.length > 0 && !tables.some((table) => table.name === '__drizzle_migrations'))) {
+      if (typeof version !== 'number' || version > 2 || (tables.length > 0 && !tables.some((table) => table.name === '__drizzle_migrations'))) {
         throw new Error('UNSUPPORTED_DATABASE_SCHEMA');
       }
       this.client.pragma('journal_mode = WAL');
       this.db = drizzle(this.client, { schema });
       migrate(this.db, { migrationsFolder: join(REPOSITORY_ROOT, 'backend', 'migrations') });
-      if (this.client.pragma('user_version', { simple: true }) !== 1) throw new Error('UNSUPPORTED_DATABASE_SCHEMA');
+      if (this.client.pragma('user_version', { simple: true }) !== 2) throw new Error('UNSUPPORTED_DATABASE_SCHEMA');
+      // Verify v2 tables and ownership columns before cleanup touches any audio.
+      this.client.prepare('SELECT id FROM members LIMIT 1').get();
+      this.client.prepare('SELECT token_hash FROM sessions LIMIT 1').get();
+      this.client.prepare('SELECT generation_id FROM usage_entries LIMIT 1').get();
+      this.client.prepare('SELECT project_id FROM arrangements LIMIT 1').get();
+      this.client.prepare('SELECT member_id FROM projects LIMIT 1').get();
+      this.client.prepare('SELECT member_id FROM generations LIMIT 1').get();
       // Verify the required tables before touching any audio files.
       this.db.select().from(schema.projects).limit(1).all();
       this.db.select().from(schema.generations).limit(1).all();

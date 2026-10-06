@@ -2,9 +2,10 @@
  * 생성 이력·프롬프트 이력·접수·취소를 연결하는 HTTP controller다.
  * 신규 접수 202와 같은 요청 재조회 200을 구분하며 재시도/재생성도 동일한 접수 경로를 사용한다.
  */
-import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import type { GenerationSummary, Page, PromptSummary } from '../../../shared/contracts.js';
+import type { MemberRequest } from '../members/members.service.js';
 import { AppError } from '../api-errors.js';
 import { projectId } from '../projects/project-input.js';
 import { generationId, generationListQuery } from './generation-request.js';
@@ -29,8 +30,8 @@ export class GenerationsController {
 
   // 응답 상태는 실제로 새 job이 기록되었는지 service의 결과에 따라 결정한다.
   @Post('projects/:projectId/generations')
-  create(@Param('projectId') id: string, @Body() body: unknown, @Res({ passthrough: true }) response: Response): GenerationSummary {
-    const result = this.generations.create(projectId(id), body);
+  create(@Param('projectId') id: string, @Body() body: unknown, @Req() request: MemberRequest, @Res({ passthrough: true }) response: Response): GenerationSummary {
+    const result = this.generations.create(projectId(id), body, request.member?.id);
     response.status(result.status);
     return result.generation;
   }

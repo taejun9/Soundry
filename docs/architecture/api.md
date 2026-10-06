@@ -10,7 +10,7 @@ base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사
 - 입력 길이·enum·범위·필수 필드와 알 수 없는 필드를 검증한다. JSON body 기본 상한 64 KiB.
 - 400 입력 오류, 404 없음, 409 상태/동일 requestKey 입력 충돌, 429 queue full, 500 내부 오류.
 - localhost/127.0.0.1의 지정 포트만 Host allowlist에 두고 UI origin만 허용한다. UI 포트는 기본 5173 또는 명시한 `UI_PORT` 하나다. mutation은 허용 Origin과 JSON/custom header를 검증해 다른 웹페이지의 단순 요청을 거부한다. wildcard CORS를 사용하지 않는다.
-- loopback listen을 강제하고 0.0.0.0으로 바꾸지 않는다. 계정·로그인·JWT는 만들지 않는다.
+- loopback listen을 강제하고 0.0.0.0으로 바꾸지 않는다. 로컬 회원·opaque 서버 세션을 사용하며 JWT·외부 인증 서버는 사용하지 않는다.
 
 ## Endpoint
 
@@ -75,3 +75,15 @@ track title은 표시용이며 CR/LF·경로 구분자 등을 제거한 안전�
 ## 설계 검증 시나리오
 
 동일 requestKey 재전송은 한 번만 생성, 취소/완료 경쟁은 하나의 terminal 결과, 다른 project 원본 참조는 거부, 새로고침 후 상태 유지, foreign Origin mutation 거부, encoded path traversal 거부, 파일 누락·Range·삭제 중 재생 오류를 구체적으로 확인한다. 실제 테스트 코드는 관련 Phase에서 만든다.
+
+## 회원·상품·편집 API — plan-017
+
+- GET `/members/plans`: Free/Plus/Pro/관리자 정책. 결제·가격 없음.
+- GET `/members/session`: `{member, setupRequired, usage}`. 로그인 전 member/usage=null.
+- POST `/members/register`: `{name,email,password}`. 최초만 관리자·기존 프로젝트 인계, 이후 Free. role/tier 입력 거부.
+- POST `/members/login`: `{email,password}`. HttpOnly 세션 쿠키 발급.
+- POST `/members/logout`: 세션 폐기·쿠키 삭제.
+- GET `/members`, PATCH `/members/:id` `{tier}`: 관리자 회원 목록·수동 등급 지정. 마지막 관리자 해제는 409.
+- GET/PUT `/projects/:id/arrangement`: `{duration,lanes:[{id,name,muted,clips:[{id,trackId,label,start,offset,duration,volume,loop}]}]}`.
+
+회원 설정 후 프로젝트·생성·프롬프트·Track/audio/download·편집은 서버 세션과 소유권을 확인한다. 목록은 pagination 전에 소유자 필터를 적용한다. 401 LOGIN_REQUIRED/INVALID_CREDENTIALS, 403 ADMIN_REQUIRED, 429 USAGE_LIMIT/AUTH_RATE_LIMIT을 공개 오류로 제공한다. PUT도 기존 Origin/JSON 제한을 따른다. 회원 설정 전은 기존 로컬 API 호환 모드다.

@@ -5,6 +5,8 @@
  */
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { DeleteResult, GenerationSummary, TrackSummary } from '../../../../shared/contracts';
+import UsageStatus from '../members/UsageStatus.vue';
+import ArrangementEditor from '../arrangement/ArrangementEditor.vue';
 import GenerationComposer from './GenerationComposer.vue';
 import GenerationHistory from './GenerationHistory.vue';
 import PromptHistory from './PromptHistory.vue';
@@ -63,6 +65,8 @@ onBeforeUnmount(() => { active = false; });
   <p v-if="actionError" class="error-banner" role="alert">{{ actionError }}</p>
   <div v-if="uncertain && !submitting" class="uncertain-submission" role="alert"><h2>이전 요청의 접수 여부를 확인해 주세요</h2><p>응답을 받지 못해도 서버가 작업을 접수했을 수 있어요. 아래 버튼은 원래 입력과 같은 요청 번호로 접수를 확인합니다. 지금 수정 중인 내용은 전송하지 않습니다.</p><details><summary>확인할 원래 프롬프트</summary><p>{{ uncertain.prompt }}</p><p>{{ uncertain.variationCount }}곡 요청</p></details><button class="button button-primary" type="button" @click="confirmSubmission">같은 요청으로 접수 확인</button></div>
   <p v-if="submitError" class="error-banner" role="alert">{{ submitError }}</p>
+  <UsageStatus :revision="historyRevision" />
+  <ArrangementEditor :project-id="projectId" :revision="historyRevision" @saved="emit('projectChanged')" />
   <div class="workspace-grid job-workspace-grid">
     <div class="workspace-write-column"><GenerationComposer ref="composer" :project-id="projectId" :submitting="submitting" :blocked="Boolean(uncertain)" @submit="submit" @availability="available = $event" /><PromptHistory :project-id="projectId" :refresh-key="historyRevision" :reuse-disabled="!available || submitting || Boolean(uncertain)" :revealing-id="revealingId" @reuse="reuse" @reveal="reveal" /></div>
     <GenerationHistory :jobs="jobs" :loading="loading" :loading-more="loadingMore" :next-cursor="nextCursor" :sync-error="syncError" :retry-seconds="retrySeconds" :pending-count="pendingCount" :retry-disabled="!available || submitting || Boolean(uncertain)" :favorite-pending="favoritePending" :favorite-errors="favoriteErrors" :cancelling="cancelling" :action-errors="actionErrors" @refresh="refreshHistory" @more="moreHistory" @cancel="cancel" @retry="regenerate" @edit="edit" @favorite="toggleFavorite" />

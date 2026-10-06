@@ -79,3 +79,7 @@ git diff --check
 ## 전체 코드 설명과 재검증
 
 [plan-016 리뷰](../reviews/plan-016-quality-release.md)와 [전체 검증 기록](plan-016-verification.md): 앱 443 tests, Node 16 tests, Python 21항목 및 lint/typecheck/build/base/audio/smoke PASS. 기존 코드 140개 전수 주석 보강과 QA launcher 추가, 프로세스 테스트 동기화 개선, 실제 IAB 주요 기능·반응형 검증, 기존 Downloads 20곡 전수 검사와 독립 리뷰를 완료했다.
+
+## 2026-10-06 회원·비트 편집 확장
+
+plan-017의 로컬 회원/등급/usage ledger·랜딩/상품·다중 행 클립 편집을 추가했다. 앱 43 files / 456 tests, 기존 음악 Node16·Python21, lint/type/build/base/Mock WAV/smoke PASS. 실제 임시 DB/IAB 편집·행 추가·저장/복원·미리듣기·반응형 및 관리자 보호를 확인했다. WAV 링크 준비까지 검증했으며 IAB에서 실제 파일 다운로드와 음색 청취는 미검증이다. [리뷰와 검증 범위](../reviews/plan-017-studio-membership.md)를 따른다.

@@ -151,3 +151,13 @@ Vue `ref/reactive/computed`와 composable + app-level provide/inject로 시작�
 [Phase 1–10 계획](../product/implementation-roadmap.md)의 gate를 순서대로 통과한다. 2026-09-30 Phase 1–10 구현 승인을 기록했으며 각 Phase 완료 gate를 지킨다.
 
 2026-10-01 사용자가 유료 공급자를 제외하고 CLI 호출로 변경했다. 이전 Fal 구현은 미병합 상태로 보존하고 plan-013에서 Codex CLI의 JSON 악보 작곡과 자체 로컬 WAV 렌더링을 연결한다. 기존 로그인만 사용하며 유료 API fallback은 없다. 실제 생성·재생·다운로드 gate를 직접 검증한다.
+
+## 14. 회원과 다중 행 편집 확장 — 2026-10-06
+
+plan-017은 로컬 회원·서버 세션·등급·사용량, 랜딩/상품 페이지와 음원 클립 다중 행 편집을 추가한다. 이전 단일 사용자·로그인/멀티트랙 제외 결정은 이 범위에서 변경된다. Vue/Nest·loopback·로컬 DB/음원·기존 CLI 경계는 유지한다. 관리자도 소유 프로젝트만 접근하며 회원 관리 권한과 창작물 접근 권한을 구분한다.
+
+비밀번호는 random 16-byte salt와 비동기 scrypt(N=32768,r=8,p=1,64-byte output)로 저장한다. 원문은 저장·로그에 남기지 않는다. 256-bit opaque token의 SHA256만 DB에 저장하며 HttpOnly/SameSite=Strict 쿠키, 7일 만료·로그아웃 폐기, 기존 Origin/Host 제한을 함께 사용한다. 서버 인증 요청은 분당 20개로 제한한다. 최초 가입 전은 기존 API의 호환 모드이며 화면은 회원 설정으로 이동한다. 최초 가입의 관리자 선정과 기존 프로젝트 인계는 단일 transaction이다. 원격 공개 서버로 배포하지 않는다.
+
+사용량은 별도 영속 ledger이며 generation insert/update trigger로 예약·상태 변경을 반영한다. 접수의 동일 requestKey 확인과 quota 검사·insert는 한 IMMEDIATE transaction으로 실행한다. 실패/취소 복원과 삭제 후 사용량 보존을 DB에서 유지한다. 등급은 매 요청 DB 조회값을 사용한다.
+
+편집 arrangement는 프로젝트에 JSON으로 저장하고 참조 Track의 소속·길이·범위·클립/행 수를 서버에서 검증한다. Web Audio의 local audio decode/scheduling으로 클립을 겹쳐 재생하며 반복·offset·gain을 반영한다. 미리듣기를 시작하면 기존 플레이어를 정지하고 기존 플레이어 재생 시 믹스를 정지한다. OfflineAudioContext에서 같은 클립을 렌더링해 PCM16 stereo WAV를 내보낸다. 음원 source 수/길이를 제한해 디코딩 메모리 사용을 제한한다.

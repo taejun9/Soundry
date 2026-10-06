@@ -8,6 +8,7 @@ import { pipeline } from 'node:stream/promises';
 import { audioDisposition, parseAudioRange } from './audio-headers.js';
 import { TracksService } from './tracks.service.js';
 import type { DeleteResult, LibraryTrackSummary, Page, TrackDetail } from '../../../shared/contracts.js';
+import type { MemberRequest } from '../members/members.service.js';
 import { trackListQuery } from './track-list.js';
 import { trackId, validateTrackUpdate } from './track-input.js';
 
@@ -16,7 +17,7 @@ export class TracksController {
   constructor(@Inject(TracksService) private readonly tracks: TracksService) {}
 
   @Get()
-  list(@Query() query: Record<string, unknown>): Page<LibraryTrackSummary> { return this.tracks.list(trackListQuery(query)); }
+  list(@Query() query: Record<string, unknown>, @Req() request: MemberRequest): Page<LibraryTrackSummary> { return this.tracks.list(trackListQuery(query), request.member?.id); }
 
   @Get(':id')
   get(@Param('id') id: string): TrackDetail { return this.tracks.get(trackId(id)); }

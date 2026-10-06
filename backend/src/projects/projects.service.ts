@@ -24,9 +24,9 @@ export class ProjectsService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService, @Inject(StorageConfig) private readonly storage: StorageConfig) {}
 
   // 정렬 키 쌍으로 다음 페이지를 찾고 한 개 더 조회해 nextCursor 필요 여부를 결정한다.
-  list(limit: number, cursor?: ProjectCursor): Page<ProjectSummary> {
+  list(limit: number, cursor?: ProjectCursor, memberId?: string): Page<ProjectSummary> {
     const condition = cursor ? or(lt(projects.updatedAt, cursor.updatedAt), and(eq(projects.updatedAt, cursor.updatedAt), lt(projects.id, cursor.id))) : undefined;
-    const rows = this.database.db.select(summaryColumns).from(projects).where(condition).orderBy(desc(projects.updatedAt), desc(projects.id)).limit(limit + 1).all();
+    const rows = this.database.db.select(summaryColumns).from(projects).where(and(condition, memberId ? eq(projects.memberId, memberId) : undefined)).orderBy(desc(projects.updatedAt), desc(projects.id)).limit(limit + 1).all();
     const items = rows.slice(0, limit);
     return { items, nextCursor: rows.length > limit ? encodeCursor(items[items.length - 1]!) : null };
   }
@@ -39,10 +39,10 @@ export class ProjectsService {
   }
 
   // UUID는 표시 이름과 독립적이므로 동일 이름 프로젝트도 각각 별도 데이터가 된다.
-  create(name: string): ProjectSummary {
+  create(name: string, memberId?: string): ProjectSummary {
     const id = randomUUID();
     const now = new Date().toISOString();
-    this.database.db.insert(projects).values({ id, name, createdAt: now, updatedAt: now }).run();
+    this.database.db.insert(projects).values({ id, name, memberId: memberId ?? null, createdAt: now, updatedAt: now }).run();
     return this.get(id);
   }
 
