@@ -5,6 +5,7 @@
  */
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { DeleteResult, GenerationSummary, TrackSummary } from '../../../../shared/contracts';
+import CompositionNotebook from '../knowledge/CompositionNotebook.vue';
 import UsageStatus from '../members/UsageStatus.vue';
 import ArrangementEditor from '../arrangement/ArrangementEditor.vue';
 import GenerationComposer from './GenerationComposer.vue';
@@ -67,6 +68,7 @@ onBeforeUnmount(() => { active = false; });
   <p v-if="submitError" class="error-banner" role="alert">{{ submitError }}</p>
   <UsageStatus :revision="historyRevision" />
   <ArrangementEditor :project-id="projectId" :revision="historyRevision" @saved="emit('projectChanged')" />
+  <CompositionNotebook :jobs="jobs" />
   <div class="workspace-grid job-workspace-grid">
     <div class="workspace-write-column"><GenerationComposer ref="composer" :project-id="projectId" :submitting="submitting" :blocked="Boolean(uncertain)" @submit="submit" @availability="available = $event" /><PromptHistory :project-id="projectId" :refresh-key="historyRevision" :reuse-disabled="!available || submitting || Boolean(uncertain)" :revealing-id="revealingId" @reuse="reuse" @reveal="reveal" /></div>
     <GenerationHistory :jobs="jobs" :loading="loading" :loading-more="loadingMore" :next-cursor="nextCursor" :sync-error="syncError" :retry-seconds="retrySeconds" :pending-count="pendingCount" :retry-disabled="!available || submitting || Boolean(uncertain)" :favorite-pending="favoritePending" :favorite-errors="favoriteErrors" :cancelling="cancelling" :action-errors="actionErrors" @refresh="refreshHistory" @more="moreHistory" @cancel="cancel" @retry="regenerate" @edit="edit" @favorite="toggleFavorite" />

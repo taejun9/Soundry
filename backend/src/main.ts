@@ -34,7 +34,9 @@ bootstrap().catch((error: unknown) => {
   } else if (error instanceof Error && error.message === 'INVALID_LOCAL_CONFIG') {
     console.error('Soundry API: API_HOST=127.0.0.1, API_PORT=3000 설정만 지원합니다.');
   } else if (error instanceof Error && error.message === 'INVALID_MUSIC_PROVIDER') {
-    console.error('Soundry API: MUSIC_PROVIDER=cli 또는 mock 설정만 지원합니다. 값을 확인한 뒤 다시 실행해 주세요.');
+    console.error('Soundry API: MUSIC_PROVIDER=cli, ollama 또는 mock 설정만 지원합니다. 값을 확인한 뒤 다시 실행해 주세요.');
+  } else if (error instanceof Error && ['INVALID_OLLAMA_PORT', 'INVALID_LOCAL_MODEL'].includes(error.message)) {
+    console.error('Soundry API: 로컬 작곡 모델 이름과 1024–65535 범위의 Ollama 포트를 확인해 주세요. cloud 모델은 사용할 수 없습니다.');
   } else if (error instanceof Error && error.message === 'INVALID_UI_PORT') {
     console.error('Soundry API: UI_PORT는 1024–65535 사이의 정수이며 API_PORT(3000)와 달라야 합니다.');
   } else if (error instanceof Error && ['UNSAFE_STORAGE_PATH', 'INVALID_DATA_DIRECTORY'].includes(error.message)) {

@@ -50,6 +50,8 @@ const preset = computed(() => GENRE_PRESETS.find(item => item.id === selectedPre
 const variationLimit = computed(() => maxVariations(caps.value));
 const providerName = computed(() => provider.value?.isMock ? 'Mock' : provider.value ? displayProviderName(provider.value.id) : '공급자');
 const isCli = computed(() => provider.value?.id === 'cli' && !provider.value.isMock);
+const isLocal = computed(() => provider.value?.id === 'ollama' && !provider.value.isMock);
+const isScoreComposer = computed(() => isCli.value || isLocal.value);
 const seedLimit = computed(() => seedCharacterLimit(provider.value?.id));
 const modeHelp = computed(() => {
   if (!caps.value) return '공급자 정보를 확인한 뒤 선택할 수 있어요.';
@@ -62,8 +64,8 @@ function supported(key: SettingKey) { return supportsSetting(caps.value, key); }
 function supportHelp(key: SettingKey) {
   if (!provider.value) return '공급자 정보를 확인한 뒤 선택할 수 있어요.';
   if (!supported(key)) return `현재 ${providerName.value}에서는 이 설정을 지원하지 않아요.`;
-  if (isCli.value && key === 'seed') return '선택 사항 · 64자 이내. 같은 악보의 로컬 합성에 사용할 값이며, AI 작곡 결과가 같아지는 것을 보장하지 않습니다.';
-  if (isCli.value && key === 'durationSeconds') return '90–180초 · 비워 두면 150초(2분 30초)로 만듭니다.';
+  if (isScoreComposer.value && key === 'seed') return '선택 사항 · 64자 이내. 같은 악보의 로컬 합성에 사용할 값이며, AI 작곡 결과가 같아지는 것을 보장하지 않습니다.';
+  if (isScoreComposer.value && key === 'durationSeconds') return '90–180초 · 비워 두면 150초(2분 30초)로 만듭니다.';
   const range = key === 'bpm' ? caps.value?.bpmRange : key === 'durationSeconds' ? caps.value?.durationRangeSeconds : undefined;
   return range ? `선택 범위 ${range.min}–${range.max}${key === 'durationSeconds' ? '초' : ' BPM'}. 비워 두면 자동으로 결정합니다.` : '선택 사항 · 비워 두면 자동으로 결정합니다.';
 }
@@ -154,10 +156,10 @@ onMounted(() => { void reload(); });
           <div class="setting-field"><label :for="`${id}-mood`" class="field-label">분위기</label><input :id="`${id}-mood`" v-model="draft.mood" class="text-input" maxlength="80" placeholder="예: 차분하고 몽환적인" :disabled="!supported('mood')" :aria-describedby="`${id}-mood-help`" :aria-invalid="Boolean(visibleError('mood'))" @blur="touch('mood')" /><p :id="`${id}-mood-help`" class="field-help">{{ supportHelp('mood') }}</p><p v-if="visibleError('mood')" class="field-error" role="alert">{{ visibleError('mood') }}</p></div>
           <div class="setting-field"><label :for="`${id}-bpm`" class="field-label">빠르기 · BPM</label><input :id="`${id}-bpm`" :value="draft.bpm" type="number" inputmode="decimal" step="any" :min="caps?.bpmRange?.min ?? 0.001" :max="caps?.bpmRange?.max" class="text-input" placeholder="자동" :disabled="!supported('bpm')" :aria-describedby="`${id}-bpm-help`" :aria-invalid="Boolean(visibleError('bpm'))" @input="setNumber('bpm', $event)" @blur="touch('bpm')" /><p :id="`${id}-bpm-help`" class="field-help">{{ supportHelp('bpm') }}</p><p v-if="visibleError('bpm')" class="field-error" role="alert">{{ visibleError('bpm') }}</p></div>
           <div class="setting-field"><label :for="`${id}-duration`" class="field-label">길이 · 초</label><input :id="`${id}-duration`" :value="draft.durationSeconds" type="number" inputmode="decimal" step="any" :min="caps?.durationRangeSeconds?.min ?? 0.001" :max="caps?.durationRangeSeconds?.max" class="text-input" placeholder="자동" :disabled="!supported('durationSeconds')" :aria-describedby="`${id}-duration-help`" :aria-invalid="Boolean(visibleError('durationSeconds'))" @input="setNumber('durationSeconds', $event)" @blur="touch('durationSeconds')" /><p :id="`${id}-duration-help`" class="field-help">{{ supportHelp('durationSeconds') }}</p><p v-if="visibleError('durationSeconds')" class="field-error" role="alert">{{ visibleError('durationSeconds') }}</p></div>
-          <div class="setting-field setting-wide"><label :for="`${id}-seed`" class="field-label">시드 <span class="optional-label">{{ isCli ? '로컬 합성 값 · 선택' : '같은 설정으로 결과 비교' }}</span></label><input :id="`${id}-seed`" v-model="draft.seed" class="text-input" :maxlength="seedLimit" placeholder="자동" :disabled="!supported('seed')" :aria-describedby="`${id}-seed-help`" :aria-invalid="Boolean(visibleError('seed'))" @blur="touch('seed')" /><p :id="`${id}-seed-help`" class="field-help">{{ supportHelp('seed') }}</p><p v-if="visibleError('seed')" class="field-error" role="alert">{{ visibleError('seed') }}</p></div>
+          <div class="setting-field setting-wide"><label :for="`${id}-seed`" class="field-label">시드 <span class="optional-label">{{ isScoreComposer ? '로컬 합성 값 · 선택' : '같은 설정으로 결과 비교' }}</span></label><input :id="`${id}-seed`" v-model="draft.seed" class="text-input" :maxlength="seedLimit" placeholder="자동" :disabled="!supported('seed')" :aria-describedby="`${id}-seed-help`" :aria-invalid="Boolean(visibleError('seed'))" @blur="touch('seed')" /><p :id="`${id}-seed-help`" class="field-help">{{ supportHelp('seed') }}</p><p v-if="visibleError('seed')" class="field-error" role="alert">{{ visibleError('seed') }}</p></div>
         </div>
       </details>
-      <div class="composer-submit"><button class="button button-primary full-width" type="submit" :disabled="!available || submitting || blocked" :aria-describedby="`${id}-availability`"><StudioIcon name="plus" />{{ submitting ? '작업 접수 중…' : provider?.isMock ? '8초 데모 생성' : isCli ? 'AI 작곡 시작' : '음악 생성' }}</button><p :id="`${id}-availability`" class="field-help">{{ blocked && !submitting ? '이전 요청의 접수 여부를 먼저 확인해 주세요.' : !available ? '공급자 연결과 생성 가능 여부를 확인해 주세요.' : provider?.isMock ? '고정된 8초 데모 음원을 저장합니다. 프롬프트에 맞춘 새 작곡은 하지 않습니다.' : isCli ? 'Codex 로그인 계정으로 프롬프트와 설정 텍스트를 전송합니다. WAV는 로컬에서 합성하며 계정 사용 한도가 적용됩니다.' : '입력한 프롬프트와 설정을 연결한 음악 공급자에게 전송합니다.' }}</p></div>
+      <div class="composer-submit"><button class="button button-primary full-width" type="submit" :disabled="!available || submitting || blocked" :aria-describedby="`${id}-availability`"><StudioIcon name="plus" />{{ submitting ? '작업 접수 중…' : provider?.isMock ? '8초 데모 생성' : isScoreComposer ? 'AI 작곡 시작' : '음악 생성' }}</button><p :id="`${id}-availability`" class="field-help">{{ blocked && !submitting ? '이전 요청의 접수 여부를 먼저 확인해 주세요.' : !available ? '공급자 연결과 생성 가능 여부를 확인해 주세요.' : provider?.isMock ? '고정된 8초 데모 음원을 저장합니다. 프롬프트에 맞춘 새 작곡은 하지 않습니다.' : isCli ? 'Codex 로그인 계정으로 프롬프트와 설정 텍스트를 전송합니다. WAV는 로컬에서 합성하며 계정 사용 한도가 적용됩니다.' : isLocal ? '이 컴퓨터의 로컬 LLM이 작곡합니다. 작곡 지식도 로컬에서 참고하며 원격 AI로 전송하지 않습니다.' : '입력한 프롬프트와 설정을 연결한 음악 공급자에게 전송합니다.' }}</p></div>
     </form>
     <p class="draft-privacy"><StudioIcon name="lock" /><span>{{ restored ? '이 탭에서 작성하던 내용을 복원했어요. ' : '' }}작성 내용은 이 탭에서만 임시 보관되며, 새로고침하면 사라집니다.</span></p>
   </section>

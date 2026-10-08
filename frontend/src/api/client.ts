@@ -11,6 +11,9 @@ export class ApiError extends Error {
 
 // 서버의 원시 stderr/경로를 쓰지 않는 허용 목록이다. code별 안내만 브라우저에 노출한다.
 const cliSetupErrors: Record<string, string> = {
+  LOCAL_UNAVAILABLE: '로컬 Ollama 실행과 버전을 확인해 주세요.',
+  LOCAL_MODEL_MISSING: '설정한 작곡 모델을 로컬에 준비한 뒤 다시 확인해 주세요.',
+  LOCAL_CLOUD_ENABLED: 'Ollama 클라우드 기능을 끄고 재시작해 주세요. 로컬 전용 상태 확인이 필요합니다.',
   CLI_NOT_INSTALLED: 'Codex CLI를 찾을 수 없어요. CLI를 설치한 뒤 공급자 정보를 다시 확인해 주세요.',
   CLI_LOGIN_REQUIRED: 'Codex CLI 로그인이 필요해요. ChatGPT 계정으로 로그인한 뒤 공급자 정보를 다시 확인해 주세요.',
   CLI_AUTH_UNSUPPORTED: 'Codex CLI를 ChatGPT 계정으로 로그인해 주세요. API 키 로그인은 지원하지 않습니다.',

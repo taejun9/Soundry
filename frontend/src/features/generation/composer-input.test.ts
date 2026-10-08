@@ -64,3 +64,6 @@ describe('composer submission boundary', () => {
     expect(result.input?.settings).toEqual({});
   });
 });
+
+import { seedCharacterLimit } from './composer-input';
+describe('local score composer limits', () => { it('uses the same bounded seed for CLI and local LLM', () => { expect(seedCharacterLimit('ollama')).toBe(64); expect(seedCharacterLimit('cli')).toBe(64); }); });

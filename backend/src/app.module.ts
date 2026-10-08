@@ -2,6 +2,8 @@
  * 작은 로컬 앱의 명시적인 의존성 그래프다. DB·작업 관리자·스토리지는 앱 인스턴스마다 하나씩 공유한다.
  * 테스트 대역도 같은 주입 경계를 통과하므로 HTTP/서비스 테스트가 운영 조립 방식과 어긋나지 않는다.
  */
+import { KnowledgeController } from './knowledge/knowledge.controller.js';
+import { KnowledgeService } from './knowledge/knowledge.service.js';
 import { APP_GUARD } from '@nestjs/core';
 import { MembersService } from './members/members.service.js';
 import { MembersController } from './members/members.controller.js';
@@ -30,12 +32,12 @@ export class AppModule {
   static register(storage: StorageConfig, providers: ProviderService, options: ApplicationOptions): DynamicModule {
     return {
       module: AppModule,
-      controllers: [HealthController, ProjectsController, ProvidersController, GenerationsController, TracksController, MembersController, ArrangementsController],
+      controllers: [HealthController, ProjectsController, ProvidersController, GenerationsController, TracksController, MembersController, ArrangementsController, KnowledgeController],
       providers: [
         { provide: StorageConfig, useValue: storage }, { provide: ProviderService, useValue: providers },
         { provide: GENERATION_RUNTIME, useValue: { timeoutMs: options.generationTimeoutMs ?? providers.timeoutMs } },
         options.storageOverride ? { provide: StorageService, useValue: options.storageOverride } : StorageService,
-        MembersService, { provide: APP_GUARD, useClass: MembersGuard }, DatabaseService, ProjectsService, GenerationsService, JobManager, TracksService,
+        KnowledgeService, MembersService, { provide: APP_GUARD, useClass: MembersGuard }, DatabaseService, ProjectsService, GenerationsService, JobManager, TracksService,
       ],
     };
   }

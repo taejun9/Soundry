@@ -4,8 +4,8 @@
  */
 /** Labels describe the stored provider, including older Mock results. */
 export function providerName(id: string): string {
-  return id === 'mock' ? 'Mock' : id === 'cli' ? 'Codex CLI' : id;
+  return id === 'mock' ? 'Mock' : id === 'cli' ? 'Codex CLI' : id === 'ollama' ? '로컬 LLM' : id;
 }
 export function providerResultLabel(id: string): string {
-  return id === 'mock' ? 'Mock · 고정 데모' : id === 'cli' ? 'AI 작곡 · 로컬 합성' : id;
+  return id === 'mock' ? 'Mock · 고정 데모' : ['cli', 'ollama'].includes(id) ? 'AI 작곡 · 로컬 합성' : id;
 }

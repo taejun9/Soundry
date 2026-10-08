@@ -129,7 +129,7 @@ describe('membership, ownership, usage and arrangements', () => {
       .run(id, '기존 프로젝트', '2026-10-01T00:00:00.000Z', '2026-10-01T00:00:00.000Z');
     old.close();
     await start();
-    expect(db.client.pragma('user_version', { simple: true })).toBe(2);
+    expect(db.client.pragma('user_version', { simple: true })).toBe(3);
     const admin = await register();
     const member = await register('free@example.test');
     expect(admin.member.tier).toBe('admin');

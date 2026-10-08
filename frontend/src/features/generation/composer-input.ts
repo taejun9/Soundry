@@ -34,7 +34,7 @@ export function maxVariations(caps: ProviderCapabilities | null): number {
 }
 
 /** CLI의 입력 계약은 64자이고 기존 공급자 입력과 재사용할 때도 해당 제한을 적용한다. */
-export function seedCharacterLimit(providerId?: string): number { return providerId === 'cli' ? 64 : 120; }
+export function seedCharacterLimit(providerId?: string): number { return ['cli', 'ollama'].includes(providerId ?? '') ? 64 : 120; }
 
 /** 공급자 변경/재사용 시 지원하지 않는 선택값만 초기화한다. prompt와 유효 설정은 보존하고 변경 필드를 알려준다. */
 export function sanitizeDraft(draft: ComposerDraft, caps: ProviderCapabilities, seedLimit = 120): { draft: ComposerDraft; changed: (keyof ComposerDraft)[] } {

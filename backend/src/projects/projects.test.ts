@@ -96,7 +96,7 @@ describe('Projects API and SQLite lifecycle', () => {
     await app.close();
     await start();
     expect((await api<ProjectSummary>('GET', `/projects/${project.id}`)).body).toEqual(renamed.body);
-    expect(database.client.prepare('SELECT count(*) AS total FROM __drizzle_migrations').get()).toEqual({ total: 2 });
+    expect(database.client.prepare('SELECT count(*) AS total FROM __drizzle_migrations').get()).toEqual({ total: 3 });
     expect(await api<DeleteResult>('DELETE', `/projects/${project.id}`)).toEqual({ status: 200, body: { deleted: true, cleanupPending: false } });
     expect((await api('GET', `/projects/${project.id}`)).status).toBe(404);
   });

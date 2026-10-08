@@ -43,3 +43,11 @@
 ## plan-018 업로드 포맷 재확인 — 2026-10-06
 
 [SoundCloud Upload Requirements](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)를 다시 확인했다. WAV lossless, stereo, 16-bit/44.1kHz 이상과 -0.5~-1dBFS headroom 권장값을 이번 10곡 파일 검사 기준으로 사용한다. 앱의 월 등급 정책과 SoundCloud 계정의 업로드 잔여량은 별개이며 이번 작업은 파일 준비 범위다.
+
+## 작곡 LLM/RAG — 2026-10-09
+
+- [Google Gemma 개요](https://ai.google.dev/gemma/docs/core): open weights와 모델/추론 메모리 구분. 특정 크기의 작곡 품질 우위는 추론하지 않는다.
+- [Ollama 구조화 출력](https://docs.ollama.com/capabilities/structured-outputs), [Generate API](https://docs.ollama.com/api/generate): format schema, stream=false, 응답과 옵션 계약.
+- [Ollama FAQ](https://docs.ollama.com/faq): OLLAMA_NO_CLOUD=1과 서버 재시작. [공식 client 소스](https://github.com/ollama/ollama/blob/main/api/client.go)와 [공식 types](https://github.com/ollama/ollama/blob/main/api/types.go): /api/status의 cloud.disabled, /api/show의 capabilities/model_info/remote_host 계약. experimental 상태 API 미지원 시 fail-closed는 Soundry 결정이다.
+- [RAG 원논문](https://arxiv.org/abs/2005.11401): 검색 기억을 추론에 결합하는 근거. 음악적 품질 향상이나 자체 LLM 훈련의 근거가 아니다.
+- [ACE-Step 공식 저장소](https://github.com/ace-step/ACE-Step-1.5)는 초기 보컬·음색 가능성 조사에만 참고했다. 사용자 후속 지시로 음악 모델 도입은 제외했으며 의존성/모델을 설치하지 않았다.

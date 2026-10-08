@@ -157,6 +157,13 @@ export interface LibraryTrackSummary extends TrackSummary {
   projectName: string;
 }
 
+export interface CompositionKnowledge {
+  id: string; title: string; content: string; tags: string; source: string;
+  rights: 'own' | 'licensed' | 'public-domain'; allowRemote: boolean; rating: number | null;
+  trackId: string | null; createdAt: string; updatedAt: string;
+}
+export interface KnowledgeReference { id: string | null; title: string; source: string; digest: string; rating: number | null }
+
 // Local membership and layered audio arrangement contracts.
 export type MembershipTier = 'free' | 'plus' | 'pro' | 'admin';
 export interface MemberSummary { id: string; email: string; name: string; tier: MembershipTier; createdAt: string }

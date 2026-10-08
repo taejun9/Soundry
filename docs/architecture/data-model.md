@@ -61,3 +61,7 @@ Phase 2에서 fresh DB migration, 기존 데이터 유지, FK/UNIQUE, requestKey
 `0001_members_arrangements.sql`은 기존 데이터를 보존해 user_version=2로 이동한다. `members`(email UNIQUE, password_hash, tier CHECK), `sessions`(token_hash, member FK, expires_at), `usage_entries`(generation_id UNIQUE, member FK, amount/status/created_at), `arrangements`(project FK CASCADE, JSON, updated_at)를 추가한다. projects/generations에는 nullable member_id FK를 추가하며 기존 프로젝트는 첫 관리자 가입 시 귀속한다. 과거 생성은 소급 차감하지 않는다.
 
 usage_entries는 generation 삭제와 독립적으로 남아 completed 사용량을 보존한다. insert/update status trigger로 queued/processing/completed는 차감, failed/cancelled는 비차감이다. 월 시작·다음 월 시작을 Asia/Seoul 날짜 기준 UTC 시각으로 계산한다. arrangement는 원본 파일 대신 Track ID·start/offset/duration/volume/loop와 행 이름·mute를 저장한다. 삭제된 Track를 참조하는 편집본은 원본 없음으로 표시하며 해당 클립을 제거하거나 다른 클립으로 다시 구성해야 저장·재생할 수 있다.
+
+## Schema v3 — 작곡 기억
+
+`0002_composition_memory.sql`은 기존 v1/v2 프로젝트·회원·오디오를 보존하며 user_version=3으로 이동한다. `composition_knowledge`는 member FK, 제한된 텍스트/태그/출처/권한 선언, allow_remote CHECK, rating CHECK, nullable UNIQUE track FK와 날짜를 저장한다. `generation_knowledge`는 generation FK CASCADE, ordinal, nullable knowledge FK SET NULL, passage digest와 당시 rating을 저장한다. `generation_scores`는 generation/variation PK와 검증된 score_json이다. 원문 전송 snapshot을 복제하지 않으며 삭제 후 참고 ID는NULL이 된다. [작곡 기억 설계](composition-memory.md)를 따른다.

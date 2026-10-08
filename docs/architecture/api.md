@@ -87,3 +87,18 @@ track title은 표시용이며 CR/LF·경로 구분자 등을 제거한 안전�
 - GET/PUT `/projects/:id/arrangement`: `{duration,lanes:[{id,name,muted,clips:[{id,trackId,label,start,offset,duration,volume,loop}]}]}`.
 
 회원 설정 후 프로젝트·생성·프롬프트·Track/audio/download·편집은 서버 세션과 소유권을 확인한다. 목록은 pagination 전에 소유자 필터를 적용한다. 401 LOGIN_REQUIRED/INVALID_CREDENTIALS, 403 ADMIN_REQUIRED, 429 USAGE_LIMIT/AUTH_RATE_LIMIT을 공개 오류로 제공한다. PUT도 기존 Origin/JSON 제한을 따른다. 회원 설정 전은 기존 로컬 API 호환 모드다.
+
+## 작곡 지식과 악보 — plan-019
+
+| Method | 경로 | 입력/결과 |
+|---|---|---|
+| GET | /knowledge | 로그인 회원의 `{ items }`, 최대500개 |
+| POST | /knowledge | title/content/tags/source/rights/allowRemote, 새 항목201 |
+| PATCH | /knowledge/:id | 같은 전체 입력, 소유자만 수정 |
+| DELETE | /knowledge/:id | 소유자만 삭제, `{ deleted: true }` |
+| POST | /tracks/:id/feedback | rating1–5, notes1–4000자, allowRemote boolean; Track당 최신 평가1개 |
+| GET | /generations/:id/knowledge | 소유자만 `{ items }`, 참고ID·출처·digest·rating |
+| GET | /tracks/:id/composition | 소유자만 `{ score, summary }`, 없는 과거 악보는404 |
+| GET | /tracks/:id/composition.mid | 소유자만 type1 MIDI attachment |
+
+지식은 가입 전에도 로그인을 요구한다. 원격 동의는 필수 boolean이며 생략/문자열을 거부한다. 앱은 임의 파일 경로·웹수집 입력을 받지 않는다. 자세한 전송과 검색 경계는 [작곡 기억](composition-memory.md)을 따른다.

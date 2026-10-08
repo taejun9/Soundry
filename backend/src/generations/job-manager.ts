@@ -6,6 +6,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { GenerationInput, GenerationStage } from '../../../shared/contracts.js';
+import { KnowledgeService } from '../knowledge/knowledge.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import { generations, tracks } from '../database/schema.js';
 import { ProviderError } from '../providers/provider-error.js';
@@ -87,6 +88,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     @Inject(ProviderService) private readonly providers: ProviderService,
     @Inject(StorageService) private readonly storage: BatchStorage,
     @Inject(GENERATION_RUNTIME) private readonly runtime: GenerationRuntime,
+    @Inject(KnowledgeService) private readonly knowledge: KnowledgeService,
   ) {
     if (!Number.isFinite(runtime.timeoutMs) || runtime.timeoutMs < 1 || runtime.timeoutMs > CLI_GENERATION_TIMEOUT_MS) throw new Error('INVALID_GENERATION_TIMEOUT');
   }
@@ -175,6 +177,8 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
       const input: GenerationInput = { prompt: row.prompt, settings: JSON.parse(row.settingsJson) as GenerationInput['settings'], variationCount: row.variationCount };
       const sources = await withCancellation(this.providers.current.generate(input, {
         signal,
+        onComposition: (index, score) => { if (!signal.aborted) this.knowledge.storeScore(id, index, score); },
+        knowledge: this.knowledge.forGeneration(id, row.memberId, input, this.providers.current.id),
         onStage: (stage) => { if (!signal.aborted) this.stages.set(id, stage); },
       }), signal, releaseSources);
       if (sources.length !== row.variationCount) { releaseSources(sources); throw new Error('INVALID_PROVIDER_RESULT'); }
