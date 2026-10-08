@@ -13,6 +13,8 @@ export const CLI_OUTPUT_LIMIT = 1024 * 1024;
 export const CLI_COMPOSITION_TIMEOUT_MS = 240_000;
 export type CliAvailability = 'ready' | 'CLI_NOT_INSTALLED' | 'CLI_LOGIN_REQUIRED' | 'CLI_AUTH_UNSUPPORTED' | 'CLI_UNAVAILABLE' | 'LOCAL_UNAVAILABLE' | 'LOCAL_MODEL_MISSING' | 'LOCAL_CLOUD_ENABLED';
 export interface CompositionRunner {
+  readonly modelLabel?: string;
+  readonly compositionModelLabel?: string;
   probe(signal: AbortSignal): Promise<CliAvailability>;
   compose(prompt: string, schema: object, signal: AbortSignal): Promise<unknown>;
 }

@@ -3,7 +3,7 @@
  * CLI stderr, 계정 정보, 입력 프롬프트, 작업 경로를 에러 메시지에 이어 붙이지 않는다.
  */
 const messages = {
-  LOCAL_UNAVAILABLE: '로컬 Ollama 상태를 확인하지 못했어요. 실행 및 버전을 확인해 주세요.',
+  LOCAL_UNAVAILABLE: '로컬 LLM 서버 상태를 확인하지 못했어요. 실행과 연결 설정을 확인해 주세요.',
   LOCAL_MODEL_MISSING: '설정한 로컬 작곡 모델이 설치되지 않았어요. 모델을 준비한 뒤 다시 확인해 주세요.',
   LOCAL_CLOUD_ENABLED: 'Ollama의 클라우드 기능을 끄고 재시작해 주세요. 로컬 전용 상태를 확인해야 작곡할 수 있습니다.',
   LOCAL_FAILED: '로컬 모델 작곡을 완료하지 못했어요. 모델과 메모리 상태를 확인해 주세요.',

@@ -145,3 +145,7 @@ GrooveForge의 코드·DB·런타임을 공유하지 않습니다. 회원은 이
 지식은 로그인 회원별로 격리된다. **Codex 전송 동의**를 체크하지 않은 항목은 로컬 LLM에서만 참고한다. RAG는 저장/검색 기억이며 자동 모델 훈련이나 판매 품질 달성을 의미하지 않는다. 보컬·음색 생성 모델은 현재 요청 범위에서 제외했다.
 
 로컬 작곡 전환은 별도로 준비한 Ollama에 원하는 Gemma 모델을 설치한 뒤 `.env`의 `MUSIC_PROVIDER=ollama`, `SOUNDRY_COMPOSER_MODEL=설치한모델이름`, `SOUNDRY_OLLAMA_PORT=11434`를 설정하고 Soundry를 재시작한다. Ollama 서버는 `OLLAMA_NO_CLOUD=1`을 적용해 재시작해야 한다. 앱이 모델을 자동 다운로드하거나 클라우드로 fallback하지 않는다. `/api/status`를 지원하지 않는 오래된 Ollama는 로컬 전용 확인에 실패한다. 모델별 실제 작곡 성공과 품질은 별도 검증한다. [설계·사용 경계·품질 gate](docs/architecture/composition-memory.md)를 따른다.
+
+### 이미 구동한 llama.cpp Gemma 사용
+
+`http://127.0.0.1:8089`의llama.cpp는 `.env`에서 `MUSIC_PROVIDER=llamacpp`, `SOUNDRY_LLAMA_PORT=8089`로선택하고Soundry를재시작한다. 현재로드된단일모델을자동확인하므로Ollama나추가모델설치가필요없다. 로컬작곡지식RAG·청취평가·악보JSON/MIDI를같이사용한다. 사용자Gemma서버를앱이종료하거나설정을변경하지않는다.

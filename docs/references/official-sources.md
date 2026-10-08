@@ -51,3 +51,7 @@
 - [Ollama FAQ](https://docs.ollama.com/faq): OLLAMA_NO_CLOUD=1과 서버 재시작. [공식 client 소스](https://github.com/ollama/ollama/blob/main/api/client.go)와 [공식 types](https://github.com/ollama/ollama/blob/main/api/types.go): /api/status의 cloud.disabled, /api/show의 capabilities/model_info/remote_host 계약. experimental 상태 API 미지원 시 fail-closed는 Soundry 결정이다.
 - [RAG 원논문](https://arxiv.org/abs/2005.11401): 검색 기억을 추론에 결합하는 근거. 음악적 품질 향상이나 자체 LLM 훈련의 근거가 아니다.
 - [ACE-Step 공식 저장소](https://github.com/ace-step/ACE-Step-1.5)는 초기 보컬·음색 가능성 조사에만 참고했다. 사용자 후속 지시로 음악 모델 도입은 제외했으며 의존성/모델을 설치하지 않았다.
+
+## llama.cpp — 2026-10-09
+
+[공식server README](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md): /health, /v1/models, /v1/chat/completions, response_format JSON schema와thinking 제어. 사용자가구동한로컬Gemma 서버의health200/단일모델/context32768을직접확인했다. 제한된loopback·소유권/RAG·출력검증·타임아웃은Soundry의설계결정이다.

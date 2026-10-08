@@ -45,3 +45,17 @@ MIDI는 type1/480PPQ, 템포·4/4·섹션 marker·악기별 track·GM program·d
 후속 품질 평가는 같은 장르/요청/BPM/길이의 고정 brief 목록을 만들고 CLI/Gemma 및 RAG 사용 전후를 비교한다. 최소20개 brief에서 형식 유효율, 요청 준수, 멜로디 기억성, 화성 연결, 리듬 변화, 곡 전개·종지, 반복 과다, 수정 필요 시간을 기록한다. 청취 순서를 섞어 평가하고 생성 모델·참고digest·사용자 평가를 함께 남긴다. LLM 출력은 seed만으로 동일하게 재현되지 않으므로 같은 LLM 출력이라는 가정은 두지 않는다. 작품별 사람이 최종 편곡과 사용 자료의 권한을 확인한 뒤 상업용 여부를 판단한다.
 
 충분한 사람이 승인한 사례와 실패 사례를 모은 뒤 embedding 검색 및 별도 LoRA/파인튜닝 여부를 새 실행 계획에서 검토할 수 있다. 보컬·음색 음악 모델, 결제·클라우드·추적은 현재 범위에 포함하지 않는다.
+
+## llama.cpp 직접 연결 — plan-020
+
+사용자가 `http://127.0.0.1:8089`에 이미 구동한 Gemma는 `MUSIC_PROVIDER=llamacpp`, `SOUNDRY_LLAMA_PORT=8089`로 선택한다. Ollama 설치/설정은 필요하지 않다. `/health`가ok이고 `/v1/models`에 하나의 준비된 로컬 모델이 있으면 그ID를 사용한다. 모델 경로가ID에 있어도 공개 출처에는 제한된 basename만 기록한다. 서버를 구동/다운로드/모델load/unload하는 API는 호출하지 않는다.
+
+[llama.cpp 공식 server 문서](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)에 따라 `/v1/chat/completions`의 schema-constrained response_format, stream=false, thinking none을 사용한다. 모델이 반환한 content 전체를JSON으로 읽고 기존 음악 구조 검증을 유지한다. tools는 전달하지 않으며 finish_reason이stop인 하나의assistant 응답만 받는다. endpoint는127.0.0.1과숫자포트로 제한하고redirect/키/원격fallback을 허용하지 않는다. 응답1MiB·실행240초·취소 경계는Ollama와같다. localhost의API호환형식이며OpenAI서비스에접속하지않는다.
+
+llama.cpp는CLI와달리전송동의가없는로컬지식도같은회원범위에서참고한다. 서버출처·악보·참고digest와MIDI는기존저장경로를사용한다. 실제검증근거는plan-020의QA기록을따른다.
+
+Gemma 실제 응답의 끝섹션 누락·드럼 역할 혼동을 확인해 llama.cpp에는 더 구체적인 출력 schema를 사용한다. BPM 생략 시120이고 앱이 요청 길이/템포로 intro/verse/chorus/bridge/outro5구간의 길이를 계산한다. 선율·화성·리듬 음표와 편성은 모델이 새로 작곡한다. m1–m8은 멜로디, d1/d2는 드럼 역할이고 드럼은 허용 pitch로 제약한다. 후보6패턴·멜로디 패턴별정확히6음표를 요구해 기존4개 멜로디 패턴/24개음표 기준을 충족하도록 돕는다. 최종 결과는 기존 검증기가 다시 판단한다. 이 형식 제약은 음악적 품질 보장이 아니다.
+
+llama.cpp 작곡은1단계에서후보패턴을만들고2단계에서실제로생긴패턴ID만참조해각섹션을편곡한다. 앱이섹션시점과패턴길이로repeats를계산하고사용한패턴만최종악보에남긴다. 음표·편성·음량·pan·transpose는모델출력이며최종구조/다양성/무음/동시발음검증을유지한다. 한variation에로컬추론2회가필요하며자동실패재시도/원격fallback은없다.
+
+llama.cpp의한번에만들곡수는최대2개다. 후보패턴은1–2마디로제한하고각추론출력은최대4096토큰이다. 후보패턴/편곡추론은각240초이고기존job전체20분상한도적용한다. Ollama/CLI의최대4개와구분해UI/API에서같이제한한다.

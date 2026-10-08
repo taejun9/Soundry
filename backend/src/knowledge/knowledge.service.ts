@@ -60,7 +60,7 @@ export class KnowledgeService {
     return publicRow(this.owned(item.id, memberId));
   }
   forGeneration(id: string, memberId: string | null, input: GenerationInput, provider: string): RetrievedKnowledge[] {
-    if (!memberId || !['cli','ollama'].includes(provider)) return [];
+    if (!memberId || !['cli','ollama','llamacpp'].includes(provider)) return [];
     const knowledge = this.list(memberId).map(item => {
       if (!item.trackId) return item;
       try { return { ...item, content: item.content + '\nEvaluated arrangement structure: ' + this.composition(item.trackId).summary }; } catch { return item; }

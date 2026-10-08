@@ -49,3 +49,5 @@ plan-018-screen-music-qa: 전체 앱456·음악 Node18/Python23 및 lint/type/bu
 ## Phase 12 — 작곡 기억과 로컬 LLM 교체
 
 plan-019-composition-memory: 회원별 작곡 지식·청취 피드백의 lexical RAG, CLI의 항목별 추가 전송 동의, Ollama/Gemma runner와 준비 상태, 검증 악보 저장·JSON/MIDI 내보내기. 사용자는 보컬·음색 모델 도입을 제외하고 작곡까지만 확정했다. 전체 QA와 별도 리뷰를 거치며 실제 Gemma 추론과 판매 가능한 작곡 품질은 설치/청취 평가 전까지 미검증이다. [작곡 품질 gate](../architecture/composition-memory.md)를 따른다.
+
+plan-020-llamacpp-gemma: 사용자가구동한8089의llama.cpp/Gemma직접연결. 실제로컬작곡과RAG·악보/합성저장을검증하고공급자설정을전환한다. 보컬·음색모델은추가하지않는다.

@@ -96,3 +96,7 @@ CLI를 통한 텍스트 추론에는 기존 계정의 전송 정책과 사용 �
 ## 교체 가능한 작곡 LLM — plan-019
 
 `ollama` 공급자는 로컬 Gemma 등 미리 설치한 LLM의 JSON 악보를 같은 검증기/합성기로 처리한다. CLI는 항목별 전송에 동의한 회원 지식만 RAG로 참고하고 Ollama는 로컬 지식을 참고한다. 새 결과는 검증된 악보 JSON·MIDI와 참고 항목 식별자를 내보낸다. 준비 확인·전송·검색·미검증 품질은 [작곡 기억 설계](composition-memory.md)를 따른다.
+
+## llama.cpp — 2026-10-09
+
+`llamacpp`는사용자가8089에구동한Gemma를직접사용한다. 준비상태와실제모델ID를확인해공개된basename출처를기록한다. 기존RAG/악보검증/로컬합성/JSON/MIDI를재사용하며임의URL·원격fallback·서버관리API는추가하지않는다. [작곡기억의llama.cpp연결](composition-memory.md)을따른다.

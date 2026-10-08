@@ -50,7 +50,7 @@ const preset = computed(() => GENRE_PRESETS.find(item => item.id === selectedPre
 const variationLimit = computed(() => maxVariations(caps.value));
 const providerName = computed(() => provider.value?.isMock ? 'Mock' : provider.value ? displayProviderName(provider.value.id) : '공급자');
 const isCli = computed(() => provider.value?.id === 'cli' && !provider.value.isMock);
-const isLocal = computed(() => provider.value?.id === 'ollama' && !provider.value.isMock);
+const isLocal = computed(() => ['ollama', 'llamacpp'].includes(provider.value?.id ?? '') && !provider.value?.isMock);
 const isScoreComposer = computed(() => isCli.value || isLocal.value);
 const seedLimit = computed(() => seedCharacterLimit(provider.value?.id));
 const modeHelp = computed(() => {
@@ -64,6 +64,7 @@ function supported(key: SettingKey) { return supportsSetting(caps.value, key); }
 function supportHelp(key: SettingKey) {
   if (!provider.value) return '공급자 정보를 확인한 뒤 선택할 수 있어요.';
   if (!supported(key)) return `현재 ${providerName.value}에서는 이 설정을 지원하지 않아요.`;
+  if (provider.value.id === 'llamacpp' && key === 'bpm') return '40–220 BPM · 비워 두면 120 BPM으로 작곡합니다.';
   if (isScoreComposer.value && key === 'seed') return '선택 사항 · 64자 이내. 같은 악보의 로컬 합성에 사용할 값이며, AI 작곡 결과가 같아지는 것을 보장하지 않습니다.';
   if (isScoreComposer.value && key === 'durationSeconds') return '90–180초 · 비워 두면 150초(2분 30초)로 만듭니다.';
   const range = key === 'bpm' ? caps.value?.bpmRange : key === 'durationSeconds' ? caps.value?.durationRangeSeconds : undefined;
