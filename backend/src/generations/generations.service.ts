@@ -6,6 +6,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import type { GenerationSettings, GenerationSummary, Page, PromptSummary } from '../../../shared/contracts.js';
+import {KnowledgeService} from '../knowledge/knowledge.service.js';
+import {validateReferenceInput} from '../providers/composition/reference-composer.js';
 import { MembersService } from '../members/members.service.js';
 import { AppError } from '../api-errors.js';
 import { DatabaseService } from '../database/database.service.js';
@@ -26,6 +28,7 @@ export class GenerationsService {
     @Inject(ProviderService) private readonly providers: ProviderService,
     @Inject(JobManager) private readonly jobs: JobManager,
     @Inject(MembersService) private readonly members: MembersService,
+    @Inject(KnowledgeService) private readonly knowledge:KnowledgeService,
   ) {}
 
   private projectExists(projectId: string): void {
@@ -105,6 +108,7 @@ export class GenerationsService {
       if (input.sourceGenerationId) {
         const source = this.database.db.select({ projectId: generations.projectId }).from(generations).where(eq(generations.id, input.sourceGenerationId)).get();
         if (!source || source.projectId !== projectId) throw new AppError(400, 'INVALID_INPUT', '같은 프로젝트의 생성 이력만 재사용할 수 있습니다.');
+        if(this.providers.current.id==='llamacpp'){const reference=this.knowledge.styleReference(input.sourceGenerationId,projectId);if(reference)validateReferenceInput(input,reference);}
       }
       const active = this.database.db.select({ count: sql<number>`count(*)`.mapWith(Number) }).from(generations).where(inArray(generations.status, ['queued', 'processing'])).get()!.count;
       if (active >= MAX_ACTIVE_GENERATIONS) throw new AppError(429, 'QUEUE_FULL', '대기 중인 작업이 많습니다. 작업이 끝난 뒤 다시 제출해 주세요.');

@@ -1,4 +1,4 @@
-import { COMPOSITION_CORPUS } from '../../../shared/composition-corpus.js';
+import { COMPOSITION_CORPUS, CURATED_CONTENT_REVISIONS } from '../../../shared/composition-corpus.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { CompositionKnowledge, GenerationInput, KnowledgeReference } from '../../../shared/contracts.js';
@@ -24,11 +24,22 @@ export class KnowledgeService {
   }
   importCurated(memberId: string): { added: number; skipped: number; total: number } {
     return this.database.client.transaction(() => {
+      this.refreshCurated(memberId);
       const existing = this.list(memberId); const seen = new Set(existing.map(item => item.content));
       const pending = COMPOSITION_CORPUS.filter(item => !seen.has(item.content));
       if (existing.length + pending.length > 500) throw new AppError(409, 'KNOWLEDGE_LIMIT', '기본 자료를 추가할 공간이 부족해요. 기존 지식을 정리해 주세요.');
       for (const item of pending) this.save(memberId,item);
       return { added: pending.length, skipped: COMPOSITION_CORPUS.length-pending.length, total: existing.length+pending.length };
+    })();
+  }
+  private refreshCurated(memberId: string): void {
+    this.database.client.transaction(() => {
+      for (const item of this.list(memberId)) {
+        const revision=CURATED_CONTENT_REVISIONS.find(row=>row.before===item.content);
+        const curated=revision&&COMPOSITION_CORPUS.find(row=>row.content===revision.after);
+        if(curated&&item.rights==='own'&&item.rating===null&&item.trackId===null&&item.source===curated.source&&item.title===curated.title&&item.tags===curated.tags)
+          this.save(memberId,{...curated,allowRemote:item.allowRemote},item.id);
+      }
     })();
   }
   private owned(id: string, memberId: string): Row {
@@ -71,6 +82,7 @@ export class KnowledgeService {
   }
   forGeneration(id: string, memberId: string | null, input: GenerationInput, provider: string): RetrievedKnowledge[] {
     if (!memberId || !['cli','ollama','llamacpp'].includes(provider)) return [];
+    this.refreshCurated(memberId);
     const knowledge = this.list(memberId).map(item => {
       if (!item.trackId) return item;
       try { return { ...item, content: item.content + '\nEvaluated arrangement structure: ' + this.composition(item.trackId).summary }; } catch { return item; }
@@ -80,6 +92,13 @@ export class KnowledgeService {
       for (const [ordinal, item] of items.entries()) this.database.client.prepare('INSERT INTO generation_knowledge VALUES(?,?,?,?,?)').run(id, ordinal, item.reference.id, item.reference.digest, item.reference.rating);
     })();
     return items;
+  }
+  styleReference(generationId:string,projectId:string):import('../providers/composition/reference-composer.js').StyleReference|undefined {
+    // A generation can only inherit the first score of its own project's completed source.
+    const row=this.database.client.prepare("SELECT s.score_json,g.settings_json FROM generations g JOIN generation_scores s ON s.generation_id=g.id AND s.variation_index=0 WHERE g.id=? AND g.project_id=? AND g.status='completed' AND g.provider IN ('cli','llamacpp','ollama')").get(generationId,projectId) as {score_json:string;settings_json:string}|undefined;
+    if(!row)return undefined;
+    const settings=JSON.parse(row.settings_json) as GenerationInput['settings'];
+    return {score:JSON.parse(row.score_json) as Composition,durationSeconds:settings.durationSeconds??150};
   }
   storeScore(id: string, index: number, score: Composition): void {
     this.database.client.prepare('INSERT INTO generation_scores VALUES(?,?,?)').run(id, index, JSON.stringify(score));

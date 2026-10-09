@@ -12,6 +12,14 @@ const mock: ProviderSummary = { id: 'mock', model: 'demo-fixture', isMock: true,
 const cli: ProviderSummary = { id: 'cli', model: 'test-composer', isMock: false, configured: true, generationEnabled: true, notice: 'AI composition and local synthesis', capabilities: { modes: ['instrumental'], settings: ['genre', 'mood', 'bpm', 'durationSeconds', 'seed'], maxVariations: 4, seedSupported: true, canCancelRemote: false, bpmRange: { min: 40, max: 220 }, durationRangeSeconds: { min: 90, max: 180 } } };
 
 describe('tab-memory composer lifecycle', () => {
+  it('uses one variation for slow local quality composition and preserves the prompt when reusing older two-variation jobs',()=>{
+    const scope=effectScope(),provider=ref<ProviderSummary>({...cli,id:'llamacpp',capabilities:{...cli.capabilities,maxVariations:1}});
+    const composer=scope.run(()=>useComposer('local-quality',provider))!;composer.draft.prompt='An original developed theme';
+    expect(composer.validate()?.variationCount).toBe(1);
+    composer.reuse({generationId:'old-job',prompt:'Retain this original idea',settings:{genre:'Jazz'},variationCount:2});
+    expect(composer.validate()?.variationCount).toBe(1);expect(composer.draft.prompt).toBe('Retain this original idea');
+    scope.stop();forgetProjectDraft('local-quality');
+  });
   it('keeps CLI defaults on the server and validates actual seed/range boundaries before submission', () => {
     const scope = effectScope(); const composer = scope.run(() => useComposer('cli-input', ref(cli)))!;
     composer.draft.prompt = 'A layered original instrumental';

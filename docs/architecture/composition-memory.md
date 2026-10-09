@@ -71,3 +71,23 @@ plan-021 실제장르검사에서요청한타악기누락을확인했다. llama.
 작곡노트의「16장르 기본 작곡 자료 추가」버튼은인증된자신의계정에96건을멱등추가한다. 기존본문은보존하고새자료의외부전송동의는false,평점은null이다. 회원별개인지식을공유하지않는다.
 
 명시적four-on-the-floor요청에는d1을1마디/36kick/0·1·2·3beat의4음표로제약하고중복박을거부한다. verse/chorus에d1이없으면실패한다. 일반장르이름만으로모든음악에같은킥을강제하지않는다. 이규칙은명시적리듬요구의준수이며장르음악성판정은아니다.
+
+## 표현력 복원 — plan-023
+
+기존 실제 CLI21악보의 직접작성멜로디음표 중앙값207과Gemma16악보24를 비교했다. 합성기는같았으며Gemma adapter의6음표/6패턴/1–2마디 제한이작곡정보를크게줄였다. 이숫자는음악성점수가아니며품질저하원인의근거다.
+
+새 `sectional-v2`는Gemma가tonic/mode와verse/chorus/bridge의8마디화성계획,악기를정한뒤6구간의lead/bass/voicing/percussion을새로작성한다. 본구간은4마디 phrase를마디별로요청하고outro잔여는최대8마디로작성하며48tick/bar격자로straight/swing/triplet을표현한다. timing-pair와diatonic voicing vocabulary는유효표현의선택지이며Gemma가리듬·음높이·velocity·화성·voicing을선택한다. 앱은선택한음표를canonical version1로변환·배치하며고정곡이나보완음표를붙이지않는다. 작성음표집계는반복확장횟수와구분한다.
+
+구간경계에phrase를정렬하고outro의마지막화성을tonic으로끝내며노트범위/중복/실제동시삼화음/마디별bass·chord관계/명시적quarterkick을검증한다. 해당구간만최대1회로컬repair,각chat240초/8192출력상한/응답1MiB/전체compose16분/기존job20분·6000voice-seconds/48voice/16000event를유지한다. 도구/임의주소/자동다운로드/원격fallback없음. 새공개model출처suffix는sectional-v2다.
+
+기본작곡자료의obsolete6음표제약4건을고쳤다. 기본자료import또는명시적생성시같은회원의원본그대로인curated항목만정확한before/content·title/tags/source/rights와rating/track조건으로갱신한다. 개인수정·청취평가·다른회원·전송동의는변경하지않는다. 새패턴수·음표수만으로CodexCLI의청취품질동등성을확정하지않는다.
+
+사용자의리듬·그루브·장르감우선피드백을반영해공통0/24tick공격예시는제거했다. Funk/Latin은본구간마디별bass엇박,Reggae는짧은eighth-upbeat chord와bass엇박을grammar/관계검증한다. 명시적인정박/no-syncopation은장르profile보다우선한다. 명시적four-on-floor는각마디kick0..3의quarterkick으로검증하며그외타악기는모델이선택한다. swing지시는1/3·2/3박격자를사용한다. 최종악보의역할별엇박비율/삼연음위치/velocity종류/드럼pitch를구조관찰로보존한다. 수치가높을수록좋다는의미는아니다.
+
+그루브profile은사용자의해당요청prompt/genre만으로계산한다. 모든장르안내가섞인시스템prompt나RAG문구에서다른장르의swing/offbeat를자동감지하지않는다. 본구간드럼은kick0..3/backbeat/hat0..N/fills의namedobject에서모델이kick/backbeat와장르별4또는8개hat/ride/shaker위치를작성하며관계검증이실제역할/스윙위치도다시검사한다.
+
+## 원본 스타일 유지와 선율 다듬기 — plan-023
+
+llamacpp에서같은프로젝트의완료작업입력을가져오면첫완성canonical악보가있는경우`reference-v3`를사용한다. 원본의장르·BPM·길이를유지해야하며불일치는추론전에400으로거부한다. 원본참조해제로독립`sectional-v2`작곡을선택할수있다. mock/실패/다른프로젝트참조는스타일악보가될수없다. 다른공급자에는참조악보를자동전송하지않는다.
+
+원본편성·구간·리듬·gate·강약·mix·bass/drums/pad/organ·동시화음과보호악기의공유패턴을유지한다. 단선율slot에실제반주pitchclass를제공하며프레이즈마지막pitch를anchor로보존한다. Gemma가새pitch초안후polish를작성하고최종후보가잘못된경우한번만repair한다. 최소1/3의slotpitch를변경해야하며원본을변경하지않는다. 반환출처는reference-v3로기록하고새선율변주임을화면과패키지에표시한다. 전체편곡또는전체음표를Gemma독립작성으로표시하지않으며음악성동등성은청취로별도판단한다.

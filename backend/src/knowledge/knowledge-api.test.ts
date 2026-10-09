@@ -1,3 +1,4 @@
+import { COMPOSITION_CORPUS, CURATED_CONTENT_REVISIONS } from '../../../shared/composition-corpus.js';
 import { randomUUID } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { request } from 'node:http';
@@ -13,6 +14,7 @@ import { MembersService } from '../members/members.service.js';
 import { ProviderService } from '../providers/provider.service.js';
 import type { CompositionRunner } from '../providers/cli-runner.js';
 import type { Composition } from '../providers/composition/index.js';
+import { CliProvider } from '../providers/cli-provider.js';
 import { KnowledgeService } from './knowledge.service.js';
 function score(input: GenerationInput): Composition {
   const total = Math.ceil((input.settings.durationSeconds ?? 150) / 2);
@@ -69,6 +71,18 @@ beforeEach(async () => {
 });
 afterEach(async () => { await app?.close(); rmSync(root, { recursive: true, force: true }); });
 describe('composition memory ownership and lifecycle', () => {
+  it('returns a style snapshot only for the completed source in the same project and keeps it after audio deletion',async()=>{
+    const a=await member('style-owner'),b=await member('other-owner');const own=await project(a.cookie),other=await project(b.cookie);const created=await generate(own,a.cookie);const source=await complete(created.body.id,a.cookie);const knowledge=app.get(KnowledgeService);
+    expect(knowledge.styleReference(source.id,other)).toBeUndefined();const reference=knowledge.styleReference(source.id,own)!;expect(reference.durationSeconds).toBe(90);expect(reference.score).toEqual(knowledge.composition(source.tracks[0]!.id).score);
+    expect((await api('POST','/projects/'+other+'/generations',{prompt:'No cross-owner reference',settings:{durationSeconds:90},variationCount:1,requestKey:randomUUID(),sourceGenerationId:source.id},b.cookie)).status).toBe(400);
+    expect((await api('DELETE','/tracks/'+source.tracks[0]!.id,undefined,a.cookie)).status).toBe(200);expect(knowledge.styleReference(source.id,own)).toEqual(reference);
+    await app.close();const localCompose=vi.fn(async(prompt:string,schema:object)=>{expect(schema).toHaveProperty('x-soundry-quality.version',3);return score(JSON.parse(prompt.split('\n').find(line=>line.startsWith('{"prompt":'))!) as GenerationInput);});
+    app=await createApplication({dataDir:root,providerOverride:new CliProvider({probe:async()=> 'ready',compose:localCompose,modelLabel:'llamacpp:test:sectional-v2',compositionModelLabel:'llamacpp:test:reference-v3'},{id:'llamacpp'})});await app.listen(0,'127.0.0.1');port=((app.getHttpServer() as Server).address() as AddressInfo).port;db=app.get(DatabaseService);await app.get(ProviderService).refreshConfiguration();
+    const base={prompt:'Refine the owned melody',settings:{bpm:120,genre:'Jazz',durationSeconds:90,seed:'new-qa-style'},variationCount:1,sourceGenerationId:source.id};
+    const mismatch=await api('POST','/projects/'+own+'/generations',{...base,settings:{...base.settings,bpm:100},requestKey:randomUUID()},a.cookie);expect(mismatch.status).toBe(400);expect(mismatch.body).toMatchObject({error:{code:'STYLE_SETTINGS_MISMATCH'}});expect(localCompose).not.toHaveBeenCalled();
+    const accepted=await api<GenerationSummary>('POST','/projects/'+own+'/generations',{...base,requestKey:randomUUID()},a.cookie);expect(accepted.status).toBe(202);const variation=await complete(accepted.body.id,a.cookie);expect(localCompose).toHaveBeenCalledOnce();expect(variation.model).toBe('llamacpp:test:reference-v3');expect(variation.tracks[0]!.model).toBe('llamacpp:test:reference-v3');
+
+  });
   it('requires membership even before setup and isolates read/update/delete from administrators', async () => {
     expect((await api('GET','/knowledge')).status).toBe(401);
     const a = await member('admin'); const b = await member('writer');
@@ -89,6 +103,19 @@ describe('composition memory ownership and lifecycle', () => {
     expect(app.get(KnowledgeService).list(a.id).every(item=>!item.allowRemote&&item.rating===null&&item.trackId===null)).toBe(true);
     expect((await api('POST','/knowledge/curated/import',{},b.cookie)).body).toEqual({added:96,skipped:0,total:96});
     expect(new Set(app.get(KnowledgeService).list(b.id).map(item=>item.id))).not.toEqual(new Set(app.get(KnowledgeService).list(a.id).map(item=>item.id)));
+  });
+  it('refreshes only untouched owned curated capability notes and preserves consent and personal edits',async()=>{
+    const a=await member('admin'),b=await member('writer'),service=app.get(KnowledgeService);
+    const revision=CURATED_CONTENT_REVISIONS[0],curated=COMPOSITION_CORPUS.find(item=>item.content===revision.after)!;
+    const old=service.save(a.id,{...curated,content:revision.before,allowRemote:true});
+    const personal=service.save(a.id,{...curated,content:revision.before+' Personal addition',allowRemote:false});
+    const foreign=service.save(b.id,{...curated,content:revision.before,allowRemote:false});
+    await api('POST','/knowledge/curated/import',{},a.cookie);
+    const changed=service.list(a.id).find(item=>item.id===old.id)!;
+    expect(changed.content).toBe(revision.after);expect(changed.allowRemote).toBe(true);expect(changed.rating).toBeNull();
+    expect(service.list(a.id).find(item=>item.id===personal.id)?.content).toContain('Personal addition');
+    expect(service.list(b.id).find(item=>item.id===foreign.id)?.content).toBe(revision.before);
+    expect(service.list(a.id)).toHaveLength(97);
   });
   it('does not partially import when the knowledge limit would be exceeded', async () => {
     const a=await member('admin'); const service=app.get(KnowledgeService);

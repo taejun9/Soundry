@@ -175,8 +175,10 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
     let batch: StoredAudio[] | undefined;
     try {
       const input: GenerationInput = { prompt: row.prompt, settings: JSON.parse(row.settingsJson) as GenerationInput['settings'], variationCount: row.variationCount };
+      const styleReference=this.providers.current.id==='llamacpp'&&row.sourceGenerationId?this.knowledge.styleReference(row.sourceGenerationId,row.projectId):undefined;
       const sources = await withCancellation(this.providers.current.generate(input, {
         signal,
+        styleReference,
         onComposition: (index, score) => { if (!signal.aborted) this.knowledge.storeScore(id, index, score); },
         knowledge: this.knowledge.forGeneration(id, row.memberId, input, this.providers.current.id),
         onStage: (stage) => { if (!signal.aborted) this.stages.set(id, stage); },
@@ -201,7 +203,7 @@ export class JobManager implements OnModuleInit, OnModuleDestroy {
           genre: audio.metadata.genre ?? null, mood: audio.metadata.mood ?? null, seed: audio.metadata.seed ?? null,
           provider: row.provider, model: audio.model, favorite: false, createdAt: finishedAt,
         }))).run();
-        this.database.db.update(generations).set({ status: 'completed', finishedAt, errorCode: null, errorMessage: null }).where(and(eq(generations.id, id), eq(generations.status, 'processing'))).run();
+        this.database.db.update(generations).set({ status: 'completed', finishedAt, errorCode: null, errorMessage: null,...(styleReference?{model:stored[0]!.model}:{}) }).where(and(eq(generations.id, id), eq(generations.status, 'processing'))).run();
         this.database.touchProject(row.projectId);
         return true;
       }, { behavior: 'immediate' });

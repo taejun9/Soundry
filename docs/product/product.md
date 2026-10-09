@@ -64,3 +64,13 @@ Dark, minimal, modern music studio. 검정·짙은 회색 배경, 읽기 쉬운 
 ## 제작 스튜디오 확장 — 2026-10-09
 
 Live 기능/UI 흡수 요청에 따라 [조사·통합 지도](../references/ableton-live-research.md)를 기준으로 제작 환경을 확장한다. 첫 구현은 원본 검색, Arrangement/클립 런처, BPM 기반 편집 snap, 비반복 클립 분할,50단계 undo/redo,행별 volume/pan/mute/solo/Low-pass/Delay,clip fade와 실제 원본 파형이다. 원본 변경 없이 로컬 preview/offline stereo WAV export를 수행한다. BPM은 편집 격자 기준으로 오디오 속도를 바꾸지 않는다. 모든 Live 기능의 동등 구현은 미완료다. 후속 MIDI/automation/audio/native 단계는 로드맵의 독립 gate를 따른다.
+
+## 작곡 품질 복원 — 2026-10-09
+
+Gemma의형식유효성위주6음표/짧은패턴 제한을제거하고화성계획과6구간의개발된프레이즈로전환한다. 같은합성기를사용하는CLI/Gemma를동일공개brief·BPM·길이·seed·장르guidance로비교한다. 코드QA·구조지표와최종청취판정은구분한다. 로컬품질작곡은실제수분이상걸리므로한번에1곡을접수하고기본/과거2곡초안을UI에서1곡으로조정한다. 기존2곡요청키재전송은과거작업조회계약을유지한다.
+
+## 원본 스타일 유지와 선율 다듬기 — plan-023
+
+llamacpp에서같은프로젝트의완료작업입력을가져오면첫완성canonical악보가있는경우`reference-v3`를사용한다. 원본의장르·BPM·길이를유지해야하며불일치는추론전에400으로거부한다. 원본참조해제로독립`sectional-v2`작곡을선택할수있다. mock/실패/다른프로젝트참조는스타일악보가될수없다. 다른공급자에는참조악보를자동전송하지않는다.
+
+원본편성·구간·리듬·gate·강약·mix·bass/drums/pad/organ·동시화음과보호악기의공유패턴을유지한다. 단선율slot에실제반주pitchclass를제공하며프레이즈마지막pitch를anchor로보존한다. Gemma가새pitch초안후polish를작성하고최종후보가잘못된경우한번만repair한다. 최소1/3의slotpitch를변경해야하며원본을변경하지않는다. 반환출처는reference-v3로기록하고새선율변주임을화면과패키지에표시한다. 전체편곡또는전체음표를Gemma독립작성으로표시하지않으며음악성동등성은청취로별도판단한다.

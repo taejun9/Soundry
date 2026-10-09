@@ -57,6 +57,12 @@ function runner(): CompositionRunner & { probe: ReturnType<typeof vi.fn<Composit
 }
 // 순차 작곡과 별도 seed, 앱 계산 제한, 엄격한 출력/입력 검증 및 부분 batch 실패를 다룬다.
 describe('CLI composition provider', () => {
+  it('rejects two slow local quality variations before inference instead of exceeding the job deadline',async()=>{
+    const fake=runner(),provider=new CliProvider(fake,{id:'llamacpp'});
+    expect(provider.capabilities.maxVariations).toBe(1);
+    await expect(provider.generate(musicInput,{signal:new AbortController().signal,onStage:vi.fn()})).rejects.toMatchObject({publicCode:'INVALID_INPUT'});
+    expect(fake.probe).not.toHaveBeenCalled();expect(fake.compose).not.toHaveBeenCalled();
+  });
   it('composes variations sequentially with explicit musical constraints and distinct bounded seeds', async () => {
     const fake = runner(); let running = 0; let maximum = 0;
     fake.compose.mockImplementation(async prompt => { maximum = Math.max(maximum, ++running); await delay(5); running--; return score(fromPrompt(prompt)); });

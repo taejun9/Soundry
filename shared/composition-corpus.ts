@@ -11,7 +11,7 @@ const rows: [string, string, number, string[]][] = [
   ['Trap','트랩',140,[
     'Use a half-time phrase at the fast notated tempo. A sparse intro should expose a motif before bass enters; a bridge should change register or remove the main bass response.',
     'Choose a minor pentatonic pitch family for a compact pluck hook. Keep the bass in a low register and use a different bass pattern for the contrasting section.',
-    'For half-time feel put the snare near zero-based beat 2 of a four-beat bar. Use a few close hat attacks and quieter secondary hits. With six-note patterns, write a separate hat pattern if needed.',
+    'For half-time feel put the snare near zero-based beat 2 of a four-beat bar. Use multi-bar hat subdivisions with accented and quieter hits, meaningful rests and a changing fill; preserve a low independent bass.',
     'A two-bar melodic phrase can anticipate the downbeat then rest. Answer the first phrase with a changed last note instead of transposing every voice arbitrarily.',
     'Separate low bass, plucked lead and hat/snare roles; no single pattern should be played by all three. Remove hats in a breakdown and bring the hook back with a new answer.',
     'The current note schema cannot represent continuous 808 slides or filter automation. Judge the bass rhythm and pitch contour; do not claim these production techniques were synthesised.'
@@ -35,7 +35,7 @@ const rows: [string, string, number, string[]][] = [
   ['Rock','록',132,[
     'Expose a recognisable guitar riff in the intro, answer it in the verse, and open the chorus register. Use a quieter bridge or rhythmic stop before a purposeful ending.',
     'Compose a tonal riff built around roots/fifths and one contrasting note. Give bass its own rhythmic support rather than applying arbitrary semitone transpositions to the guitar line.',
-    'Use kick/snare backbeat with clear accents and a short fill near a transition. A six-note drum motif is sparse; prefer strong essential hits rather than pretending to recreate a detailed live kit.',
+    'Use a developed multi-bar kick/snare backbeat with clear accents, ghost notes and a short transition fill. Contrast verse and chorus grooves while respecting the synthesized kit limitations.',
     'Change the riff ending or rhythmic pickup for the chorus. Avoid endlessly replaying a one-bar scale fragment with only an instrument change.',
     'Keep guitar, bass and lead roles separate. Contrast a single guitar intro, fuller ensemble chorus and thinner bridge; choose a strong final sustained note or chord.',
     'The preview synth does not produce authentic distorted guitar performance. Evaluate riff, harmony and arrangement separately from recording realism.'
@@ -75,7 +75,7 @@ const rows: [string, string, number, string[]][] = [
   ['Drum & Bass','드럼앤베이스',172,[
     'At fast tempo, let the melodic phrase and bass breathe in half-time. Build from a light intro into a broken-beat section, contrasting bridge and a clear final release.',
     'A smooth minor palette can connect a sparse pad/chord line to an independent sub-bass motif. Avoid very low chord voicings that compete with the bass.',
-    'Use broken kick placements and snares around beats 1 and 3 of a four-beat bar. With at most six notes in a motif, concentrate on the defining backbeat; use another motif for variation.',
+    'Use multi-bar broken kick placements and snares around beats 1 and 3 of a four-beat bar, changing hat subdivisions, accented pickups and an end fill. Keep the defining backbeat clear above a half-time low bass.',
     'Write a longer-feeling melodic contour with held notes above the fast drum grid, then answer it with a changed ending. Fast repeated scale notes alone do not create liquid phrasing.',
     'Bass, pad/piano and melodic lead should have separate patterns. Drop some percussion in the bridge and change the bass response when the main motif returns.',
     'Check fast BPM, broken kick placement and backbeat. Detailed sampled breaks, continuous sub modulation and real mix quality are outside the preview renderer.'
@@ -110,7 +110,7 @@ const rows: [string, string, number, string[]][] = [
     'Phrase accents should follow melodic grouping and harmonic arrival rather than a mandatory drum backbeat. Use varied durations and rests within the four-beat score grid.',
     'Develop a short original theme by sequence, rhythmic change or a new ending. Distinguish motif development from copying the same one-bar phrase through every section.',
     'Piano and strings can take independent roles and exchange lead. Spread chord registers, keep low voices clear, and thin the middle before the final thematic return.',
-    'The current engine supports 4/4 and six-note motifs only; it cannot establish advanced counterpoint or long-form classical quality merely by naming the genre.'
+    'The engine supports 4/4 and developed phrases of up to eight bars, with polyphonic chord voicings and independent low bass. Advanced counterpoint and classical musical quality still require inspection of actual voice leading, thematic development and cadence.'
   ]],
   ['Latin','라틴',104,[
     'Choose one specific Latin-inspired rhythmic direction for this sketch instead of claiming all Latin traditions. Let a guitar phrase and rhythmic bass answer alternate before a fuller central section.',
@@ -135,3 +135,23 @@ export const COMPOSITION_CORPUS = rows.flatMap(([genre,korean,,notes]) => notes.
   title: `${genre}: ${aspects[index]}`, content, tags: `${genre}|${korean}|${aspects[index]}`,
   source: 'Soundry 독자 작성 작곡 설계 v1; 기존 곡·악보 미사용', rights: 'own' as const, allowRemote: false,
 })));
+
+/** Exact historical guidance eligible for owned, unedited curated revisions. */
+export const CURATED_CONTENT_REVISIONS = [
+  {
+    "before": "For half-time feel put the snare near zero-based beat 2 of a four-beat bar. Use a few close hat attacks and quieter secondary hits. With six-note patterns, write a separate hat pattern if needed.",
+    "after": "For half-time feel put the snare near zero-based beat 2 of a four-beat bar. Use multi-bar hat subdivisions with accented and quieter hits, meaningful rests and a changing fill; preserve a low independent bass."
+  },
+  {
+    "before": "Use kick/snare backbeat with clear accents and a short fill near a transition. A six-note drum motif is sparse; prefer strong essential hits rather than pretending to recreate a detailed live kit.",
+    "after": "Use a developed multi-bar kick/snare backbeat with clear accents, ghost notes and a short transition fill. Contrast verse and chorus grooves while respecting the synthesized kit limitations."
+  },
+  {
+    "before": "Use broken kick placements and snares around beats 1 and 3 of a four-beat bar. With at most six notes in a motif, concentrate on the defining backbeat; use another motif for variation.",
+    "after": "Use multi-bar broken kick placements and snares around beats 1 and 3 of a four-beat bar, changing hat subdivisions, accented pickups and an end fill. Keep the defining backbeat clear above a half-time low bass."
+  },
+  {
+    "before": "The current engine supports 4/4 and six-note motifs only; it cannot establish advanced counterpoint or long-form classical quality merely by naming the genre.",
+    "after": "The engine supports 4/4 and developed phrases of up to eight bars, with polyphonic chord voicings and independent low bass. Advanced counterpoint and classical musical quality still require inspection of actual voice leading, thematic development and cadence."
+  }
+] as const;

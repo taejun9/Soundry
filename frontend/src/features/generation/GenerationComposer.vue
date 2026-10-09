@@ -145,7 +145,7 @@ onMounted(() => { void reload(); });
       <p :id="`${id}-prompt-help`" class="field-help prompt-help">장면 + 분위기 + 주요 악기 + 곡의 흐름을 적으면 아이디어가 더 선명해져요.</p>
       <p v-if="visibleError('prompt')" :id="`${id}-prompt-error`" class="field-error" role="alert">{{ visibleError('prompt') }}</p>
       <p v-if="presetNotice" class="preset-notice" role="status">{{ presetNotice }}</p>
-      <p v-if="sourceGenerationId" class="source-note composer-source">이전 작업에서 가져온 입력입니다. 생성하면 새 작업으로 저장되고 원본은 유지됩니다.</p>
+      <div v-if="sourceGenerationId" class="source-note composer-source"><p>{{ provider?.id === 'llamacpp' ? '원본 작업의 첫 완성곡 악보가 있으면 편성·그루브·반주·전개를 유지하고 새 선율을 만듭니다. 원본의 장르·BPM·길이를 유지해 주세요.' : '이전 작업에서 가져온 입력입니다. 생성하면 새 작업으로 저장되고 원본은 유지됩니다.' }}</p><button type="button" class="button button-secondary" @click="sourceGenerationId = null">원본 참조 해제</button></div>
 
       <div class="variation-row"><div><label :for="`${id}-variations`" class="field-label">한 번에 만들 곡 수</label><p :id="`${id}-variations-help`" class="field-help">{{ provider ? `현재 공급자는 최대 ${variationLimit}곡을 지원해요.` : '공급자 정보를 확인하고 있어요.' }}</p></div><select :id="`${id}-variations`" v-model.number="draft.variationCount" class="text-input variation-select" :disabled="!provider" :aria-invalid="Boolean(visibleError('variationCount'))" :aria-describedby="`${id}-variations-help`" @blur="touch('variationCount')"><option v-for="count in 4" :key="count" :value="count" :disabled="count > variationLimit">{{ count }}곡</option></select></div>
       <p v-if="visibleError('variationCount')" class="field-error" role="alert">{{ visibleError('variationCount') }}</p>

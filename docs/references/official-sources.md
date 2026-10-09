@@ -59,3 +59,7 @@
 ## Live 제작 흐름과 Web Audio — 2026-10-09
 
 [공식 조사·기능별 지도](ableton-live-research.md)에 Live12 매뉴얼/비교표와장르검증범위를정리했다. UI공간배치의참고이며Ableton코드/번들통합이나기기동등성근거가아니다. [MDN OfflineAudioContext](https://developer.mozilla.org/en-US/docs/Web/API/OfflineAudioContext), [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode), [linearRampToValueAtTime](https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/linearRampToValueAtTime)를공통preview/export·pan·fade scheduling에적용한다. [SoundCloud 업로드 조건](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)의lossless/stereo/16bit44.1kHz이상/headroom을재확인했다. 실제업로드나음악성승인은포함하지않는다.
+
+## 작곡 품질 복원 — 2026-10-09
+
+[OpenAI Docs 비대화형CLI](https://learn.chatgpt.com/docs/non-interactive-mode)와설치CLI0.136.0의기존schema/stdin계약을동일brief기준곡에사용했다. [llama.cpp server](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md)의schema-constrained response_format·thinking제어를유지한다. 설치server의실제schema probe에서prefixItems단독tupleenum과named-object역할강제를확인했다. items:false는거부되었고prefixItems와items동시사용때는역할제약이무시되어namedobject로분리했다. 출력제약/구간repair/음악관계검증은Soundry의설계이며공식자료가Gemma음악성또는CLI동등성을보증하지않는다. [SoundCloud 요구](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)를최종WAV검사에다시적용한다.

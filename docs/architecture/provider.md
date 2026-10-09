@@ -100,3 +100,13 @@ CLI를 통한 텍스트 추론에는 기존 계정의 전송 정책과 사용 �
 ## llama.cpp — 2026-10-09
 
 `llamacpp`는사용자가8089에구동한Gemma를직접사용한다. 준비상태와실제모델ID를확인해공개된basename출처를기록한다. 기존RAG/악보검증/로컬합성/JSON/MIDI를재사용하며임의URL·원격fallback·서버관리API는추가하지않는다. [작곡기억의llama.cpp연결](composition-memory.md)을따른다.
+
+## Gemma 표현력 복원 — plan-023
+
+llamacpp는 `sectional-v2` 출력프로필을사용한다. [작곡기억의품질복원](composition-memory.md)을따른다. 기존renderer/canonicalJSON/MIDI와원본은유지하며형식안정화를위한6음표제약을제거한다. 초기실제한곡717초를확인해capabilitymaxVariations를1로조정했다. 한곡compose는16분,각단계240초,전체job20분을지켜타임아웃·취소이후결과를공개하지않는다. 출력형식범위가커졌다는사실만으로음악품질동등성을표시하지않는다. CLI한도4와명시선택/전송동의정책은유지한다.
+
+## 원본 스타일 유지와 선율 다듬기 — plan-023
+
+llamacpp에서같은프로젝트의완료작업입력을가져오면첫완성canonical악보가있는경우`reference-v3`를사용한다. 원본의장르·BPM·길이를유지해야하며불일치는추론전에400으로거부한다. 원본참조해제로독립`sectional-v2`작곡을선택할수있다. mock/실패/다른프로젝트참조는스타일악보가될수없다. 다른공급자에는참조악보를자동전송하지않는다.
+
+원본편성·구간·리듬·gate·강약·mix·bass/drums/pad/organ·동시화음과보호악기의공유패턴을유지한다. 단선율slot에실제반주pitchclass를제공하며프레이즈마지막pitch를anchor로보존한다. Gemma가새pitch초안후polish를작성하고최종후보가잘못된경우한번만repair한다. 최소1/3의slotpitch를변경해야하며원본을변경하지않는다. 반환출처는reference-v3로기록하고새선율변주임을화면과패키지에표시한다. 전체편곡또는전체음표를Gemma독립작성으로표시하지않으며음악성동등성은청취로별도판단한다.

@@ -210,6 +210,9 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
     llama_plan = {**plan, "provider": "llamacpp", "model": "llamacpp:gemma-test:score-v1"}
     llama_entry = {**results[0], "provider": "llamacpp", "model": llama_plan["model"]}
     assert module.public_provenance(llama_plan, plan["tracks"][0], llama_entry)["provider"] == "llamacpp"
+    sectional_plan = {**llama_plan, "model": "llamacpp:gemma-test:sectional-v2"}
+    sectional_entry = {**llama_entry, "model": sectional_plan["model"]}
+    assert module.public_provenance(sectional_plan, plan["tracks"][0], sectional_entry)["model"].endswith(":sectional-v2")
     for bad_model in ("mock", "llamacpp:/private/model:score-v1", "llamacpp:https://remote:score-v1", "llamacpp:" + "a" * 91 + ":score-v1"):
         try:
             module.public_provenance({**llama_plan, "model": bad_model}, plan["tracks"][0], {**llama_entry, "model": bad_model})

@@ -122,7 +122,7 @@ def public_provenance(plan, track, entry):
     record.update(trace)
     provider, model = plan.get("provider"), plan.get("model")
     cli = provider == "cli" and model == "codex-composer-local-synth-v1"
-    llama = provider == "llamacpp" and isinstance(model, str) and re.fullmatch(r"llamacpp:[A-Za-z0-9_.:-]{1,90}:score-v1", model)
+    llama = provider == "llamacpp" and isinstance(model, str) and re.fullmatch(r"llamacpp:[A-Za-z0-9_.:-]{1,90}:(?:score-v1|sectional-v2|reference-v3)", model)
     if not (cli or llama):
         raise ValueError("지원하는 악보 작곡·로컬 합성 모델 제작 계획이 아닙니다.")
     if entry.get("provider") != plan["provider"] or entry.get("model") != plan["model"]:

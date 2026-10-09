@@ -50,7 +50,7 @@ export class ProviderService implements OnModuleInit, OnModuleDestroy {
     if (['ollama','llamacpp'].includes(this.current.id) && this.current instanceof CliProvider) {
       const configured = this.current.availability === 'ready';
       return { id: this.current.id, model: this.current.model, isMock: false, configured, generationEnabled: configured, capabilities: this.current.capabilities,
-        notice: (configured ? '' : providerMessage(this.current.availability as Exclude<typeof this.current.availability, 'ready'>) + ' ') + '로컬 LLM이 악보를 작곡하고 기존 합성기로 미리듣기를 만듭니다. 로그인·원격 API 없이 실행합니다. ' + (this.current.id === 'ollama' ? 'Ollama의 클라우드 비활성 상태를 확인합니다. ' : '이미 구동한 llama.cpp 모델을 사용합니다. ') + ' 작곡 지식 RAG는 모델 가중치 훈련이 아니며 상업 품질은 청취 평가가 필요합니다.' };
+        notice: (configured ? '' : providerMessage(this.current.availability as Exclude<typeof this.current.availability, 'ready'>) + ' ') + '로컬 LLM이 악보를 작곡하고 기존 합성기로 미리듣기를 만듭니다. 로그인·원격 API 없이 실행합니다. ' + (this.current.id === 'ollama' ? 'Ollama의 클라우드 비활성 상태를 확인합니다. ' : '이미 구동한 llama.cpp 모델을 사용합니다. 품질 작곡은 한 번에 1곡이며 여러 분이 걸릴 수 있습니다. ') + ' 작곡 지식 RAG는 모델 가중치 훈련이 아니며 상업 품질은 청취 평가가 필요합니다.' };
     }
     if (this.current.id === 'cli') {
       const availability = this.current instanceof CliProvider ? this.current.availability : 'ready';

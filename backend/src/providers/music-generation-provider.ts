@@ -7,6 +7,7 @@ import type { GenerationInput, GenerationSettings, ProviderCapabilities } from '
 /** Server-only contract; paths, remote URLs and credentials never cross this boundary. */
 export interface ProviderContext {
   onComposition?(index: number, score: import('./composition/index.js').Composition): void;
+  styleReference?: import('./composition/reference-composer.js').StyleReference;
   knowledge?: import('../knowledge/retrieval.js').RetrievedKnowledge[];
   signal: AbortSignal;
   onStage(stage: 'generating' | 'saving'): void;

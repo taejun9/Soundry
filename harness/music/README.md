@@ -200,3 +200,36 @@ python3 harness/music/package_studio.py \
 ```
 
 경로는로컬설치위치에맞춘다. 브라우저/모델자동설치는하지않는다. benchmark생략시합성UI/신호만검사한다. Rendered출력/Downloads는기존파일을덮어쓰지않는다. 16장르원본SHA·canonical악보·genre대응을검사하고공통mix graph로120초WAV를실제render한다. package도구는전체WAV/원본SHA·MIDI chunk/note pair/EOT를다시검사한뒤업로드본/원본/악보/metadata를별도폴더로보존한다. 청취·LUFS·true peak·DAWimport·SoundCloudupload·전체Live동등성은검사범위밖이다. 합성UI음원은Downloads패키지에넣지않는다.
+
+## Gemma/Codex 품질 비교 신규 작곡 — plan-023
+
+`quality-benchmark.ts`는지원16장르의같은공개brief/BPM/120초/seed를공급자별전용SQLite에접수하고실패·요청키·원본·악보·MIDI·참고자료digest를보존한다. CLI쪽은해당전용합성테스트회원의독자작성공개자료96건만전송동의를true로설정하며개인회원RAG를읽거나동의를바꾸지않는다. 음악모델/추가API키는설치하지않는다. CLI계정한도/로그인오류는checkpoint를보존하고중단한다.
+
+```sh
+TSX_TSCONFIG_PATH=backend/tsconfig.json node --import tsx harness/music/quality-benchmark.ts data/plan023-quality-benchmark llamacpp
+TSX_TSCONFIG_PATH=backend/tsconfig.json node --import tsx harness/music/quality-benchmark.ts data/plan023-cli-quality-benchmark cli
+node --import tsx harness/music/finalize_quality.ts data/plan023-quality-benchmark/benchmark.json data/plan023-cli-quality-benchmark/benchmark.json
+python3 harness/music/package_quality.py data/plan023-quality-benchmark/benchmark.json /absolute/new-package/Gemma_Improved
+python3 harness/music/package_quality.py data/plan023-cli-quality-benchmark/benchmark.json /absolute/new-package/Codex_Reference
+```
+
+Python은NumPy지원실행파일을사용한다. 전체16개실제결과가필요하고기존패키지는덮어쓰지않는다. 재개는완료원본SHA를먼저확인한다. `quality-probe.ts`는같은공개Jazz입력의단일공급자진단이며초기실패/부분후보를전달음원에포함하지않는다. `finalize_quality.ts`는새canonicalscore/원본SHA·같은brief·참고자료를다시검사하고구조비교를작성한다. 실제청취평가는별도이며작성음표수·신호를음악성평점으로사용하지않는다.
+
+`verify_quality.py`는두새16곡세트가완료된뒤실제32곡의원본/Provenance/Upload WAV를전부디코딩하고SHA/형식/길이/peak/독립inode/악보복사/MIDI note-on-off·EOT를다시검사한다. 같은입력과참고자료digest를대조한후새출력폴더에전수검증JSON·리듬비교CSV·빈청취평가CSV를쓴다. 실패하면완료패키지로표시하지않는다.
+
+```sh
+python3 harness/music/verify_quality.py data/plan023-quality-benchmark/benchmark.json data/plan023-cli-quality-benchmark/benchmark.json /absolute/package/Gemma_Improved /absolute/package/Codex_Reference /absolute/package/Comparison
+```
+
+### 최종 스타일 보존 선율 변주
+
+사용자청취피드백에따라최종Gemma세트는CLI원본의그루브·편성·반주를유지한새선율변주다. 실제CLI전용DB/music을별도`data/plan023-style-matched`에복제하고기준checkpoint/악보를`parent-benchmark.json`/`parent-artifacts`로보존한뒤실행한다. 첫회원/같은project의실제parentgeneration을참조하며가짜job을만들지않는다. 이전rough16변주는rough-melody-pass에보존하고최종16변주의초안/polish응답을기록했다.
+
+```sh
+TSX_TSCONFIG_PATH=backend/tsconfig.json node --import tsx harness/music/quality-benchmark.ts data/plan023-style-matched llamacpp reference
+node --import tsx harness/music/finalize_quality.ts data/plan023-style-matched/benchmark.json data/plan023-cli-quality-benchmark/benchmark.json
+python3 harness/music/package_quality.py data/plan023-style-matched/benchmark.json /absolute/package/Gemma_Style_Matched
+python3 harness/music/verify_quality.py data/plan023-style-matched/benchmark.json data/plan023-cli-quality-benchmark/benchmark.json /absolute/package/Gemma_Style_Matched /absolute/package/Codex_Reference /absolute/package/Comparison
+```
+
+Gemma는실제반주context로draft후polish를작성한다. finalizer는원본비교를통해멜로디slot외pitch와전체리듬·gain/pan·구간·cadenceanchor불변을검사한다. 공개품질기록에parent출처/새pitch작성수를포함하고원본전체음표집계를Gemma새작성량으로사용하지않는다.16독립CLI곡+16Gemma변주=32파일이며청취평가는별도다.
