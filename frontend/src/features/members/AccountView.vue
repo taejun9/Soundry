@@ -91,7 +91,7 @@ onMounted(load);
             : '다시, 당신의 사운드로'
       }}
     </h1>
-    <p class="page-description">이 컴퓨터에 저장되는 로컬 회원 계정입니다.</p>
+    <p class="page-description">Soundry 서버에 저장되는 로컬 회원 계정입니다.</p>
     <p v-if="error" class="error-banner" role="alert">{{ error }}</p>
     <p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
     <template v-if="session.member">

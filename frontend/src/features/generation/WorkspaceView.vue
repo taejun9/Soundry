@@ -76,7 +76,7 @@ onBeforeUnmount(() => { sequence++; controller?.abort(); metadataController?.abo
   <section v-else-if="error" class="empty-state workspace-select"><span class="empty-icon"><StudioIcon name="folder" /></span><h1>{{ notFound ? '프로젝트를 찾을 수 없어요' : '프로젝트를 불러오지 못했어요' }}</h1><p role="alert">{{ notFound ? '주소를 확인하거나 다른 프로젝트를 선택해 주세요.' : error }}</p><div class="inline-actions"><button type="button" class="button button-secondary" @click="loadProject">다시 시도</button><RouterLink to="/projects" class="button button-primary">프로젝트 목록</RouterLink></div></section>
   <template v-else-if="project">
     <RouterLink to="/projects" class="text-link workspace-back">모든 프로젝트<StudioIcon name="arrow" /></RouterLink>
-    <section class="page-heading"><div class="workspace-title"><p class="eyebrow accent-text">CREATE YOUR NEXT SOUND</p><h1 class="break-name">{{ project.name }}</h1><p class="page-description">{{ project.trackCount }}곡 · 최근 수정 <time :datetime="project.updatedAt">{{ projectDate(project.updatedAt) }}</time></p></div><span class="outline-tag">이 컴퓨터에 저장됨</span></section>
+    <section class="page-heading"><div class="workspace-title"><p class="eyebrow accent-text">CREATE YOUR NEXT SOUND</p><h1 class="break-name">{{ project.name }}</h1><p class="page-description">{{ project.trackCount }}곡 · 최근 수정 <time :datetime="project.updatedAt">{{ projectDate(project.updatedAt) }}</time></p></div><span class="outline-tag">Soundry 서버에 저장됨</span></section>
     <p v-if="metadataError" class="error-banner" role="alert">{{ metadataError }}</p>
     <ProjectStudio :key="project.id" :project-id="project.id" @project-changed="refreshMetadata" />
   </template>

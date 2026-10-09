@@ -18,6 +18,7 @@ import type { BatchStorage } from './storage/storage.types.js';
 // override 항목은 같은 프로세스의 통합 테스트에서만 주입한다. HTTP 입력으로 구현체를 선택할 수 없다.
 export interface ApplicationOptions {
   uiPort?: string;
+  lanHost?: string;
   dataDir?: string;
   musicProvider?: string;
   /** In-process integration test dependencies, never environment or HTTP options. */
@@ -43,7 +44,7 @@ export async function createApplication(options: ApplicationOptions = {}): Promi
   app.set('trust proxy', false);
   // Host/Origin을 먼저 검사해 외부 사이트 요청이 JSON 파싱이나 도메인 처리에 도달하지 않게 한다.
   // 압축 해제를 금지하고 64 KiB 상한을 두어 작은 로컬 API가 예상 밖 본문을 처리하지 않게 한다.
-  app.use(createLocalBoundary(uiPort));
+  app.use(createLocalBoundary(uiPort, options.lanHost ?? process.env.SOUNDRY_LAN_HOST));
   app.use(express.json({ limit: '64kb', strict: true, inflate: false }));
   app.use(jsonErrorHandler);
   app.setGlobalPrefix('api');

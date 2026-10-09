@@ -1,3 +1,4 @@
+import { COMPOSITION_CORPUS } from '../../../shared/composition-corpus.js';
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { CompositionKnowledge, GenerationInput, KnowledgeReference } from '../../../shared/contracts.js';
@@ -20,6 +21,15 @@ export class KnowledgeService {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
   list(memberId: string): CompositionKnowledge[] {
     return (this.database.client.prepare('SELECT * FROM composition_knowledge WHERE member_id=? ORDER BY updated_at DESC,id LIMIT 500').all(memberId) as Row[]).map(publicRow);
+  }
+  importCurated(memberId: string): { added: number; skipped: number; total: number } {
+    return this.database.client.transaction(() => {
+      const existing = this.list(memberId); const seen = new Set(existing.map(item => item.content));
+      const pending = COMPOSITION_CORPUS.filter(item => !seen.has(item.content));
+      if (existing.length + pending.length > 500) throw new AppError(409, 'KNOWLEDGE_LIMIT', '기본 자료를 추가할 공간이 부족해요. 기존 지식을 정리해 주세요.');
+      for (const item of pending) this.save(memberId,item);
+      return { added: pending.length, skipped: COMPOSITION_CORPUS.length-pending.length, total: existing.length+pending.length };
+    })();
   }
   private owned(id: string, memberId: string): Row {
     const row = this.database.client.prepare('SELECT * FROM composition_knowledge WHERE id=? AND member_id=?').get(id, memberId) as Row | undefined;
@@ -65,7 +75,7 @@ export class KnowledgeService {
       if (!item.trackId) return item;
       try { return { ...item, content: item.content + '\nEvaluated arrangement structure: ' + this.composition(item.trackId).summary }; } catch { return item; }
     });
-    const items = retrieveKnowledge(knowledge, [input.prompt, input.settings.genre, input.settings.mood].filter(Boolean).join(' '), provider === 'cli');
+    const items = retrieveKnowledge(knowledge, [input.prompt, input.settings.genre, input.settings.mood].filter(Boolean).join(' '), provider === 'cli', input.settings.genre);
     this.database.client.transaction(() => {
       for (const [ordinal, item] of items.entries()) this.database.client.prepare('INSERT INTO generation_knowledge VALUES(?,?,?,?,?)').run(id, ordinal, item.reference.id, item.reference.digest, item.reference.rating);
     })();

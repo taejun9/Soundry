@@ -161,3 +161,5 @@ plan-017은 로컬 회원·서버 세션·등급·사용량, 랜딩/상품 페�
 사용량은 별도 영속 ledger이며 generation insert/update trigger로 예약·상태 변경을 반영한다. 접수의 동일 requestKey 확인과 quota 검사·insert는 한 IMMEDIATE transaction으로 실행한다. 실패/취소 복원과 삭제 후 사용량 보존을 DB에서 유지한다. 등급은 매 요청 DB 조회값을 사용한다.
 
 편집 arrangement는 프로젝트에 JSON으로 저장하고 참조 Track의 소속·길이·범위·클립/행 수를 서버에서 검증한다. Web Audio의 local audio decode/scheduling으로 클립을 겹쳐 재생하며 반복·offset·gain을 반영한다. 미리듣기를 시작하면 기존 플레이어를 정지하고 기존 플레이어 재생 시 믹스를 정지한다. OfflineAudioContext에서 같은 클립을 렌더링해 PCM16 stereo WAV를 내보낸다. 음원 source 수/길이를 제한해 디코딩 메모리 사용을 제한한다.
+
+plan-021의 승인된 Windows 테스트는 [LAN gateway](lan.md)에서 빌드된 화면과 고정 API proxy만 제공한다. API·Gemma는 loopback을 유지하며 데이터는 맥북에 저장한다.

@@ -50,11 +50,11 @@ describe('llama.cpp local composition contract', () => {
     await expect(new LlamaCppRunner({port:pending.port,timeoutMs:30}).compose('music',{},signal())).rejects.toMatchObject({code:'LOCAL_TIMEOUT'});
   });
   it('composes motifs then arranges only existing IDs with app-calculated section timing',async()=>{
-    const input={prompt:'original Jazz',settings:{bpm:120,durationSeconds:90,genre:'Jazz',mood:'warm',seed:'original'},variationCount:1};
+    const input={prompt:'original Classical',settings:{bpm:120,durationSeconds:90,genre:'Classical',mood:'warm',seed:'original'},variationCount:1};
     const respond=(body:Record<string,unknown>)=>{
       const schema=(body.response_format as {schema:{properties:Record<string,unknown>}}).schema;
       let output:unknown;
-      if(schema.properties.patterns) output={version:1,bpm:120,genre:'Jazz',mood:'warm',seed:'original',sections:(schema.properties.sections as {const:unknown}).const,patterns:Array.from({length:6},(_,i)=>({id:'m'+(i+1),bars:1,notes:Array.from({length:6},(_,n)=>({beat:n/2,duration:0.4,pitch:48+i*2+n,velocity:0.6}))}))};
+      if(schema.properties.patterns) output={version:1,bpm:120,genre:'Classical',mood:'warm',seed:'original',sections:(schema.properties.sections as {const:unknown}).const,patterns:Array.from({length:6},(_,i)=>({id:'m'+(i+1),bars:1,notes:Array.from({length:6},(_,n)=>({beat:n/2,duration:0.4,pitch:48+i*2+n,velocity:0.6}))}))};
       else output=Object.fromEntries(Object.keys(schema.properties).map((name,index)=>[name,[0,1].map(n=>({patternId:'m'+((index*2+n)%6+1),instrument:n?'piano':'bass',transpose:0,gain:0.4,pan:n?0.2:0}))]));
       return {choices:[{finish_reason:'stop',message:{role:'assistant',content:JSON.stringify(output)}}]};
     };
@@ -62,4 +62,36 @@ describe('llama.cpp local composition contract', () => {
     const score=parseComposition(result,input);expect(score.parts).toHaveLength(10);expect(score.parts[0]).toMatchObject({startBar:0,repeats:4});expect(score.parts.at(-1)).toMatchObject({startBar:34,repeats:11});
     expect(s.calls.filter(c=>c.path==='/v1/chat/completions')).toHaveLength(2);
   });
+  it('keeps requested percussion and low bass, and rejects missing drums, high bass or incompatible transposition',async()=>{
+    const input={prompt:'Pop with drums',settings:{bpm:120,durationSeconds:90,genre:'Pop',mood:'bright',seed:'original'},variationCount:1};
+    for (const mode of ['valid','missing-drums','high-bass','semitone','wrong-bass']) {
+      const respond=(body:Record<string,unknown>)=>{
+        const schema=(body.response_format as {schema:{properties:Record<string,unknown>}}).schema;
+        const ids=['m1','m2','m3','m4','d1','d2'];
+        let output:unknown;
+        if (schema.properties.patterns) output={version:1,...input.settings,sections:(schema.properties.sections as {const:unknown}).const,patterns:ids.map((id,i)=>({id,bars:1,notes:Array.from({length:6},(_,n)=>({beat:n/2,duration:0.4,pitch:id.startsWith('d')?[36,38,42,36,38,42][n]:id==='m3'?(mode==='high-bass'?70:40)+n:60+i*2+n,velocity:0.6}))}))};
+        else output=Object.fromEntries(Object.keys(schema.properties).map((name,index)=>[name,ids.filter(id=>!(mode==='missing-drums'&&name==='chorus'&&id.startsWith('d'))).map(id=>({patternId:id,instrument:id.startsWith('d')?'drums':id==='m3'?'bass':mode==='wrong-bass'&&id==='m1'?'bass':id==='m1'?'piano':'synth',transpose:mode==='semitone'&&id==='m1'?1:0,gain:0.3+index*0.05,pan:0}))]));
+        if (schema.properties.patterns) delete (output as Record<string,unknown>).durationSeconds;
+        return {choices:[{finish_reason:'stop',message:{role:'assistant',content:JSON.stringify(output)}}]};
+      };
+      const s=await server({respond}); const call=new LlamaCppRunner({port:s.port}).compose('original music',llamaCompositionSchema(input),signal());
+      if (mode==='valid') { const score=parseComposition(await call,input);expect(score.parts.some(part=>part.instrument==='drums')).toBe(true);expect(score.parts.filter(part=>part.instrument==='bass').every(part=>part.patternId==='m3'&&part.transpose===0)).toBe(true); }
+      else await expect(call).rejects.toMatchObject({code:'LOCAL_INVALID_OUTPUT'});
+    }
+  });
+
+  it('retains explicit quarter kicks in verse and chorus and rejects duplicate kick beats or omitted groove',async()=>{
+    const input={prompt:'House four-on-the-floor drums',settings:{bpm:120,durationSeconds:90,genre:'House',mood:'bright',seed:'original'},variationCount:1};
+    for (const mode of ['valid','duplicate-beat','missing-verse']) {
+      const respond=(body:Record<string,unknown>)=>{
+        const schema=(body.response_format as {schema:{properties:Record<string,unknown>}}).schema;const ids=['m1','m2','m3','m4','d1','d2'];
+        const output=schema.properties.patterns?{version:1,bpm:120,genre:'House',mood:'bright',seed:'original',sections:(schema.properties.sections as {const:unknown}).const,patterns:ids.map((id,i)=>({id,bars:1,notes:Array.from({length:id==='d1'?4:6},(_,n)=>({beat:id==='d1'?(mode==='duplicate-beat'&&n===1?0:n):n/2,duration:0.25,pitch:id==='d1'?36:id==='d2'?42:id==='m3'?40+n:60+i*2+n,velocity:0.6}))}))}:Object.fromEntries(Object.keys(schema.properties).map((name,index)=>[name,ids.filter(id=>!(mode==='missing-verse'&&name==='verse'&&id==='d1')).map(id=>({patternId:id,instrument:id.startsWith('d')?'drums':id==='m3'?'bass':'piano',transpose:0,gain:0.3+index*0.05,pan:0}))]));
+        return {choices:[{finish_reason:'stop',message:{role:'assistant',content:JSON.stringify(output)}}]};
+      };
+      const s=await server({respond});const call=new LlamaCppRunner({port:s.port}).compose('original',llamaCompositionSchema(input),signal());
+      if(mode==='valid') {const score=parseComposition(await call,input);expect(score.patterns.find(pattern=>pattern.id==='d1')!.notes.map(note=>note.beat)).toEqual([0,1,2,3]);}
+      else await expect(call).rejects.toMatchObject({code:'LOCAL_INVALID_OUTPUT'});
+    }
+  });
+
 });

@@ -3,6 +3,7 @@
  * 인증 계정을 추가하는 대신 다른 웹사이트가 브라우저를 통해 로컬 데이터를 변경하는 요청을 차단한다.
  */
 import type { RequestHandler } from 'express';
+import { readLanHost } from '../../../shared/lan-config.js';
 
 export const API_HOST = '127.0.0.1';
 export const API_PORT = 3000;
@@ -21,8 +22,10 @@ export function readUiPort(value: string | undefined): number {
 }
 
 // Host는 프록시 헤더 대신 실제 Host를 검증한다. 허용 Origin만 응답에 반영하며 wildcard/credentials를 열지 않는다.
-export function createLocalBoundary(uiPort: number): RequestHandler {
+export function createLocalBoundary(uiPort: number, lanHost?: string): RequestHandler {
   const allowedOrigins = new Set([`http://127.0.0.1:${uiPort}`, `http://localhost:${uiPort}`]);
+  const lan = readLanHost(lanHost);
+  if (lan) allowedOrigins.add(`http://${lan}:${uiPort}`);
   return (request, response, next): void => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Cache-Control', 'no-store');

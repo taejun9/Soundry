@@ -162,3 +162,23 @@ Node 검증은 **18개 회귀**다. 실제 네트워크 대신 대역 응답을 
 새 계획에는 새로운 상태 폴더를 사용한다. 기존 완료 checkpoint를 다른 계획으로 바꾸지 않는다. 회원 설정을 마친 앱의 API에는 로컬 회원 세션이 필요하며, 명령행 runner 자체는 로그인 기능을 제공하지 않는다. plan-018은 화면에서 첫 작업을 접수한 뒤 메모리의 테스트 회원 세션을 쓰는 별도 일회성 호출로 동일 작업을 이어갔다. 세션·인증값은 Git이나 업로드 산출물에 포함하지 않는다.
 
 추가 Node 회귀는 10곡 전체 제작·전수 원본 확인·중복 접수 없는 재개와 잘못된 계획의 사전 거부를 검사한다. 추가 Python 항목은 대역 없는 10곡 원본 유지 패키징과 SHA·안내 곡 수, 빈/과대/중복/완료 불일치 계획의 preflight를 확인한다. 테스트 fixture를 실제 생성 음원으로 집계하지 않는다.
+
+
+## 로컬 Gemma 16장르 검사와 RAG 자료
+
+작곡 corpus는 기존 곡을 복사하지 않은96건의 독자 작성 관찰이며 사람의 청취 평가나 가중치 훈련이 아니다. 실제 앱 서버를 먼저 중지한 뒤 명시한 기존 data root와 회원 UUID로만 저장한다. DB 백업·기존 자료 보존·본문 중복 생략·500개 상한을 적용한다. 다른 프로세스가 data root를 사용하면 실패하며 그 경계를 우회하지 않는다.
+
+```sh
+TSX_TSCONFIG_PATH=backend/tsconfig.json node --import tsx harness/music/seed-corpus.ts /absolute/existing-data-root MEMBER_UUID
+```
+
+아래 검사도 사용자가 명시적으로 실행하는 도구다. 전용 `plan021-genre-benchmark` data root를 사용하며 기존 앱 데이터와 분리한다. 실제 실행 중인 loopback llama.cpp만 호출한다. 16개 지원 장르/120초/variation1로 실제 생성하고, 장르별 최대3회의 기록된 새생성을 허용한다. 이는 일반 CLI 배치의 실패 즉시 중단과 다른, 이번 품질 검사의 승인된 제한이다. provider 자동 fallback/무한 재시도는 없다. checkpoint에는 모든 실패와 성공을 남기며 재개 시 동일 요청 키를 조회한다. 별도 QA계정의 무작위 비밀번호/세션은 공개하지 않는다.
+
+```sh
+TSX_TSCONFIG_PATH=backend/tsconfig.json node --import tsx harness/music/genre-benchmark.ts /absolute/data/plan021-genre-benchmark
+python3 harness/music/package_benchmark.py /absolute/data/plan021-genre-benchmark/benchmark.json /absolute/new-upload-folder
+```
+
+Python에는 NumPy가 필요하다. 패키지는16개 완료본의 실제 SHA·WAV·공급자/모델을 확인한 뒤 생성하고 계정정보·원본 로컬경로는 공개하지 않는다. WAV 신호통과와 악보 구조통과를 음악적 우수성으로 환산하지 않는다. 청취/Suno비교는 수행하지 않았으면 미검증으로 남긴다. 최종 형식과 headroom은 [SoundCloud 공식 업로드 요건](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)을 따른다.
+
+최종벤치마크후 `node --import tsx harness/music/finalize-benchmark.ts /absolute/data/plan021-genre-benchmark/benchmark.json`으로원본SHA/악보를재검증한다. seed-corpus.ts의선택적세번째인자로이완료benchmark.json을주면자동구조관찰16건을별도추가한다. 평점은null이고청취승인사례로표시하지않는다. 원본96건과관찰16건의역할을구분한다.

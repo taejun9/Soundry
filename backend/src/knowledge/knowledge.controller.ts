@@ -12,6 +12,10 @@ function member(request: MemberRequest): string {
 export class KnowledgeController {
   constructor(@Inject(KnowledgeService) private readonly knowledge: KnowledgeService) {}
   @Get('knowledge') list(@Req() r: MemberRequest) { return { items: this.knowledge.list(member(r)) }; }
+  @Post('knowledge/curated/import') importCurated(@Req() r: MemberRequest, @Body() body: unknown) {
+    if (typeof body !== 'object' || body === null || Array.isArray(body) || Object.keys(body).length) throw new AppError(400, 'INVALID_INPUT', '기본 자료 추가에는 다른 입력이 필요하지 않습니다.');
+    return this.knowledge.importCurated(member(r));
+  }
   @Post('knowledge') create(@Req() r: MemberRequest, @Body() body: unknown) { return this.knowledge.save(member(r), body); }
   @Patch('knowledge/:id') update(@Req() r: MemberRequest, @Param('id') id: string, @Body() body: unknown) { return this.knowledge.save(member(r), body, generationId(id)); }
   @Delete('knowledge/:id') remove(@Req() r: MemberRequest, @Param('id') id: string) { return this.knowledge.remove(generationId(id), member(r)); }

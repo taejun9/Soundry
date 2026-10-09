@@ -65,6 +65,6 @@ function settingValue(key: string, value: string | number | undefined) { return 
       </li>
     </ol>
     <div v-if="nextCursor" class="load-more"><button type="button" class="button button-secondary" :disabled="loading || loadingMore" @click="emit('more')">{{ loadingMore ? '불러오는 중…' : '이전 작업 더 보기' }}</button></div>
-    <p class="history-footnote">음원은 이 컴퓨터에 저장됩니다. 다운로드 버튼으로 원본 파일을 저장할 수 있어요.</p>
+    <p class="history-footnote">음원은 Soundry 서버에 저장됩니다. 다운로드 버튼으로 원본 파일을 저장할 수 있어요.</p>
   </section>
 </template>

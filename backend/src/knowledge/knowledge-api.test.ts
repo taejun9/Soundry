@@ -79,6 +79,23 @@ describe('composition memory ownership and lifecycle', () => {
     expect((await api('PATCH','/knowledge/' + added.body.id, notes('수정 재즈', true), b.cookie)).status).toBe(200);
     expect((await api('DELETE','/knowledge/' + added.body.id, undefined, b.cookie)).status).toBe(200);
   });
+  it('imports original genre guidance idempotently for the authenticated owner only', async () => {
+    expect((await api('POST','/knowledge/curated/import',{})).status).toBe(401);
+    const a=await member('admin'); const b=await member('writer');
+    expect((await api('POST','/knowledge/curated/import',{memberId:b.id},a.cookie)).status).toBe(400);
+    expect((await api('POST','/knowledge/curated/import',{},a.cookie)).body).toEqual({added:96,skipped:0,total:96});
+    expect((await api('POST','/knowledge/curated/import',{},a.cookie)).body).toEqual({added:0,skipped:96,total:96});
+    expect(app.get(KnowledgeService).list(b.id)).toEqual([]);
+    expect(app.get(KnowledgeService).list(a.id).every(item=>!item.allowRemote&&item.rating===null&&item.trackId===null)).toBe(true);
+    expect((await api('POST','/knowledge/curated/import',{},b.cookie)).body).toEqual({added:96,skipped:0,total:96});
+    expect(new Set(app.get(KnowledgeService).list(b.id).map(item=>item.id))).not.toEqual(new Set(app.get(KnowledgeService).list(a.id).map(item=>item.id)));
+  });
+  it('does not partially import when the knowledge limit would be exceeded', async () => {
+    const a=await member('admin'); const service=app.get(KnowledgeService);
+    for (let i=0;i<405;i++) service.save(a.id,notes('existing '+i));
+    expect((await api('POST','/knowledge/curated/import',{},a.cookie)).status).toBe(409);
+    expect(service.list(a.id)).toHaveLength(405);
+  });
   it('rejects missing consent, unsupported rights/fields and oversized or control text', async () => {
     const a = await member('admin'); const input = notes('지식');
     for (const body of [{ ...input, allowRemote: undefined }, { ...input, allowRemote: 'true' }, { ...input, rights: 'copyrighted' }, { ...input, rights: { toString: 'own' } }, { ...input, tags: null }, { ...input, content: 'x'.repeat(4001) }, { ...input, content: 'bad\u0000note' }, { ...input, path: '/private/file' }]) expect((await api('POST','/knowledge', body, a.cookie)).status).toBe(400);

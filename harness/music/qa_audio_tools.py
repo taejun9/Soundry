@@ -207,6 +207,16 @@ with tempfile.TemporaryDirectory(prefix="soundry-music-qa-") as temporary:
         except ValueError:
             pass
     checks.append("실제 완료 결과의 CLI provider/model 일치 요구·모델 fallback 거부")
+    llama_plan = {**plan, "provider": "llamacpp", "model": "llamacpp:gemma-test:score-v1"}
+    llama_entry = {**results[0], "provider": "llamacpp", "model": llama_plan["model"]}
+    assert module.public_provenance(llama_plan, plan["tracks"][0], llama_entry)["provider"] == "llamacpp"
+    for bad_model in ("mock", "llamacpp:/private/model:score-v1", "llamacpp:https://remote:score-v1", "llamacpp:" + "a" * 91 + ":score-v1"):
+        try:
+            module.public_provenance({**llama_plan, "model": bad_model}, plan["tracks"][0], {**llama_entry, "model": bad_model})
+            raise AssertionError("unsafe llama model accepted")
+        except ValueError:
+            pass
+    checks.append("로컬 llama.cpp 악보 출처 허용·실제 모델 일치·경로/원격주소/과대 모델 거부")
     for name, unsafe_source in (("high-peak", source), ("floating", float_file)):
         unsafe_results = copy.deepcopy(results)
         unsafe_results[0]["localFile"] = str(unsafe_source)

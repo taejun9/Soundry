@@ -33,3 +33,9 @@ export async function compositionArtifact(id: string, signal?: AbortSignal): Pro
   if (!object(result) || !object(result.score) || typeof result.summary !== 'string') throw invalid();
   return { score: result.score, summary: result.summary };
 }
+
+export async function importCuratedKnowledge(signal?: AbortSignal): Promise<{ added: number; skipped: number; total: number }> {
+  const result = await requestJson('/knowledge/curated/import', { method: 'POST', body: {}, signal });
+  if (!object(result) || !['added','skipped','total'].every(key => typeof result[key] === 'number' && Number.isInteger(result[key]) && result[key] >= 0 && result[key] <= 500)) throw invalid();
+  return result as { added: number; skipped: number; total: number };
+}

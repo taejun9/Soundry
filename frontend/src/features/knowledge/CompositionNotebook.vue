@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, useId, watch } from 'vue';
 import type { CompositionKnowledge, GenerationSummary, KnowledgeReference } from '../../../../shared/contracts';
-import { compositionArtifact, listKnowledge, saveFeedback, saveKnowledge, knowledgeReferences } from '../../api/knowledge';
+import { compositionArtifact, importCuratedKnowledge, listKnowledge, saveFeedback, saveKnowledge, knowledgeReferences } from '../../api/knowledge';
 import type { KnowledgeInput } from '../../api/knowledge';
 import { errorMessage, requestJson } from '../../api/client';
 import { session } from '../members/session';
@@ -42,6 +42,9 @@ async function mutate(action: (signal: AbortSignal) => Promise<unknown>, message
   try { await action(signal); if (signal.aborted) return; notice.value = message; await load(); }
   catch (reason) { if (!signal.aborted) error.value = errorMessage(reason); }
   finally { if (!signal.aborted) busy.value = false; }
+}
+async function importBasics() {
+  await mutate(signal => importCuratedKnowledge(signal), '장르별 기본 자료를 준비했어요. 같은 내용은 중복 저장하지 않습니다.');
 }
 async function save() {
   const current = editing.value;
@@ -86,6 +89,8 @@ onBeforeUnmount(() => { controller.abort(); selectionController?.abort(); sequen
     <p v-if="!memberId">로그인하면 나만의 작곡 지식과 평가를 저장할 수 있어요.</p>
     <template v-else>
       <p v-if="error" class="error-banner" role="alert">{{ error }}</p><p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
+      <button type="button" class="button button-secondary" :disabled="busy || loading" @click="importBasics">16장르 기본 작곡 자료 추가</button>
+      <p class="notebook-copy">형식·화성·리듬·선율·편곡·평가 기준 96건을 내 지식에 추가합니다. 독자 작성 기본 자료이며 청취 평가 사례는 아닙니다. 추가 자료는 로컬 전용으로 저장됩니다.</p>
       <div class="notebook-columns">
         <form @submit.prevent="save">
           <h3>{{ editing ? '작곡 지식 수정' : '작곡 지식 추가' }}</h3>

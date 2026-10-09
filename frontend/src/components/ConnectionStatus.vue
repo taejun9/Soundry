@@ -45,6 +45,6 @@ onUnmounted(() => { requestId++; controller?.abort(); });
       </button>
     </div>
     <p v-if="state === 'disconnected'">서버 실행을 확인한 뒤 다시 연결해 주세요.</p>
-    <p v-else>이 컴퓨터에서 실행 중</p>
+    <p v-else>Soundry 서버에서 실행 중</p>
   </div>
 </template>

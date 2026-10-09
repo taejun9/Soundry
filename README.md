@@ -149,3 +149,5 @@ GrooveForge의 코드·DB·런타임을 공유하지 않습니다. 회원은 이
 ### 이미 구동한 llama.cpp Gemma 사용
 
 `http://127.0.0.1:8089`의llama.cpp는 `.env`에서 `MUSIC_PROVIDER=llamacpp`, `SOUNDRY_LLAMA_PORT=8089`로선택하고Soundry를재시작한다. 현재로드된단일모델을자동확인하므로Ollama나추가모델설치가필요없다. 로컬작곡지식RAG·청취평가·악보JSON/MIDI를같이사용한다. 사용자Gemma서버를앱이종료하거나설정을변경하지않는다.
+
+같은 네트워크의 Windows 테스트는 [LAN 접속 설정](docs/architecture/lan.md)을 따른다. `npm run lan`은 명시한 내부 IP에서 빌드된 화면만 제공한다.

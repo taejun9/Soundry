@@ -28,3 +28,7 @@ loopback 바인딩과 Host/Origin allowlist를 사용한다. 서버 측 path con
 ## 작곡 지식 — 2026-10-09
 
 회원별 로컬 지식과 청취 평가를 저장한다. CLI에 추가 전송하는 항목은 명시적으로 동의한 allowRemote=true뿐이며 기본 폼은false다. 평가와 연결된 곡 구조 요약도 같은 동의를 적용한다. 전체 악보/음원/회원 정보는 RAG 요청에 추가하지 않는다. Ollama는 숫자 loopback endpoint와 cloud.disabled=true를 요구한다. 사용자 홈 설정·키·임의 파일·인터넷 자료를 자동 수집하지 않는다. 삭제는 향후 검색에서 제외하고 과거 참고 기록의 FK를NULL로 바꾸며 이미 전송된 내용을 회수하지 않는다.
+
+## 승인된 내부 LAN 테스트 — 2026-10-09
+
+Windows 접속 요청에 따라 [명시적 LAN gateway](../architecture/lan.md)를 제공한다. 기본은 loopback이고 SOUNDRY_LAN_HOST를 지정해 별도로 실행한 빌드 화면만 같은 내부 네트워크에 공개한다. 회원 데이터와 음원은 맥북 서버에 저장되며 인증 후 브라우저에 전달된다. API/모델 바인딩은 loopback을 유지하고 정확한 LAN UI Origin만 추가 허용한다. 최초 회원 설정은 loopback에서 완료해야 한다. HTTP는 신뢰하는 내부 LAN 테스트용이며 외부 인터넷 공개·클라우드 저장은 추가하지 않는다.

@@ -9,7 +9,7 @@ base URL: `http://localhost:3000/api`. 개발 중 UI는 Vite `/api` proxy를 사
 - 목록: `{ items, nextCursor }`. 기본 limit 30, 최대 100. 일반 목록은 createdAt/id 내림차순 정렬과 같은 쌍의 cursor를 사용한다. project 목록은 updatedAt/id 내림차순 정렬과 같은 updatedAt/id cursor를 사용한다. 프로젝트 변경 후 목록을 새로 읽을 때는 기존 cursor를 버리고 첫 페이지부터 읽는다.
 - 입력 길이·enum·범위·필수 필드와 알 수 없는 필드를 검증한다. JSON body 기본 상한 64 KiB.
 - 400 입력 오류, 404 없음, 409 상태/동일 requestKey 입력 충돌, 429 queue full, 500 내부 오류.
-- localhost/127.0.0.1의 지정 포트만 Host allowlist에 두고 UI origin만 허용한다. UI 포트는 기본 5173 또는 명시한 `UI_PORT` 하나다. mutation은 허용 Origin과 JSON/custom header를 검증해 다른 웹페이지의 단순 요청을 거부한다. wildcard CORS를 사용하지 않는다.
+- localhost/127.0.0.1의 지정 포트만 Host allowlist에 두고 UI origin만 허용한다. 사용자가 승인한 LAN 테스트는 SOUNDRY_LAN_HOST의 정확한 내부 IPv4/동일 UI 포트 origin을 추가한다. UI 포트는 기본 5173 또는 명시한 `UI_PORT` 하나다. mutation은 허용 Origin과 JSON/custom header를 검증해 다른 웹페이지의 단순 요청을 거부한다. wildcard CORS를 사용하지 않는다.
 - loopback listen을 강제하고 0.0.0.0으로 바꾸지 않는다. 로컬 회원·opaque 서버 세션을 사용하며 JWT·외부 인증 서버는 사용하지 않는다.
 
 ## Endpoint
@@ -102,3 +102,5 @@ track title은 표시용이며 CR/LF·경로 구분자 등을 제거한 안전�
 | GET | /tracks/:id/composition.mid | 소유자만 type1 MIDI attachment |
 
 지식은 가입 전에도 로그인을 요구한다. 원격 동의는 필수 boolean이며 생략/문자열을 거부한다. 앱은 임의 파일 경로·웹수집 입력을 받지 않는다. 자세한 전송과 검색 경계는 [작곡 기억](composition-memory.md)을 따른다.
+
+`POST /knowledge/curated/import`는로그인한회원의빈JSON요청으로기본작곡자료96건을추가한다. 본문중복은건너뛰고500개상한을추가전확인하며트랜잭션으로적용한다. 다른회원ID·임의파일·전송동의변경은받지않는다.

@@ -120,8 +120,11 @@ def public_provenance(plan, track, entry):
     if not trace.get("requestId") or len(trace["requestId"]) > 128:
         raise ValueError("완료 request ID 형식이 잘못됐습니다.")
     record.update(trace)
-    if plan.get("provider") != "cli" or plan.get("model") != "codex-composer-local-synth-v1":
-        raise ValueError("CLI 작곡·로컬 합성 모델 제작 계획이 아닙니다.")
+    provider, model = plan.get("provider"), plan.get("model")
+    cli = provider == "cli" and model == "codex-composer-local-synth-v1"
+    llama = provider == "llamacpp" and isinstance(model, str) and re.fullmatch(r"llamacpp:[A-Za-z0-9_.:-]{1,90}:score-v1", model)
+    if not (cli or llama):
+        raise ValueError("지원하는 악보 작곡·로컬 합성 모델 제작 계획이 아닙니다.")
     if entry.get("provider") != plan["provider"] or entry.get("model") != plan["model"]:
         raise ValueError("완료 결과의 공급자/모델이 제작 계획과 다릅니다.")
     record.update({"provider": entry["provider"], "model": entry["model"]})
@@ -410,7 +413,8 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
                            "originalCopyMethod": original_copy_method})
             validate_public(record)
             (provenance / (stem + ".json")).write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            description = record["description"] + "\n\nSoundry에서 Codex CLI의 AI 악보 작곡과 로컬 합성으로 제작한 instrumental 테스트 곡입니다."
+            composer = "Codex CLI" if record["provider"] == "cli" else "로컬 llama.cpp 모델"
+            description = record["description"] + f"\n\nSoundry에서 {composer}의 AI 악보 작곡과 로컬 합성으로 제작한 instrumental 테스트 곡입니다."
             (metadata / (stem + ".txt")).write_text(
                 f'제목: {record["title"]}\n장르: {record["genre"]}\n콘셉트: {record["concept"]}\n'
                 f'설명:\n{description}\n\n태그: ' + ", ".join(record["tags"]) + "\n", encoding="utf-8")
@@ -440,7 +444,7 @@ def package(plan_path: Path, manifest_path: Path, destination: Path, preserve_or
         listening_note = (f"실제 청취를 수행하지 않은 곡: {', '.join(unlistened)}번.\n" if unlistened else "")
         (destination / "읽어 주세요.txt").write_text(
             f"Soundry 테스트 음원 {count}곡\n\n"
-            "Codex CLI가 AI로 악보를 작곡하고 Soundry의 로컬 악기로 합성한 연주곡입니다.\n\n"
+            f"{plan['provider']} 모델이 AI로 악보를 작곡하고 Soundry의 로컬 악기로 합성한 연주곡입니다.\n\n"
             "사용 방법\n"
             "1. 아래 목록에서 원하는 번호·제목·장르·콘셉트·참고 방향을 확인하세요.\n"
             "2. 같은 번호로 시작하는 Upload_WAV의 WAV 파일을 SoundCloud 업로드에 사용하세요.\n"
