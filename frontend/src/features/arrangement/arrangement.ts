@@ -1,7 +1,7 @@
 import type { Arrangement, ArrangementClip } from '../../../../shared/contracts';
 export function audibleClips(arrangement: Arrangement): ArrangementClip[] {
   return arrangement.lanes
-    .filter((l) => !l.muted)
+    .filter((l) => !l.muted && (!arrangement.lanes.some(lane => lane.solo) || l.solo))
     .flatMap((l) => l.clips)
     .filter((c) => c.volume > 0);
 }

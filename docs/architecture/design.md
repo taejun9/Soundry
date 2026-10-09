@@ -163,3 +163,7 @@ plan-017은 로컬 회원·서버 세션·등급·사용량, 랜딩/상품 페�
 편집 arrangement는 프로젝트에 JSON으로 저장하고 참조 Track의 소속·길이·범위·클립/행 수를 서버에서 검증한다. Web Audio의 local audio decode/scheduling으로 클립을 겹쳐 재생하며 반복·offset·gain을 반영한다. 미리듣기를 시작하면 기존 플레이어를 정지하고 기존 플레이어 재생 시 믹스를 정지한다. OfflineAudioContext에서 같은 클립을 렌더링해 PCM16 stereo WAV를 내보낸다. 음원 source 수/길이를 제한해 디코딩 메모리 사용을 제한한다.
 
 plan-021의 승인된 Windows 테스트는 [LAN gateway](lan.md)에서 빌드된 화면과 고정 API proxy만 제공한다. API·Gemma는 loopback을 유지하며 데이터는 맥북에 저장한다.
+
+## 제작 오디오 graph — plan-022
+
+기존 arrangement의 JSON 저장을 optional 필드로 확장한다. DB schema 변경 없이 legacy JSON을 읽는다. frontend의 공통 `scheduleMix`는 BufferSource→clip fade gain→optional Low-pass→dry bus와feed-forward delay→lane gain→StereoPanner→master gain→기존 DynamicsCompressor→destination을 구성한다. 모든 node를 정지/분리하는 release 함수와 source 범위·최대8개/합계600초 검사로 preview/offline 수명과 메모리를 제한한다. Delay에는 feedback이 없고 곡 길이에서 tail을 자른다. export는 실제 렌더 PCM의 peak를 검사해필요한경우만-1dBFS로감쇠한다. 원본 파일은변경하지않는다. [Live 통합 지도](../references/ableton-live-research.md)는전체DAW동등성미완료와후속엔진경계를기록한다.

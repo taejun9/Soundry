@@ -380,6 +380,22 @@ describe('membership, ownership, usage and arrangements', () => {
       (await api<Arrangement>('GET', `/projects/${p.id}/arrangement`, undefined, login.cookie)).body,
     ).toEqual(a);
   });
+  it('round trips optional studio settings, enforces fades and preserves owner access', async () => {
+    await start(); const admin = await register(); const other = await register('other-studio@example.test');
+    const p = await project(admin.cookie);
+    const track = (await complete((await generate(p.id, admin.cookie)).body.id, admin.cookie)).tracks[0]!;
+    const data: Arrangement = {duration:8,bpm:124,snapBeats:0.25,masterVolume:0.6,lanes:[{id:randomUUID(),name:'Studio',muted:false,solo:true,volume:0.8,pan:-0.2,lowpassHz:12000,delaySeconds:0.25,delayWet:0.2,clips:[{id:randomUUID(),trackId:track.id,label:'A',start:0,offset:0,duration:8,volume:0.9,loop:false,fadeIn:0.01,fadeOut:1}]}]};
+    expect((await api('PUT',`/projects/${p.id}/arrangement`,data,admin.cookie)).status).toBe(200);
+    expect((await api<Arrangement>('GET',`/projects/${p.id}/arrangement`,undefined,admin.cookie)).body).toEqual(data);
+    expect((await api('PUT',`/projects/${p.id}/arrangement`,data,other.cookie)).status).toBe(404);
+    for (const fields of [{bpm:0},{bpm:'124'},{snapBeats:0.1},{masterVolume:2},{unknown:1}])
+      expect((await api('PUT',`/projects/${p.id}/arrangement`,{...data,...fields},admin.cookie)).status).toBe(400);
+    for (const fields of [{pan:2},{volume:-0.1},{solo:1},{lowpassHz:0},{delaySeconds:2.1},{delayWet:2}])
+      expect((await api('PUT',`/projects/${p.id}/arrangement`,{...data,lanes:[{...data.lanes[0],...fields}]},admin.cookie)).status).toBe(400);
+    for (const fields of [{fadeIn:-1},{fadeIn:7.5,fadeOut:1},{fadeOut:'1'}])
+      expect((await api('PUT',`/projects/${p.id}/arrangement`,{...data,lanes:[{...data.lanes[0],clips:[{...data.lanes[0]!.clips[0],...fields}]}]},admin.cookie)).status).toBe(400);
+    expect((await api<Arrangement>('GET',`/projects/${p.id}/arrangement`,undefined,admin.cookie)).body).toEqual(data);
+  });
   it('rate limits repeated credential attempts without disclosing secrets', async () => {
     await start();
     const admin = await register();

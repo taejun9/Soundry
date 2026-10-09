@@ -29,7 +29,7 @@ export class ArrangementsController {
   @Put() save(@Param('projectId') value: string, @Body() body: unknown): Arrangement {
     const id = projectId(value);
     this.exists(id);
-    const data = record(body, ['duration', 'lanes']);
+    const data = record(body, ['duration', 'lanes', 'bpm', 'snapBeats', 'masterVolume']);
     if (
       !num(data.duration, 1, 600) ||
       !Array.isArray(data.lanes) ||
@@ -37,10 +37,13 @@ export class ArrangementsController {
       data.lanes.length > 32
     )
       throw invalid();
+    for (const [key, min, max] of [['bpm', 30, 300], ['snapBeats', 0, 4], ['masterVolume', 0, 1]] as const)
+      if (data[key] !== undefined && !num(data[key], min, max)) throw invalid();
+    if (data.snapBeats !== undefined && ![0, 0.25, 0.5, 1, 4].includes(data.snapBeats as number)) throw invalid();
     const ids = new Set<string>();
     let count = 0;
     for (const item of data.lanes) {
-      const lane = record(item, ['id', 'name', 'muted', 'clips']);
+      const lane = record(item, ['id', 'name', 'muted', 'clips', 'volume', 'pan', 'solo', 'lowpassHz', 'delaySeconds', 'delayWet']);
       if (
         typeof lane.id !== 'string' ||
         ids.has(lane.id) ||
@@ -51,12 +54,15 @@ export class ArrangementsController {
         !Array.isArray(lane.clips)
       )
         throw invalid();
+      if (lane.solo !== undefined && typeof lane.solo !== 'boolean') throw invalid();
+      for (const [key, min, max] of [['volume', 0, 1], ['pan', -1, 1], ['lowpassHz', 40, 20000], ['delaySeconds', 0, 2], ['delayWet', 0, 1]] as const)
+        if (lane[key] !== undefined && !num(lane[key], min, max)) throw invalid();
       const laneId = projectId(lane.id);
       if (ids.has(laneId)) throw invalid();
       ids.add(laneId);
       lane.id = laneId;
       for (const item of lane.clips) {
-        const c = record(item, ['id', 'trackId', 'label', 'start', 'offset', 'duration', 'volume', 'loop']);
+        const c = record(item, ['id', 'trackId', 'label', 'start', 'offset', 'duration', 'volume', 'loop', 'fadeIn', 'fadeOut']);
         if (
           typeof c.id !== 'string' ||
           ids.has(c.id) ||
@@ -72,6 +78,9 @@ export class ArrangementsController {
           c.start + c.duration > data.duration
         )
           throw invalid();
+        for (const key of ['fadeIn', 'fadeOut'])
+          if (c[key] !== undefined && !num(c[key], 0, c.duration as number)) throw invalid();
+        if (((c.fadeIn as number | undefined) ?? 0) + ((c.fadeOut as number | undefined) ?? 0) > (c.duration as number)) throw invalid();
         const clipId = projectId(c.id);
         if (ids.has(clipId)) throw invalid();
         ids.add(clipId);

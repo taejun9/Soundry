@@ -182,3 +182,21 @@ python3 harness/music/package_benchmark.py /absolute/data/plan021-genre-benchmar
 Python에는 NumPy가 필요하다. 패키지는16개 완료본의 실제 SHA·WAV·공급자/모델을 확인한 뒤 생성하고 계정정보·원본 로컬경로는 공개하지 않는다. WAV 신호통과와 악보 구조통과를 음악적 우수성으로 환산하지 않는다. 청취/Suno비교는 수행하지 않았으면 미검증으로 남긴다. 최종 형식과 headroom은 [SoundCloud 공식 업로드 요건](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)을 따른다.
 
 최종벤치마크후 `node --import tsx harness/music/finalize-benchmark.ts /absolute/data/plan021-genre-benchmark/benchmark.json`으로원본SHA/악보를재검증한다. seed-corpus.ts의선택적세번째인자로이완료benchmark.json을주면자동구조관찰16건을별도추가한다. 평점은null이고청취승인사례로표시하지않는다. 원본96건과관찰16건의역할을구분한다.
+
+## 제작 스튜디오 브라우저 QA·16장르 export — plan-022
+
+`studio-browser-qa.mjs`는 프로젝트 backend TypeScript 설정과 명시한 local Playwright/Chrome 실행 파일을 사용한다. 개인 브라우저와 분리된 headless 프로필·임시 합성 회원/Mock 프로젝트로 UI를 검사한다. 실행 중인 기존앱3000을 사용하지 않고31306에 테스트 앱을 띄워 Host/Origin 검사를 유지한다.5176에는 이 작업의 Vite가 실행되어야 한다. 실제 음원은 optional benchmark를 지정할 때만 재사용하며 새 AI 생성을 호출하지 않는다. 대역은 테스트 API 연결에만 사용하고, Web Audio render와WAVdownload는실제브라우저에서수행한다.
+
+```sh
+UI_PORT=5176 npm run dev --workspace frontend
+TSX_TSCONFIG_PATH=backend/tsconfig.json \
+SOUNDRY_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+SOUNDRY_CHROME=/absolute/path/to/chrome \
+node --import tsx harness/music/studio-browser-qa.mjs \
+  data/studio-qa /absolute/path/to/plan021-genre-benchmark/benchmark.json
+python3 harness/music/package_studio.py \
+  /absolute/path/to/plan021-genre-benchmark/benchmark.json \
+  data/studio-qa/verification.json /absolute/path/to/new-download-package
+```
+
+경로는로컬설치위치에맞춘다. 브라우저/모델자동설치는하지않는다. benchmark생략시합성UI/신호만검사한다. Rendered출력/Downloads는기존파일을덮어쓰지않는다. 16장르원본SHA·canonical악보·genre대응을검사하고공통mix graph로120초WAV를실제render한다. package도구는전체WAV/원본SHA·MIDI chunk/note pair/EOT를다시검사한뒤업로드본/원본/악보/metadata를별도폴더로보존한다. 청취·LUFS·true peak·DAWimport·SoundCloudupload·전체Live동등성은검사범위밖이다. 합성UI음원은Downloads패키지에넣지않는다.

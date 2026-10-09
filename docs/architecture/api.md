@@ -104,3 +104,7 @@ track title은 표시용이며 CR/LF·경로 구분자 등을 제거한 안전�
 지식은 가입 전에도 로그인을 요구한다. 원격 동의는 필수 boolean이며 생략/문자열을 거부한다. 앱은 임의 파일 경로·웹수집 입력을 받지 않는다. 자세한 전송과 검색 경계는 [작곡 기억](composition-memory.md)을 따른다.
 
 `POST /knowledge/curated/import`는로그인한회원의빈JSON요청으로기본작곡자료96건을추가한다. 본문중복은건너뛰고500개상한을추가전확인하며트랜잭션으로적용한다. 다른회원ID·임의파일·전송동의변경은받지않는다.
+
+## 제작 스튜디오 저장 확장 — plan-022
+
+기존 arrangement JSON에 optional `bpm`(30–300), `snapBeats`(0/0.25/0.5/1/4), `masterVolume`(0–1)을 추가했다. lane에는 optional `volume`(0–1), `pan`(-1–1), `solo`(boolean), `lowpassHz`(40–20000), `delaySeconds`(0–2), `delayWet`(0–1); clip에는 optional `fadeIn/fadeOut`(초,0–clip.duration,합계≤duration)을 추가한다. 없는 필드는 기존 재생 기본값을 사용한다. 기존 JSON shape/소유권/원본 검증을 유지하며 알 수 없는 필드·비유한 값·범위 초과는400이다. Session 순번 view와undo history는별도 API나 회원간 공유 저장을 만들지 않는다.

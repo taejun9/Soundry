@@ -51,3 +51,7 @@ plan-018-screen-music-qa: 전체 앱456·음악 Node18/Python23 및 lint/type/bu
 plan-019-composition-memory: 회원별 작곡 지식·청취 피드백의 lexical RAG, CLI의 항목별 추가 전송 동의, Ollama/Gemma runner와 준비 상태, 검증 악보 저장·JSON/MIDI 내보내기. 사용자는 보컬·음색 모델 도입을 제외하고 작곡까지만 확정했다. 전체 QA와 별도 리뷰를 거치며 실제 Gemma 추론과 판매 가능한 작곡 품질은 설치/청취 평가 전까지 미검증이다. [작곡 품질 gate](../architecture/composition-memory.md)를 따른다.
 
 plan-020-llamacpp-gemma: 사용자가구동한8089의llama.cpp/Gemma직접연결. 실제로컬작곡과RAG·악보/합성저장을검증하고공급자설정을전환한다. 보컬·음색모델은추가하지않는다.
+
+## Live 제작 환경 확장 — 2026-10-09
+
+사용자가 Live의 전체 기능/UI 조사 후 통합 구현을 요청했다. [공식 조사와 기능별 통합 지도](../references/ableton-live-research.md)의 A→B→C→D 단계가 새 목표다. plan-022는 A만 구현·검증한다. B(MIDI/Session/automation)·C(audio engine/DSP/recording)·D(native/하드웨어/extension)는 미구현이며 각각 active plan과 QA·리뷰를 거쳐야 한다. 기존 제외 목록의 피아노롤·실시간 합성·stem 관련 항목은 이번 요청으로 조사/후속 구현 후보에 포함하되 현재 제공 기능으로 표시하지 않는다. cloud/결제/추적·원격 자동 AI 호출 제외는 유지한다.

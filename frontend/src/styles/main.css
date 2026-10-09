@@ -1330,3 +1330,39 @@ textarea::placeholder { color: #919ea6; opacity: 1; }
 }
 
 .mix-download { margin: 0 0 18px; }
+
+/* Soundry's own arrangement/session production workspace. */
+.live-studio { border-color: #455046; }
+.studio-view-switch, .studio-transport { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+.studio-view-switch button, .studio-mixer button, .studio-session button { padding: 9px 12px; border: 1px solid #465246; border-radius: 4px; background: #222c23; color: #c3d4bd; font-size: 11px; }
+.live-studio button[aria-pressed='true'] { background: #b9ed91; color: #1b2818; }
+.live-studio button:disabled { opacity: .4; }
+.studio-transport label { width: 120px; display: grid; gap: 6px; font-size: 10px; color: var(--muted); }
+.studio-transport output { font-family: monospace; color: #d0ebb8; padding: 10px; }
+.studio-layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 12px; }
+.studio-browser { padding: 14px; background: #151b16; border: 1px solid #343e35; border-radius: 6px; min-width: 0; }
+.studio-browser label { display: grid; gap: 6px; font-size: 11px; color: var(--muted); }
+.studio-browser-list { max-height: 370px; overflow: auto; margin-top: 14px; }
+.studio-browser-list button { text-align: left; display: grid; width: 100%; padding: 12px 8px; background: #222c23; color: #c3d4bd; margin: 4px 0; border-radius: 4px; }
+.studio-browser-list strong { font-size: 11px; white-space: normal; overflow-wrap: anywhere; }
+.studio-browser-list small { font-size: 9px; margin-top: 6px; opacity: .75; }
+.studio-browser > p:last-child { font-size: 11px; color: var(--muted); }
+.studio-mixer { margin-top: 16px; border: 1px solid #465246; background: #19211b; border-radius: 6px; padding: 14px; }
+.studio-mixer-heading { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.studio-mixer-heading h3 { font-size: 13px; margin-right: auto; }
+.studio-mixer-heading select { max-width: 160px; }
+.studio-devices { display: grid; grid-template-columns: repeat(5, minmax(90px, 1fr)); gap: 12px; margin-top: 16px; }
+.studio-devices label { display: grid; align-content: start; gap: 8px; font-size: 10px; color: #b1c0ac; }
+.studio-session { overflow: auto; border: 1px solid #465246; border-radius: 6px; }
+.studio-session table { border-collapse: collapse; min-width: 100%; }
+.studio-session th, .studio-session td { padding: 8px; border: 1px solid #303c32; min-width: 90px; text-align: center; color: #849881; }
+.studio-slot { display: flex; align-items: center; }
+.studio-slot button:last-child { flex: 1; }
+.studio-session p { padding: 12px; color: var(--muted); font-size: 10px; }
+.studio-waveform { flex-basis: 100%; color: #b9ed91; }
+.studio-waveform p { font-size: 10px; }
+.studio-waveform svg { width: 100%; height: 90px; background: #101710; }
+.live-studio .lane-controls > div { flex-wrap: wrap; margin-top: 4px; gap: 2px; }
+.live-studio .lane-controls { padding: 8px; }
+@media (max-width: 1100px) { .studio-layout { grid-template-columns: 1fr; } .studio-browser-list { display: flex; max-height: 140px; gap: 6px; } .studio-browser-list button { min-width: 150px; } }
+@media (max-width: 700px) { .studio-devices { grid-template-columns: repeat(2, minmax(0, 1fr)); } .studio-view-switch button { flex: 1 1 40%; } .studio-mixer-heading h3 { flex-basis: 100%; } }

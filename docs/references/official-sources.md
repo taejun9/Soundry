@@ -55,3 +55,7 @@
 ## llama.cpp — 2026-10-09
 
 [공식server README](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md): /health, /v1/models, /v1/chat/completions, response_format JSON schema와thinking 제어. 사용자가구동한로컬Gemma 서버의health200/단일모델/context32768을직접확인했다. 제한된loopback·소유권/RAG·출력검증·타임아웃은Soundry의설계결정이다.
+
+## Live 제작 흐름과 Web Audio — 2026-10-09
+
+[공식 조사·기능별 지도](ableton-live-research.md)에 Live12 매뉴얼/비교표와장르검증범위를정리했다. UI공간배치의참고이며Ableton코드/번들통합이나기기동등성근거가아니다. [MDN OfflineAudioContext](https://developer.mozilla.org/en-US/docs/Web/API/OfflineAudioContext), [StereoPannerNode](https://developer.mozilla.org/en-US/docs/Web/API/StereoPannerNode), [linearRampToValueAtTime](https://developer.mozilla.org/en-US/docs/Web/API/AudioParam/linearRampToValueAtTime)를공통preview/export·pan·fade scheduling에적용한다. [SoundCloud 업로드 조건](https://help.soundcloud.com/hc/en-us/articles/360039171614-Upload-Requirements)의lossless/stereo/16bit44.1kHz이상/headroom을재확인했다. 실제업로드나음악성승인은포함하지않는다.

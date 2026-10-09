@@ -60,3 +60,7 @@ Dark, minimal, modern music studio. 검정·짙은 회색 배경, 읽기 쉬운 
 ## 작곡 기억 확장 — 2026-10-09
 
 사용자 요청으로 작곡 지식·청취 평가 RAG와 추후 Gemma 로컬 작곡 모델 교체, 악보 JSON/MIDI 내보내기를 포함한다. 후속 요청에 따라 보컬·음색용 모델 도입은 제외한다. 기존 연주 합성은 작곡을 들어보는 용도다. 작업 공간의 작곡 노트에서 지식 관리/청취 평가/참고 출처/악보를 제공한다. RAG는 검색 기억이며 자동 가중치 학습·판매 품질 보장은 아니다. [작곡 기억 설계와 품질 gate](../architecture/composition-memory.md)를 따른다.
+
+## 제작 스튜디오 확장 — 2026-10-09
+
+Live 기능/UI 흡수 요청에 따라 [조사·통합 지도](../references/ableton-live-research.md)를 기준으로 제작 환경을 확장한다. 첫 구현은 원본 검색, Arrangement/클립 런처, BPM 기반 편집 snap, 비반복 클립 분할,50단계 undo/redo,행별 volume/pan/mute/solo/Low-pass/Delay,clip fade와 실제 원본 파형이다. 원본 변경 없이 로컬 preview/offline stereo WAV export를 수행한다. BPM은 편집 격자 기준으로 오디오 속도를 바꾸지 않는다. 모든 Live 기능의 동등 구현은 미완료다. 후속 MIDI/automation/audio/native 단계는 로드맵의 독립 gate를 따른다.

@@ -170,6 +170,6 @@ export interface MemberSummary { id: string; email: string; name: string; tier: 
 export interface MembershipPlan { tier: MembershipTier; name: string; monthlyLimit: number | null }
 export interface UsageSummary { month: string; used: number; limit: number | null; remaining: number | null }
 export interface SessionSummary { member: MemberSummary | null; setupRequired: boolean; usage: UsageSummary | null }
-export interface ArrangementClip { id: string; trackId: string; label: string; start: number; offset: number; duration: number; volume: number; loop: boolean }
-export interface ArrangementLane { id: string; name: string; muted: boolean; clips: ArrangementClip[] }
-export interface Arrangement { duration: number; lanes: ArrangementLane[] }
+export interface ArrangementClip { id: string; trackId: string; label: string; start: number; offset: number; duration: number; volume: number; loop: boolean; fadeIn?: number; fadeOut?: number }
+export interface ArrangementLane { id: string; name: string; muted: boolean; clips: ArrangementClip[]; volume?: number; pan?: number; solo?: boolean; lowpassHz?: number; delaySeconds?: number; delayWet?: number }
+export interface Arrangement { duration: number; lanes: ArrangementLane[]; bpm?: number; snapBeats?: number; masterVolume?: number }
